@@ -13,7 +13,11 @@ rm(i)
 
 # TO DO:
 # How to select windows for protocol 1? For now: start and end time used, based on used sensors (function selectwindows)
-# Check activpal timestamps, windows are not yet selected properly
+# Check activPAL timestamps, windows are not yet selected properly
+
+#data_description <- "data_description_V1.xlsx"
+#protocol = 1
+#session = 1
 
 ## Actigraph
 # Protocol 1
@@ -29,7 +33,7 @@ data_time_xyz_actigraph_pro3 <- loaddata(path = path, folder = "Actigraph_pro3",
 # Protocol 1
 data_time_xyz_activpal_pro1 <- loaddata(path = path, folder = "Activpal_pro1", brand = "Activpal", windows = FALSE)
 
-#data_time_xyz_activpal_pro1 <- loaddata(path = path, folder = "Activpal_pro1", brand = "Activpal", data_description = "data_description_V1.xlsx", protocol = 1, session = 1)
+data_time_xyz_activpal_pro1_window <- loaddata(path = path, folder = "Activpal_pro1", brand = "Activpal", data_description = "data_description_V1.xlsx", protocol = 1, session = 1)
 # Protocol 2
 data_time_xyz_activpal_pro2 <- loaddata(path = path, folder = "Activpal_pro2", brand = "Activpal", windows = FALSE)
 # Protocol 3
@@ -41,7 +45,7 @@ data_time_xyz_acttrust_pro123 <- loaddata(path = path, folder = "Acttrust_Condor
 
 ## Axivity
 # Protocol 1
-data_time_xyz_axivity_pro1 <- loaddata(path = path, folder = "Axivity_pro1", brand = "Axivity")
+data_time_xyz_axivity_pro1 <- loaddata(path = path, folder = "Axivity_pro1", brand = "Axivity", windows = FALSE)
 # Protocol 2
 data_time_xyz_axivity_pro2_ses1 <- loaddata(path = path, folder = "Axivity_pro2_ses1", brand = "Axivity") #session 1
 data_time_xyz_axivity_pro2_ses2 <- loaddata(path = path, folder = "Axivity_pro2_ses2", brand = "Axivity") #session 2
