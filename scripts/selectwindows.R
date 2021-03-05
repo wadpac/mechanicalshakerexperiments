@@ -19,9 +19,9 @@ selectwindows <- function(data, brand, window) {
   for(i in 1:length(start_index)){
     if(!is.na(start_index[i])) {
       select_window <- data[start_index[i]:end_index[i], ]
-      select_window$condition <- rep(description_pro_ses$condition[i], nrow(select_window))
-      select_window$shaker_setting <- rep(description_pro_ses$mechanical_shaker_setting[i], nrow(select_window))
-      #select_window$event <- rep(description_pro_ses$event[i], nrow(select_window))
+      select_window$condition <- rep(window$description_pro_ses$condition[i], nrow(select_window))
+      select_window$shaker_setting <- rep(window$description_pro_ses$mechanical_shaker_setting[i], nrow(select_window))
+      #select_window$event <- rep(window$description_pro_ses$event[i], nrow(select_window))
       selected_data <- rbind(selected_data, select_window)
     }
   }

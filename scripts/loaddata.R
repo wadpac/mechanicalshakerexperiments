@@ -15,6 +15,7 @@ loaddata <- function(path, folder, brand, windows = TRUE, data_description, prot
 
   file_path <- paste(path, folder, sep = "/")
   data <- list()
+  specifications <- data.frame()
   
   if(brand == "Actigraph") { pattern ="*.gt3x" }
   else if(brand == "Activpal" || brand == "MOX" || brand == "Shimmer") { pattern ="*.csv" }
@@ -34,14 +35,17 @@ loaddata <- function(path, folder, brand, windows = TRUE, data_description, prot
     else if(brand == "MOX") { d <- read.csv(paste(file_path, file_list[f], sep = "/")) }
     else if(brand == "Shimmer") { d <- read.csv(paste(file_path, file_list[f], sep = "/"), nrow = 10, skip = 1, sep = '\t') }
     
+    specs <- getspecs()
+    
     if (windows == TRUE) {
       window <- getwindows(brand, data_description, protocol, session)
       select <- selectwindows(d, brand, window)
       d <- select
     }
     data[[f]] <- as.data.frame(d)
+    
   }
   
-  return(data)
+  return(list(data, specifications))
 }
 

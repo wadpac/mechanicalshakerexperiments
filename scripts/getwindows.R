@@ -32,5 +32,5 @@ getwindows <- function(brand, data_description, protocol, session) {
     }
   }
   
-  return(list(start_ts = start_time, end_ts = end_time))
+  return(list(start_ts = start_time, end_ts = end_time, description_pro_ses = description_pro_ses))
 }
