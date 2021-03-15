@@ -11,7 +11,7 @@ rm(i)
 
 # TO DO:
 # How to select windows for protocol 1? For now: range between start and end time used, based on used sensors (function selectwindows)
-# Check activPAL timestamps, windows are not yet selected properly
+# How to select the data for protocol session 4 (subset of devices)
 
 ## Actigraph
 # Protocol 1
@@ -31,4 +31,4 @@ data_time_xyz_activpal_pro2_ses1 <- loaddata(path = path, brand = "Activpal", pr
 data_time_xyz_activpal_pro2_ses2 <- loaddata(path = path, brand = "Activpal", protocol = 2, session = 2)
 data_time_xyz_activpal_pro2_ses3 <- loaddata(path = path, brand = "Activpal", protocol = 2, session = 3)
 # Protocol 3
-data_time_xyz_activpal_pro3 <- loaddata(path = path, brand = "Activpal", protocol = 3, session = 1)
+data_time_xyz_activpal_pro3 <- loaddata(path = path, brand = "Activpal", protocol = 3, session = 3)
