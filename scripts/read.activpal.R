@@ -2,8 +2,8 @@ read.activpal <- function(file.name.and.path)
   #function adapted from package (activalProcessing), as the original function (activpal.file.reader) is not suitable for the raw data
 {
   data <- read.csv(file.name.and.path, stringsAsFactors = FALSE, skip = 1, sep = ";")
-  data <- data[,(1:5)]
-  names(data) <- c("time","sample_index","x","y","z")
+  #data <- data[,(1:5)]
+  names(data) <- c("time","sample_index","X","Y","Z")
   
   data$time <- sub("#","",data$time)
   data$time <- sub("#","",data$time)
@@ -17,7 +17,7 @@ read.activpal <- function(file.name.and.path)
   data <- data[!(data[,"time"] == "0"),]
   n <- dim(data)[1]		
   
-  if(is.character(data$time)==TRUE&t==n)
+  if(is.character(data$time) == TRUE & t == n)
   {
     data$time <- as.numeric(data$time)
     data$time <- as.POSIXct(as.Date(data$time,origin="1899-12-30"))

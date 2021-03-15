@@ -25,13 +25,14 @@ getwindows <- function(brand, protocol, session, path, data) {
   
   if (protocol == 2 || protocol == 3) {
     for (r in 1:nrow(description_pro_ses)) {
-      start <- strftime(toString(paste(description_pro_ses$date[r], description_pro_ses$start_time[r]), sep = " "), format = "%Y-%m-%d %H:%M:%OS2", tz = "GMT")
-      start_time <- c(start_time, start)
-      end <- strftime(toString(paste(description_pro_ses$date[r], description_pro_ses$end_time[r]), sep = " "), format = "%Y-%m-%d %H:%M:%OS2", tz = "GMT")
-      end_time <- c(end_time, end)
+      if(startsWith(description_pro_ses$accelerometers_used[r], "all") || (brand == "Axivity" & description_pro_ses$accelerometers_used[r] == "Axivity")){
+        start <- strftime(toString(paste(description_pro_ses$date[r], description_pro_ses$start_time[r]), sep = " "), format = "%Y-%m-%d %H:%M:%OS2", tz = "GMT")
+        start_time <- c(start_time, start)
+        end <- strftime(toString(paste(description_pro_ses$date[r], description_pro_ses$end_time[r]), sep = " "), format = "%Y-%m-%d %H:%M:%OS2", tz = "GMT")
+        end_time <- c(end_time, end)
+      }
     }
   }
-  
   
   selected_data_list <- list()
   selected_data <- data.frame()
@@ -40,20 +41,22 @@ getwindows <- function(brand, protocol, session, path, data) {
   #event <- c()
   
   #Select the windows
-  
   for(pp in 1:length(data)) {
     d <- data[[pp]]
     for(w in 1:length(start_time)) {
       if(! is.na(start_time[w])) {
         if(brand == "Actigraph") {
           select_window <- subset(d, d$time >= as.POSIXct(start_time[w], tz = "GMT") & d$time <= as.POSIXct(end_time[w], tz = "GMT"), c("time", "X", "Y", "Z"))
+        }
+        if(brand == "Activpal") {
+          select_window <- subset(d, d$time >= as.POSIXlt(start_time[w]) & d$time <= as.POSIXlt(end_time[w]), c("time", "X", "Y", "Z"))
+        }
           if(length(select_window$time) > 0) {
             condition <- rep(description_pro_ses$condition[w], nrow(select_window))
             shaking_freqency <- rep(description_pro_ses$mechanical_shaker_setting[w], nrow(select_window))
             #event <- rep(description_pro_ses$event[w], nrow(select_window))
             select_window <- cbind(select_window, condition, shaking_freqency)
           }
-        }
       }
       if(length(select_window) > 0) {
         selected_data <- rbind(selected_data, select_window)

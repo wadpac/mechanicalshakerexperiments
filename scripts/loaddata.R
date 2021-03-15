@@ -1,8 +1,8 @@
 ## Function to read in the mechanical shaker data using:
 # path;
-# brand: one of c("Actigraph", "Activpal", "Acttrust", "Axivity", "GENEActiv", "MOX", "Shimmer"), 
-# protocol number;
-# session number;
+# brand: one of c("Actigraph", "Activpal", "Acttrust", "Axivity", "GENEActiv", "MOX", "Shimmer", "Fitbit), 
+# protocol number: 1, 2 or 3;
+# session number: 1, 2 or 3;
 # windows: TRUE then windows from the data_description file will be selected, FALSE: complete data file will be loaded.
 
 loaddata <- function(path, brand, protocol, session, windows = TRUE) {
@@ -38,10 +38,11 @@ loaddata <- function(path, brand, protocol, session, windows = TRUE) {
   if(brand == "Acttrust") { pattern ="*.txt" }
   if(brand == "Axivity") { pattern ="*.cwa" }
   if(brand == "GENEActiv") { pattern ="*.bin" }
+  #else {} #fitbit
   
   file_list <- list.files(file_path, pattern = pattern, all.files = FALSE)
   
-  # Parallel inladen van de data
+  # Load data in parallel
   closeAllConnections() # in case there is a still something running from last time, kill it.
   cores = parallel::detectCores()
   Ncores = cores[1]
@@ -49,7 +50,7 @@ loaddata <- function(path, brand, protocol, session, windows = TRUE) {
   doParallel::registerDoParallel(cl)
   
   parallelLoad <- function(file_path, file_list, brand, protocol, windows, session, path) {
-    foreach(i = 1:length(file_list), .packages = "read.gt3x") %dopar% {
+    foreach(i = 1:length(file_list), .packages = "read.gt3x", .export = "read.activpal") %dopar% {
       # Load in the data
       if(brand == "Actigraph"){ d <- read.gt3x(paste(file_path, file_list[i], sep = "/"), asDataFrame = TRUE) }
       else if(brand == "Activpal") { d <- read.activpal(paste(file_path, file_list[i], sep = "/")) }
@@ -58,19 +59,22 @@ loaddata <- function(path, brand, protocol, session, windows = TRUE) {
       else if(brand == "GENEActiv") { d <- read.bin(paste(file_path, file_list[i], sep = "/")) }
       else if(brand == "MOX") { d <- read.csv(paste(file_path, file_list[i], sep = "/")) }
       else if(brand == "Shimmer") { d <- read.csv(paste(file_path, file_list[i], sep = "/"), nrow = 10, skip = 1, sep = '\t')}
-      else {# brand = Fitbit}
+      else {}# brand = Fitbit
       }
-  }
-  
+  } 
+
   data <- tryCatch(parallelLoad(file_path, file_list, brand, protocol, windows, session, path), error = function(e) print(e))
   parallel::stopCluster(cl)
   
+  #Get data specifications
+  names(data) <- file_list
+  specifications <- getspecs(brand, data)
+  
+  #Get and select windows
   if (windows == TRUE) {
     window_data <- getwindows(brand, protocol, session, path, data)
+    data <- window_data
   }
-  
-  specifications <- getspecs(brand, data)
-  data <- list(data = data, specifications = specifications)
-  return(data)
-}
 
+  return(list(data = data, specifications = specifications))
+}
