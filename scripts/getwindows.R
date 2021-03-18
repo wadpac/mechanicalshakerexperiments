@@ -25,7 +25,7 @@ getwindows <- function(brand, protocol, session, path, data) {
   
   if (protocol == 2 || protocol == 3) {
     for (r in 1:nrow(description_pro_ses)) {
-      if(startsWith(description_pro_ses$accelerometers_used[r], "all") || (brand == "Axivity" & description_pro_ses$accelerometers_used[r] == "Axivity")){
+      if(startsWith(description_pro_ses$accelerometers_used[r], "all") || (brand == "Axivity" & description_pro_ses$accelerometers_used[r] == "axivity")){
         start <- strftime(toString(paste(description_pro_ses$date[r], description_pro_ses$start_time[r]), sep = " "), format = "%Y-%m-%d %H:%M:%OS2", tz = "GMT")
         start_time <- c(start_time, start)
         end <- strftime(toString(paste(description_pro_ses$date[r], description_pro_ses$end_time[r]), sep = " "), format = "%Y-%m-%d %H:%M:%OS2", tz = "GMT")
@@ -51,7 +51,11 @@ getwindows <- function(brand, protocol, session, path, data) {
         if(brand == "Activpal") {
           select_window <- subset(d, d$time >= as.POSIXlt(start_time[w]) & d$time <= as.POSIXlt(end_time[w]), c("time", "X", "Y", "Z"))
         }
-          if(length(select_window$time) > 0) {
+        if(brand == "Axivity") {
+          d$time <- as.POSIXct(d$time, origin="1970-1-1", tz = "GMT")
+          select_window <- subset(d, d$time >= as.POSIXct(start_time[w], tz = "GMT") & d$time <= as.POSIXct(end_time[w], tz = "GMT"), c("time", "x", "y", "z"))
+        }
+        if(length(select_window$time) > 0) {
             condition <- rep(description_pro_ses$condition[w], nrow(select_window))
             shaking_freqency <- rep(description_pro_ses$mechanical_shaker_setting[w], nrow(select_window))
             #event <- rep(description_pro_ses$event[w], nrow(select_window))

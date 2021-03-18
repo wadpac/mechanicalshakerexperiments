@@ -23,6 +23,12 @@ for (data_file in 1:length(data)) {
         sampling_frequency <- c(sampling_frequency, 20)
         dynamic_range <- c(dynamic_range, 2)
       }
+      if(brand == "Axivity"){
+        head <- data[[data_file]]$header
+        serial_number <- c(serial_number, data[[data_file]]$header$uniqueSerialCode)
+        sampling_frequency <- c(sampling_frequency, data[[data_file]]$header$frequency)
+        dynamic_range <- c(dynamic_range, data[[data_file]]$header$accrange)
+      }
   }
   
   specifications <- cbind(serial_number, sampling_frequency, dynamic_range)

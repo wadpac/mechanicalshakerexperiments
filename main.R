@@ -10,7 +10,8 @@ for (i in dir("/Users/annelindelettink/Documents/Work MacBook Pro Annelinde/Mech
 rm(i)
 
 # TO DO:
-# How to select windows for protocol 1? For now: range between start and end time used, based on used sensors (function selectwindows)
+# How to select windows for protocol 1? For now: range between start and end time used, based on used sensors. Events turn box not yet included (function selectwindows)
+# Axivity: protocol3_ses2 data load failed
 # How to select the data for protocol session 4 (subset of devices)
 
 ## Actigraph
@@ -32,3 +33,15 @@ data_time_xyz_activpal_pro2_ses2 <- loaddata(path = path, brand = "Activpal", pr
 data_time_xyz_activpal_pro2_ses3 <- loaddata(path = path, brand = "Activpal", protocol = 2, session = 3)
 # Protocol 3
 data_time_xyz_activpal_pro3 <- loaddata(path = path, brand = "Activpal", protocol = 3, session = 3)
+
+## Axivity
+# Protocol 1
+data_time_xyz_axivity_pro1 <- loaddata(path = path, brand = "Axivity", protocol = 1, session = 1)
+#Protocol 2
+data_time_xyz_axivity_pro2_ses1 <- loaddata(path = path, brand = "Axivity", protocol = 2, session = 1)
+data_time_xyz_axivity_pro2_ses2 <- loaddata(path = path, brand = "Axivity", protocol = 2, session = 2)
+data_time_xyz_axivity_pro2_ses3 <- loaddata(path = path, brand = "Axivity", protocol = 2, session = 3)
+# Protocol 3
+data_time_xyz_axivity_pro3_ses1 <- loaddata(path = path, brand = "Axivity", protocol = 3, session = 1)
+data_time_xyz_axivity_pro3_ses2 <- loaddata(path = path, brand = "Axivity", protocol = 3, session = 2)
+data_time_xyz_axivity_pro3_ses3 <- loaddata(path = path, brand = "Axivity", protocol = 3, session = 3)
