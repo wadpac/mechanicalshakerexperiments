@@ -44,12 +44,16 @@ getwindows <- function(brand, protocol, session, path, data) {
   for(pp in 1:length(data)) {
     d <- data[[pp]]
     for(w in 1:length(start_time)) {
-      if(! is.na(start_time[w])) {
+      if(length(start_time[w]) > 0 & !is.na(start_time[w])) {
         if(brand == "Actigraph") {
           select_window <- subset(d, d$time >= as.POSIXct(start_time[w], tz = "GMT") & d$time <= as.POSIXct(end_time[w], tz = "GMT"), c("time", "X", "Y", "Z"))
         }
         if(brand == "Activpal") {
           select_window <- subset(d, d$time >= as.POSIXlt(start_time[w]) & d$time <= as.POSIXlt(end_time[w]), c("time", "X", "Y", "Z"))
+        }
+        if (brand == "Acttrust"){
+          d$DATE.TIME <- as.POSIXlt(d$DATE.TIME, tz= "GMT", format = "%d/%m/%Y %H:%M:%OS")
+          select_window <- subset(d, d$DATE.TIME >= as.POSIXlt(start_time[w], tz = "GMT") & d$DATE.TIME <= as.POSIXct(end_time[w], tz = "GMT"), c("DATE.TIME", "ORIENTATION", "TAT", "ZCM")) #Which variables to use?
         }
         if(brand == "Axivity") {
           d$time <- as.POSIXct(d$time, origin="1970-1-1", tz = "GMT")

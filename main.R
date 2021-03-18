@@ -12,6 +12,7 @@ rm(i)
 # TO DO:
 # How to select windows for protocol 1? For now: range between start and end time used, based on used sensors. Events turn box not yet included (function selectwindows)
 # Axivity: protocol3_ses2 data load failed
+# Acttrust: which variables for acceleration to select?
 # How to select the data for protocol session 4 (subset of devices)
 
 ## Actigraph
@@ -33,6 +34,16 @@ data_time_xyz_activpal_pro2_ses2 <- loaddata(path = path, brand = "Activpal", pr
 data_time_xyz_activpal_pro2_ses3 <- loaddata(path = path, brand = "Activpal", protocol = 2, session = 3)
 # Protocol 3
 data_time_xyz_activpal_pro3 <- loaddata(path = path, brand = "Activpal", protocol = 3, session = 3)
+
+##Acttrust
+# Protocol 1
+data_time_xyz_acttrust_pro1 <- loaddata(path = path, brand = "Acttrust", protocol = 1, session = 1)
+# Protocol 2
+data_time_xyz_acttrust_pro2_ses1 <- loaddata(path = path, brand = "Acttrust", protocol = 2, session = 1)
+data_time_xyz_acttrust_pro2_ses2 <- loaddata(path = path, brand = "Acttrust", protocol = 2, session = 2)
+data_time_xyz_acttrust_pro2_ses3 <- loaddata(path = path, brand = "Acttrust", protocol = 2, session = 3)
+# Protocol 3
+data_time_xyz_acttrust_pro3 <- loaddata(path = path, brand = "Acttrust", protocol = 3, session = 3)
 
 ## Axivity
 # Protocol 1
