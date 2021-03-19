@@ -29,66 +29,42 @@ getwindows <- function(brand, protocol, session, path, data) {
       }
     }
   }
-
+  
   selected_data_list <- list()
   selected_data <- data.frame()
-  condition <- c()
-  shaking_freqency <- c()
-  #event <- c()
   #Select the windows
   cat("file ")
   for(pp in 1:length(data)) { # pp is file number?
     cat(paste0(" ",pp))
     d <- data[[pp]]
-    Nvalues =  3600 * 100 * 12  * length(start_time)
-    selected_data = data.frame(time=numeric(Nvalues), X=numeric(Nvalues),
-                               Y=numeric(Nvalues), Z=numeric(Nvalues),
-                               condition =  character(Nvalues), shaking_freqency = character(Nvalues)) # initialise matrix
-    cnt = 1
+    selected_data = d
+    selected_data$shaking_freqency = 0
+    selected_data$condition = ""
     for(w in 1:length(start_time)) { # w is condition within the experiment (e.g. shaker frequency)
-      if(length(start_time[w]) > 0 & !is.na(start_time[w])) {
-        if(brand == "Actigraph") {
-          select_window <- d[which(d$time >= as.POSIXct(start_time[w], tz = "GMT") &
-                                     d$time <= as.POSIXct(end_time[w], tz = "GMT")), c("time", "X", "Y", "Z")]
-        }
-        if(brand == "Activpal") {
-          select_window <- d[which(d$time >= as.POSIXlt(start_time[w]) &
-                                     d$time <= as.POSIXlt(end_time[w])), c("time", "X", "Y", "Z")]
-        }
-        if (brand == "Acttrust"){
-          d$DATE.TIME <- as.POSIXlt(d$DATE.TIME, tz= "GMT", format = "%d/%m/%Y %H:%M:%OS")
-          select_window <- subset(d, d$DATE.TIME >= as.POSIXlt(start_time[w], tz = "GMT") & d$DATE.TIME <= as.POSIXct(end_time[w], tz = "GMT"), c("DATE.TIME", "ORIENTATION", "TAT", "ZCM")) #Which variables to use?
-        }
-        if(brand == "Axivity") {
-          d$time <- as.POSIXct(d$time, origin="1970-1-1", tz = "GMT")
-          select_window <- d[which(d$time >= as.POSIXct(start_time[w], tz = "GMT") &
-                                     d$time <= as.POSIXct(end_time[w], tz = "GMT")), c("time", "x", "y", "z")]
-        }
-        if(length(select_window$time) > 0) {
-          condition <- rep(description_pro_ses$condition[w], nrow(select_window))
-          shaking_freqency <- rep(description_pro_ses$mechanical_shaker_setting[w], nrow(select_window))
-          #event <- rep(description_pro_ses$event[w], nrow(select_window))
-          select_window <- cbind(select_window, condition, shaking_freqency)
-        }
-        if(length(select_window) > 0) {
-          if(nrow(select_window) > 0) {
-            if (nrow(selected_data) < (cnt+nrow(select_window)-1)) {
-              selected_data[nrow(selected_data) + (3600*24*100), ] = NA
-            }
-            selected_data[cnt:(cnt+nrow(select_window)-1),] = select_window
-            cnt  = cnt + nrow(select_window)
-          }
-        }
+      if(brand == "Actigraph") {
+        stime = as.POSIXct(start_time[w], tz = "GMT")
+        etime = as.POSIXct(end_time[w], tz = "GMT")
+      } else if (brand == "Activpal") {
+        stime = as.POSIXlt(start_time[w])
+        etime = as.POSIXlt(end_time[w])
+        
+      } else if (brand == "Acttrust") {
+        stime = as.POSIXlt(start_time[w], tz = "GMT")
+        etime = as.POSIXct(end_time[w], tz = "GMT")
+      } else if(brand == "Axivity") {
+        stime = as.POSIXct(start_time[w], tz = "GMT") &
+          etime = as.POSIXct(end_time[w], tz = "GMT")
       }
-      empty = which(selected_data[,1] == 0)
-      if (length(empty) > 1) {
-        selected_data = selected_data[-empty,]
+      segment = which(selected_data$time >= stime & selected_data$time < etime)
+      if(length(segment) > 0) {
+        selected_data$shaking_freqency[segment] = as.numeric(description_pro_ses$mechanical_shaker_setting[w])
+        selected_data$condition[segment] = as.character(description_pro_ses$condition[w])
       }
-      selected_data_list[[pp]] <- selected_data
     }
-    rm(selected_data)
-
+    
+    selected_data_list[[pp]] <- selected_data
   }
+  rm(selected_data)
   return(selected_data_list)
-
+  
 }

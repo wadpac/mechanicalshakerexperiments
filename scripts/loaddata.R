@@ -115,6 +115,8 @@ loaddata <- function(path, brand, protocol, session, windows = TRUE) {
         end = as.numeric(end)
       }
       d = d[which(d$time >= start & d$time <= end),] 
+      # d$time = as.numeric(d$time)
+      return(d)
     }
   }
   
@@ -124,12 +126,9 @@ loaddata <- function(path, brand, protocol, session, windows = TRUE) {
   #Get data specifications
   names(data) <- file_list
   specifications <- getspecs(brand, data)
-  
-  #Remove header
-  d <- list()
-  if(brand == "Axivity") {
-    
-  }
+  # #Remove header
+  # d <- list()
+
   print("get windows...")
   #Get and select windows
   if (windows == TRUE) {
