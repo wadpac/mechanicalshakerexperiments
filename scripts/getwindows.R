@@ -38,7 +38,7 @@ getwindows <- function(brand, protocol, session, path, data) {
     cat(paste0(" ",pp))
     d <- data[[pp]]
     selected_data = d
-    selected_data$shaking_freqency = 0
+    selected_data$shaking_freqency = -1 # default is -1 frequency
     selected_data$condition = ""
     for(w in 1:length(start_time)) { # w is condition within the experiment (e.g. shaker frequency)
       if(brand == "Actigraph") {
@@ -61,7 +61,8 @@ getwindows <- function(brand, protocol, session, path, data) {
         selected_data$condition[segment] = as.character(description_pro_ses$condition[w])
       }
     }
-    
+    MissingFreqs = which(selected_data != -1)
+    if (length(MissingFreqs) > 0) selected_data = selected_data[MissingFreqs,]
     selected_data_list[[pp]] <- selected_data
   }
   rm(selected_data)
