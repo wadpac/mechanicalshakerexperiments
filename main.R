@@ -47,7 +47,6 @@ data_time_xyz_actigraph_pro2_ses2 <- loaddata(path = my_data_folder, brand = "Ac
 data_time_xyz_actigraph_pro2_ses3 <- loaddata(path = my_data_folder, brand = "Actigraph", protocol = 2, session = 3)
 # Protocol 3
 data_time_xyz_actigraph_pro3 <- loaddata(path = my_data_folder, brand = "Actigraph", protocol = 3, session = 3)
-kkk
 ## Activpal
 # Protocol 1
 data_time_xyz_activpal_pro1 <- loaddata(path = my_data_folder, brand = "Activpal", protocol = 1, session = 1)
