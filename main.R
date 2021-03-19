@@ -1,14 +1,18 @@
 ### Load data and select windows
 
+rm(list=ls()) # freeing up memory
+
 # user input required:
 # Obtain path to data folder
 # this is csv file with two columns: my_data_folder and my_functions_folder
 # in the second row you will store the respective folder paths as a character
 filepaths = read.csv("data/filepaths.csv")
-my_data_folder = filepaths$my_data_folder
-my_functions_folder = filepaths$my_functions_folder
+my_data_folder = gsub(pattern = '\"',replacement = "", x = filepaths$my_data_folder)
+my_functions_folder =  gsub(pattern = '\"',replacement = "", filepaths$my_functions_folder)
 
-setwd(my_data_folder) #set path
+# setwd(my_data_folder) #set path => not desirable, because that will change
+# the working directory for next time this script is run, by which the code cannot find the filepath.csv anymore
+
 for (function_file in dir(my_functions_folder, full.names = T)) source(function_file) #load functions
 
 # TO DO:
@@ -43,7 +47,7 @@ data_time_xyz_actigraph_pro2_ses2 <- loaddata(path = my_data_folder, brand = "Ac
 data_time_xyz_actigraph_pro2_ses3 <- loaddata(path = my_data_folder, brand = "Actigraph", protocol = 2, session = 3)
 # Protocol 3
 data_time_xyz_actigraph_pro3 <- loaddata(path = my_data_folder, brand = "Actigraph", protocol = 3, session = 3)
-
+kkk
 ## Activpal
 # Protocol 1
 data_time_xyz_activpal_pro1 <- loaddata(path = my_data_folder, brand = "Activpal", protocol = 1, session = 1)
