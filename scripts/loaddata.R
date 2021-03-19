@@ -76,46 +76,6 @@ loaddata <- function(path, brand, protocol, session, windows = TRUE) {
         d <- read.csv(paste(file_path, file_list[i], sep = "/"), nrow = 10, skip = 1, sep = '\t')
       } else {
       }# brand = Fitbit
-      
-      # make a crude selection of the data to reduce amount of non-experiment data in memory
-      if (protocol == 1 & session == 1) {
-        start = as.POSIXlt("2020-11-26 9:00:00")
-        end = as.POSIXlt("2020-11-26 19:45:00")
-      }
-      if (protocol == 2 & session == 1) {
-        start = as.POSIXlt("2020-11-24 9:30:00")
-        end = as.POSIXlt("2020-11-24 11:00:00")
-      }
-      if (protocol == 2 & session == 2) {
-        start = as.POSIXlt("2020-11-24 12:30:00")
-        end = as.POSIXlt("2020-11-24 13:30:00")
-      }
-      if (protocol == 2 & session == 3) {
-        start = as.POSIXlt("2020-11-24 15:00:00")
-        end = as.POSIXlt("2020-11-24 15:00:00")
-      }
-      if (protocol == 3 & session == 1) {
-        start = as.POSIXlt("2020-11-27 8:30:00")
-        end = as.POSIXlt("2020-11-27 9:30:00")
-      }
-      if (protocol == 3 & session == 2) {
-        start = as.POSIXlt("2020-11-27 9:55:00")
-        end = as.POSIXlt("2020-11-27 10:50:00")
-      }
-      if (protocol == 3 & session == 3) {
-        start = as.POSIXlt("2020-11-27 11:25:00")
-        end = as.POSIXlt("2020-11-27 12:30:00")
-      }
-      if (protocol == 3 & session == 4) {
-        start = as.POSIXlt("2020-11-27 13:15:00")
-        end = as.POSIXlt("2020-11-27 13:55:00")
-      }
-      if (brand %in% c("Axivity")) {
-        start = as.numeric(start)
-        end = as.numeric(end)
-      }
-      d = d[which(d$time >= start & d$time <= end),] 
-      # d$time = as.numeric(d$time)
       return(d)
     }
   }
