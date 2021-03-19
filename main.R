@@ -22,7 +22,7 @@ for (function_file in dir(my_functions_folder, full.names = T)) source(function_
 # How to select the data for protocol session 4 (subset of devices)
 
 # Check for missing packages and install if missing:
-packages = c("GGIR", "gdata", "doParallel", "remotes", "GENEAread", "THLfi/read.gt3x")
+packages = c("GGIR", "gdata", "doParallel", "remotes", "GENEAread", "THLfi/read.gt3x", "data.table")
 slash_in_name = sapply(packages, FUN = function(x) length(unlist(strsplit(x, "/"))) == 2)
 if (length(which(slash_in_name == FALSE)) > 0) {
   CRANpackages_to_get = packages[which(packages[!slash_in_name] %in% rownames(installed.packages()) == FALSE)]
