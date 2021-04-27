@@ -38,43 +38,43 @@ if (length(which(slash_in_name == TRUE)) > 0) {
   }
 }
 
-## Actigraph
-# Protocol 1
-data_time_xyz_actigraph_pro1 <- loaddata(path = my_data_folder, brand = "Actigraph", protocol = 1, session = 1)
-# Protocol 2
-data_time_xyz_actigraph_pro2_ses1 <- loaddata(path = my_data_folder, brand = "Actigraph", protocol = 2, session = 1)
-data_time_xyz_actigraph_pro2_ses2 <- loaddata(path = my_data_folder, brand = "Actigraph", protocol = 2, session = 2)
-data_time_xyz_actigraph_pro2_ses3 <- loaddata(path = my_data_folder, brand = "Actigraph", protocol = 2, session = 3)
-# Protocol 3
-data_time_xyz_actigraph_pro3 <- loaddata(path = my_data_folder, brand = "Actigraph", protocol = 3, session = 3)
-## Activpal
-# Protocol 1
-data_time_xyz_activpal_pro1 <- loaddata(path = my_data_folder, brand = "Activpal", protocol = 1, session = 1)
-# Protocol 2
-data_time_xyz_activpal_pro2_ses1 <- loaddata(path = my_data_folder, brand = "Activpal", protocol = 2, session = 1)
-data_time_xyz_activpal_pro2_ses2 <- loaddata(path = my_data_folder, brand = "Activpal", protocol = 2, session = 2)
-data_time_xyz_activpal_pro2_ses3 <- loaddata(path = my_data_folder, brand = "Activpal", protocol = 2, session = 3)
-# Protocol 3
-data_time_xyz_activpal_pro3 <- loaddata(path = my_data_folder, brand = "Activpal", protocol = 3, session = 3)
 
-##Acttrust
-# Protocol 1
-data_time_xyz_acttrust_pro1 <- loaddata(path = my_data_folder, brand = "Acttrust", protocol = 1, session = 1)
-# Protocol 2
-data_time_xyz_acttrust_pro2_ses1 <- loaddata(path = my_data_folder, brand = "Acttrust", protocol = 2, session = 1)
-data_time_xyz_acttrust_pro2_ses2 <- loaddata(path = my_data_folder, brand = "Acttrust", protocol = 2, session = 2)
-data_time_xyz_acttrust_pro2_ses3 <- loaddata(path = my_data_folder, brand = "Acttrust", protocol = 2, session = 3)
-# Protocol 3
-data_time_xyz_acttrust_pro3 <- loaddata(path = my_data_folder, brand = "Acttrust", protocol = 3, session = 3)
+checkdimensions = function(x) {
+  for (j in 1:length(x)) {
+    print(dim(x[[j]]))
+  }
+}
 
-## Axivity
-# Protocol 1
-data_time_xyz_axivity_pro1 <- loaddata(path = my_data_folder, brand = "Axivity", protocol = 1, session = 1)
-#Protocol 2
-data_time_xyz_axivity_pro2_ses1 <- loaddata(path = my_data_folder, brand = "Axivity", protocol = 2, session = 1)
-data_time_xyz_axivity_pro2_ses2 <- loaddata(path = my_data_folder, brand = "Axivity", protocol = 2, session = 2)
-data_time_xyz_axivity_pro2_ses3 <- loaddata(path = my_data_folder, brand = "Axivity", protocol = 2, session = 3)
-# Protocol 3
-data_time_xyz_axivity_pro3_ses1 <- loaddata(path = my_data_folder, brand = "Axivity", protocol = 3, session = 1)
-data_time_xyz_axivity_pro3_ses2 <- loaddata(path = my_data_folder, brand = "Axivity", protocol = 3, session = 2)
-data_time_xyz_axivity_pro3_ses3 <- loaddata(path = my_data_folder, brand = "Axivity", protocol = 3, session = 3)
+focus_pro1 = TRUE # to avoid loading all data in at once as that will never be needed
+if (focus_pro1ol == TRUE) {
+  actigraph_pro1 <- loaddata(path = my_data_folder, brand = "Actigraph", protocol = 1, session = 1)
+  activpal_pro1 <- loaddata(path = my_data_folder, brand = "Activpal", protocol = 1, session = 1)
+  acttrust_pro1 <- loaddata(path = my_data_folder, brand = "Acttrust", protocol = 1, session = 1)
+  axivity_pro1 <- loaddata(path = my_data_folder, brand = "Axivity", protocol = 1, session = 1)
+} else {
+  actigraph_pro2_ses1 <- loaddata(path = my_data_folder, brand = "Actigraph", protocol = 2, session = 1)
+  actigraph_pro2_ses2 <- loaddata(path = my_data_folder, brand = "Actigraph", protocol = 2, session = 2)
+  actigraph_pro2_ses3 <- loaddata(path = my_data_folder, brand = "Actigraph", protocol = 2, session = 3)
+  actigraph_pro3 <- loaddata(path = my_data_folder, brand = "Actigraph", protocol = 3, session = 3)
+  
+  activpal_pro2_ses1 <- loaddata(path = my_data_folder, brand = "Activpal", protocol = 2, session = 1)
+  activpal_pro2_ses2 <- loaddata(path = my_data_folder, brand = "Activpal", protocol = 2, session = 2)
+  activpal_pro2_ses3 <- loaddata(path = my_data_folder, brand = "Activpal", protocol = 2, session = 3)
+  activpal_pro3 <- loaddata(path = my_data_folder, brand = "Activpal", protocol = 3, session = 3)
+  # checkdimensions(activpal_pro2_ses1$data)
+  # checkdimensions(activpal_pro2_ses2$data)
+  # checkdimensions(activpal_pro2_ses3$data)
+  # checkdimensions(activpal_pro3$data)
+  
+  acttrust_pro2_ses1 <- loaddata(path = my_data_folder, brand = "Acttrust", protocol = 2, session = 1)
+  acttrust_pro2_ses2 <- loaddata(path = my_data_folder, brand = "Acttrust", protocol = 2, session = 2)
+  acttrust_pro2_ses3 <- loaddata(path = my_data_folder, brand = "Acttrust", protocol = 2, session = 3)
+  acttrust_pro3 <- loaddata(path = my_data_folder, brand = "Acttrust", protocol = 3, session = 3)
+  
+  axivity_pro2_ses1 <- loaddata(path = my_data_folder, brand = "Axivity", protocol = 2, session = 1)
+  axivity_pro2_ses2 <- loaddata(path = my_data_folder, brand = "Axivity", protocol = 2, session = 2)
+  axivity_pro2_ses3 <- loaddata(path = my_data_folder, brand = "Axivity", protocol = 2, session = 3)
+  axivity_pro3_ses1 <- loaddata(path = my_data_folder, brand = "Axivity", protocol = 3, session = 1)
+  axivity_pro3_ses2 <- loaddata(path = my_data_folder, brand = "Axivity", protocol = 3, session = 2)
+  axivity_pro3_ses3 <- loaddata(path = my_data_folder, brand = "Axivity", protocol = 3, session = 3)
+}
