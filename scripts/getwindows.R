@@ -28,11 +28,11 @@ getwindows <- function(brand, protocol, session, path, data) {
       }
     }
   }
-  
   selected_data_list <- list()
   selected_data <- data.frame()
   #Select the windows
   cat("file ")
+  tz = "Europe/Amsterdam"
   
   for(pp in 1:length(data)) { # pp is file number?
     cat(paste0(" ",pp))
@@ -43,17 +43,17 @@ getwindows <- function(brand, protocol, session, path, data) {
       selected_data$condition = ""
       for(w in 1:length(start_time)) { # w is condition within the experiment (e.g. shaker frequency)
         if(brand == "Actigraph") {
-          stime = as.POSIXct(start_time[w], tz = "GMT")
-          etime = as.POSIXct(end_time[w], tz = "GMT")
+          stime = as.POSIXct(start_time[w], tz = tz)
+          etime = as.POSIXct(end_time[w], tz = tz)
         } else if (brand == "Activpal") {
-          stime = as.POSIXlt(start_time[w])
-          etime = as.POSIXlt(end_time[w])
+          stime = as.POSIXlt(start_time[w], tz = tz)
+          etime = as.POSIXlt(end_time[w], tz = tz)
         } else if (brand == "Acttrust") {
-          stime = as.POSIXlt(start_time[w], tz = "GMT")
-          etime = as.POSIXct(end_time[w], tz = "GMT")
+          stime = as.POSIXlt(start_time[w], tz = tz)
+          etime = as.POSIXct(end_time[w], tz = tz)
         } else if(brand == "Axivity") {
-          stime = as.POSIXct(start_time[w], tz = "GMT") &
-            etime = as.POSIXct(end_time[w], tz = "GMT")
+          stime = as.POSIXct(start_time[w], tz = tz) &
+            etime = as.POSIXct(end_time[w], tz = tz)
         }
         segment = which(selected_data$time >= stime & selected_data$time < etime)
         if(length(segment) > 0) {
