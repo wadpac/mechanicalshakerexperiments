@@ -53,8 +53,8 @@ getwindows <- function(brand, protocol, session, path, data, protocolfile) {
           stime = as.POSIXlt(start_time[w], tz = tz)
           etime = as.POSIXct(end_time[w], tz = tz)
         } else if(brand == "Axivity") {
-          stime = as.POSIXct(start_time[w], tz = tz) &
-            etime = as.POSIXct(end_time[w], tz = tz)
+          stime = as.POSIXct(start_time[w], tz = tz)
+          etime = as.POSIXct(end_time[w], tz = tz)
         }
         segment = which(selected_data$time >= stime & selected_data$time < etime)
         if(length(segment) > 0) {
