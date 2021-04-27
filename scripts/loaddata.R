@@ -46,9 +46,8 @@ loaddata <- function(path, brand, protocol, session, windows = TRUE) {
   
   file_list <- list.files(file_path, pattern = pattern, all.files = FALSE)
   
-  
   print(paste0(length(file_list), " files identified for loading:"))
-
+  
   # Load data in parallel
   closeAllConnections() # in case there is a still something running from last time, kill it.
   cores = parallel::detectCores()
@@ -58,80 +57,87 @@ loaddata <- function(path, brand, protocol, session, windows = TRUE) {
   
   parallelLoad <- function(file_path, file_list, brand, protocol, windows, session, path) {
     foreach(i = 1:length(file_list), .packages = c("read.gt3x", "GGIR"), .export = "read.activpal") %dopar% {
+      # i = 1
       # Load in the data
+      
+      tz = "Europe/Amsterdam"
       if(brand == "Actigraph") {
-        d <- read.gt3x(paste(file_path, file_list[i], sep = "/"), asDataFrame = TRUE) 
+        rawdata <- as.data.frame(read.gt3x(paste(file_path, file_list[i], sep = "/"), asDataFrame = TRUE))
+        rawdata$time = as.POSIXlt(rawdata$time, tz = tz)
       } else if (brand == "Activpal") {
-        d <- read.activpal(paste(file_path, file_list[i], sep = "/"))
+        rawdata <- read.activpal(paste(file_path, file_list[i], sep = "/"))
       } else if(brand == "Acttrust") {
-        d <- read.csv(paste(file_path, file_list[i], sep = "/"), sep = ";", skip = 25)
+        rawdata <- read.csv(paste(file_path, file_list[i], sep = "/"), sep = ";", skip = 25)
       } else if(brand == "Axivity") {
-        d <- g.cwaread(paste(file_path, file_list[i], sep = "/"), start = 1, end = 1000000)
-        d = d$data # ignore header already at this stage
+        rawdata <- g.cwaread(paste(file_path, file_list[i], sep = "/"), start = 1, end = 1000000, desiredtz = tz)
+        rawdata = rawdata$data # ignore header already at this stage
       } else if (brand == "GENEActiv") {
-        d <- read.bin(paste(file_path, file_list[i], sep = "/")) 
+        rawdata <- read.bin(paste(file_path, file_list[i], sep = "/")) 
       } else if (brand == "MOX") {
-        d <- read.csv(paste(file_path, file_list[i], sep = "/")) 
+        rawdata <- read.csv(paste(file_path, file_list[i], sep = "/")) 
       } else if (brand == "Shimmer") {
-        d <- read.csv(paste(file_path, file_list[i], sep = "/"), nrow = 10, skip = 1, sep = '\t')
+        rawdata <- read.csv(paste(file_path, file_list[i], sep = "/"), nrow = 10, skip = 1, sep = '\t')
       } else {
       }# brand = Fitbit
       
-      # make a crude selection of the data to reduce amount of non-experiment data in memory
+      # make selection of the data with 2 minutes before and after each experiment
+      # this to reduce amount data in memory
       if (protocol == 1 & session == 1) {
-        start = as.POSIXlt("2020-11-26 9:00:00")
-        end = as.POSIXlt("2020-11-26 19:45:00")
+        start = as.POSIXlt("2020-11-26 9:12:00", tz = tz)
+        end = as.POSIXlt("2020-11-26 19:30:00", tz = tz)
       }
       if (protocol == 2 & session == 1) {
-        start = as.POSIXlt("2020-11-24 9:30:00")
-        end = as.POSIXlt("2020-11-24 11:00:00")
+        start = as.POSIXlt("2020-11-24 9:42:00", tz = tz)
+        end = as.POSIXlt("2020-11-24 10:47:00", tz = tz)
       }
       if (protocol == 2 & session == 2) {
-        start = as.POSIXlt("2020-11-24 12:30:00")
-        end = as.POSIXlt("2020-11-24 13:30:00")
+        start = as.POSIXlt("2020-11-24 12:37:00", tz = tz)
+        end = as.POSIXlt("2020-11-24 13:20:00", tz = tz)
       }
       if (protocol == 2 & session == 3) {
-        start = as.POSIXlt("2020-11-24 15:00:00")
-        end = as.POSIXlt("2020-11-24 16:00:00")
+        start = as.POSIXlt("2020-11-24 15:07:00", tz = tz)
+        end = as.POSIXlt("2020-11-24 15:50:00", tz = tz)
+      }
+      if (protocol == 2 & session == 4) {
+        start = as.POSIXlt("2020-11-24 15:54:00", tz = tz)
+        end = as.POSIXlt("2020-11-24 16:55:00", tz = tz)
       }
       if (protocol == 3 & session == 1) {
-        start = as.POSIXlt("2020-11-27 8:30:00")
-        end = as.POSIXlt("2020-11-27 9:30:00")
+        start = as.POSIXlt("2020-11-27 8:37:00", tz = tz)
+        end = as.POSIXlt("2020-11-27 9:20:00", tz = tz)
       }
       if (protocol == 3 & session == 2) {
-        start = as.POSIXlt("2020-11-27 9:55:00")
-        end = as.POSIXlt("2020-11-27 10:50:00")
+        start = as.POSIXlt("2020-11-27 10:02:00", tz = tz)
+        end = as.POSIXlt("2020-11-27 10:45:00", tz = tz)
       }
       if (protocol == 3 & session == 3) {
-        start = as.POSIXlt("2020-11-27 11:25:00")
-        end = as.POSIXlt("2020-11-27 12:30:00")
+        start = as.POSIXlt("2020-11-27 11:32:00", tz = tz)
+        end = as.POSIXlt("2020-11-27 12:15:00", tz = tz)
       }
       if (protocol == 3 & session == 4) {
-        start = as.POSIXlt("2020-11-27 13:15:00")
-        end = as.POSIXlt("2020-11-27 13:55:00")
+        start = as.POSIXlt("2020-11-27 13:35:00", tz = tz)
+        end = as.POSIXlt("2020-11-27 13:44:00", tz = tz)
       }
       if (brand %in% c("Axivity")) {
         start = as.numeric(start)
         end = as.numeric(end)
       }
-      d = d[which(d$time >= start & d$time <= end),] 
-      return(d)
+      rawdata = rawdata[which(rawdata$time >= start & rawdata$time <= end),] 
+      return(rawdata)
     }
   }
   
   data <- tryCatch(parallelLoad(file_path, file_list, brand, protocol, windows, session, path), error = function(e) print(e))
   parallel::stopCluster(cl)
-  
   #Get data specifications
   names(data) <- file_list
   specifications <- getspecs(brand, data)
-
+  
   print("get windows...")
   #Get and select windows
   if (windows == TRUE) {
     window_data <- getwindows(brand, protocol, session, path, data)
     data <- window_data
   }
-  
   return(list(data = data, specifications = specifications))
 }
