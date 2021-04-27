@@ -7,8 +7,12 @@ rm(list=ls()) # freeing up memory
 # this is csv file with two columns: my_data_folder and my_functions_folder
 # in the second row you will store the respective folder paths as a character
 filepaths = read.csv("data/filepaths.csv")
+
+
+
 my_data_folder = gsub(pattern = '\"',replacement = "", x = filepaths$my_data_folder)
 my_functions_folder =  gsub(pattern = '\"',replacement = "", filepaths$my_functions_folder)
+protocolfile = paste0(my_data_folder, "/data_description_V3.xlsx")
 
 # setwd(my_data_folder) #set path => not desirable, because that will change
 # the working directory for next time this script is run, by which the code cannot find the filepath.csv anymore
@@ -45,36 +49,37 @@ checkdimensions = function(x) {
   }
 }
 
-focus_pro1 = TRUE # to avoid loading all data in at once as that will never be needed
-if (focus_pro1ol == TRUE) {
-  actigraph_pro1 <- loaddata(path = my_data_folder, brand = "Actigraph", protocol = 1, session = 1)
-  activpal_pro1 <- loaddata(path = my_data_folder, brand = "Activpal", protocol = 1, session = 1)
-  acttrust_pro1 <- loaddata(path = my_data_folder, brand = "Acttrust", protocol = 1, session = 1)
-  axivity_pro1 <- loaddata(path = my_data_folder, brand = "Axivity", protocol = 1, session = 1)
+focus_pro1 = FALSE # to avoid loading all data in at once as that will never be needed
+if (focus_pro1 == TRUE) {
+  actigraph_pro1 <- loaddata(path = my_data_folder, brand = "Actigraph", protocol = 1, session = 1, protocolfile=protocolfile)
+  activpal_pro1 <- loaddata(path = my_data_folder, brand = "Activpal", protocol = 1, session = 1, protocolfile=protocolfile)
+  acttrust_pro1 <- loaddata(path = my_data_folder, brand = "Acttrust", protocol = 1, session = 1, protocolfile=protocolfile)
+  axivity_pro1 <- loaddata(path = my_data_folder, brand = "Axivity", protocol = 1, session = 1, protocolfile=protocolfile)
 } else {
-  actigraph_pro2_ses1 <- loaddata(path = my_data_folder, brand = "Actigraph", protocol = 2, session = 1)
-  actigraph_pro2_ses2 <- loaddata(path = my_data_folder, brand = "Actigraph", protocol = 2, session = 2)
-  actigraph_pro2_ses3 <- loaddata(path = my_data_folder, brand = "Actigraph", protocol = 2, session = 3)
+  actigraph_pro2_ses1 <- loaddata(path = my_data_folder, brand = "Actigraph", protocol = 2, session = 1, protocolfile=protocolfile)
+  # checkdimensions(actigraph_pro2_ses1$data)
+  actigraph_pro2_ses2 <- loaddata(path = my_data_folder, brand = "Actigraph", protocol = 2, session = 2, protocolfile=protocolfile)
+  actigraph_pro2_ses3 <- loaddata(path = my_data_folder, brand = "Actigraph", protocol = 2, session = 3, protocolfile=protocolfile)
   actigraph_pro3 <- loaddata(path = my_data_folder, brand = "Actigraph", protocol = 3, session = 3)
   
-  activpal_pro2_ses1 <- loaddata(path = my_data_folder, brand = "Activpal", protocol = 2, session = 1)
-  activpal_pro2_ses2 <- loaddata(path = my_data_folder, brand = "Activpal", protocol = 2, session = 2)
-  activpal_pro2_ses3 <- loaddata(path = my_data_folder, brand = "Activpal", protocol = 2, session = 3)
-  activpal_pro3 <- loaddata(path = my_data_folder, brand = "Activpal", protocol = 3, session = 3)
+  activpal_pro2_ses1 <- loaddata(path = my_data_folder, brand = "Activpal", protocol = 2, session = 1, protocolfile=protocolfile)
+  activpal_pro2_ses2 <- loaddata(path = my_data_folder, brand = "Activpal", protocol = 2, session = 2, protocolfile=protocolfile)
+  activpal_pro2_ses3 <- loaddata(path = my_data_folder, brand = "Activpal", protocol = 2, session = 3, protocolfile=protocolfile)
+  activpal_pro3 <- loaddata(path = my_data_folder, brand = "Activpal", protocol = 3, session = 3, protocolfile=protocolfile)
   # checkdimensions(activpal_pro2_ses1$data)
   # checkdimensions(activpal_pro2_ses2$data)
   # checkdimensions(activpal_pro2_ses3$data)
   # checkdimensions(activpal_pro3$data)
   
-  acttrust_pro2_ses1 <- loaddata(path = my_data_folder, brand = "Acttrust", protocol = 2, session = 1)
-  acttrust_pro2_ses2 <- loaddata(path = my_data_folder, brand = "Acttrust", protocol = 2, session = 2)
-  acttrust_pro2_ses3 <- loaddata(path = my_data_folder, brand = "Acttrust", protocol = 2, session = 3)
-  acttrust_pro3 <- loaddata(path = my_data_folder, brand = "Acttrust", protocol = 3, session = 3)
+  acttrust_pro2_ses1 <- loaddata(path = my_data_folder, brand = "Acttrust", protocol = 2, session = 1, protocolfile=protocolfile)
+  acttrust_pro2_ses2 <- loaddata(path = my_data_folder, brand = "Acttrust", protocol = 2, session = 2, protocolfile=protocolfile)
+  acttrust_pro2_ses3 <- loaddata(path = my_data_folder, brand = "Acttrust", protocol = 2, session = 3, protocolfile=protocolfile)
+  acttrust_pro3 <- loaddata(path = my_data_folder, brand = "Acttrust", protocol = 3, session = 3, protocolfile=protocolfile)
   
-  axivity_pro2_ses1 <- loaddata(path = my_data_folder, brand = "Axivity", protocol = 2, session = 1)
-  axivity_pro2_ses2 <- loaddata(path = my_data_folder, brand = "Axivity", protocol = 2, session = 2)
-  axivity_pro2_ses3 <- loaddata(path = my_data_folder, brand = "Axivity", protocol = 2, session = 3)
-  axivity_pro3_ses1 <- loaddata(path = my_data_folder, brand = "Axivity", protocol = 3, session = 1)
-  axivity_pro3_ses2 <- loaddata(path = my_data_folder, brand = "Axivity", protocol = 3, session = 2)
-  axivity_pro3_ses3 <- loaddata(path = my_data_folder, brand = "Axivity", protocol = 3, session = 3)
+  axivity_pro2_ses1 <- loaddata(path = my_data_folder, brand = "Axivity", protocol = 2, session = 1, protocolfile=protocolfile)
+  axivity_pro2_ses2 <- loaddata(path = my_data_folder, brand = "Axivity", protocol = 2, session = 2, protocolfile=protocolfile)
+  axivity_pro2_ses3 <- loaddata(path = my_data_folder, brand = "Axivity", protocol = 2, session = 3, protocolfile=protocolfile)
+  axivity_pro3_ses1 <- loaddata(path = my_data_folder, brand = "Axivity", protocol = 3, session = 1, protocolfile=protocolfile)
+  axivity_pro3_ses2 <- loaddata(path = my_data_folder, brand = "Axivity", protocol = 3, session = 2, protocolfile=protocolfile)
+  axivity_pro3_ses3 <- loaddata(path = my_data_folder, brand = "Axivity", protocol = 3, session = 3, protocolfile=protocolfile)
 }

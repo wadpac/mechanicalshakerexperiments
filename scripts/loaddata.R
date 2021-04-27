@@ -5,7 +5,7 @@
 # session number: 1, 2 or 3;
 # windows: TRUE then windows from the data_description file will be selected, FALSE: complete data file will be loaded.
 
-loaddata <- function(path, brand, protocol, session, windows = TRUE) {
+loaddata <- function(path, brand, protocol, session, windows = TRUE, protocolfile) {
   # Load required libraries
   library(doParallel)
   library(GGIR)
@@ -136,7 +136,7 @@ loaddata <- function(path, brand, protocol, session, windows = TRUE) {
   print("get windows...")
   #Get and select windows
   if (windows == TRUE) {
-    window_data <- getwindows(brand, protocol, session, path, data)
+    window_data <- getwindows(brand, protocol, session, path, data, protocolfile)
     data <- window_data
   }
   return(list(data = data, specifications = specifications))
