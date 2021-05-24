@@ -1,22 +1,13 @@
 ### Load data and select windows
-
 rm(list=ls()) # freeing up memory
 
 # user input required:
-# Obtain path to data folder
-# this is csv file with two columns: my_data_folder and my_functions_folder
-# in the second row you will store the respective folder paths as a character
-filepaths = read.csv("data/filepaths.csv")
-
-
-
-my_data_folder = gsub(pattern = '\"',replacement = "", x = filepaths$my_data_folder)
-my_functions_folder =  gsub(pattern = '\"',replacement = "", filepaths$my_functions_folder)
+# specify path to data folder
+my_data_folder = "/home/vincent/data/VUMC/shaker_experiments" 
 protocolfile = paste0(my_data_folder, "/data_description_V3.xlsx")
 
-# setwd(my_data_folder) #set path => not desirable, because that will change
-# the working directory for next time this script is run, by which the code cannot find the filepath.csv anymore
-
+# Following lines only needed when running debugging code:
+my_functions_folder =   "/home/vincent/projects/mechanicalshakerexperiments/R" 
 for (function_file in dir(my_functions_folder, full.names = T)) source(function_file) #load functions
 
 # TO DO:
@@ -42,22 +33,26 @@ if (length(which(slash_in_name == TRUE)) > 0) {
   }
 }
 
-
 checkdimensions = function(x) {
   for (j in 1:length(x)) {
     print(dim(x[[j]]))
   }
 }
 
-focus_pro1 = FALSE # to avoid loading all data in at once as that will never be needed
+focus_pro1 = TRUE # to avoid loading all data at once as that will never be needed
 if (focus_pro1 == TRUE) {
   actigraph_pro1 <- loaddata(path = my_data_folder, brand = "Actigraph", protocol = 1, session = 1, protocolfile=protocolfile)
   activpal_pro1 <- loaddata(path = my_data_folder, brand = "Activpal", protocol = 1, session = 1, protocolfile=protocolfile)
   acttrust_pro1 <- loaddata(path = my_data_folder, brand = "Acttrust", protocol = 1, session = 1, protocolfile=protocolfile)
   axivity_pro1 <- loaddata(path = my_data_folder, brand = "Axivity", protocol = 1, session = 1, protocolfile=protocolfile)
+  geneactiv_pro1 <- loaddata(path = my_data_folder, brand = "GENEActiv", protocol = 1, session = 1, protocolfile=protocolfile)
+  
+  print("Check dimensions of Axivity data: Protocol 1")
+  checkdimensions(axivity_pro1$data)
+  print("Check dimensions of GENEActiv data: Protocol 1")
+  print(checkdimensions(geneactiv_pro1$data))
 } else {
   actigraph_pro2_ses1 <- loaddata(path = my_data_folder, brand = "Actigraph", protocol = 2, session = 1, protocolfile=protocolfile)
-  # checkdimensions(actigraph_pro2_ses1$data)
   actigraph_pro2_ses2 <- loaddata(path = my_data_folder, brand = "Actigraph", protocol = 2, session = 2, protocolfile=protocolfile)
   actigraph_pro2_ses3 <- loaddata(path = my_data_folder, brand = "Actigraph", protocol = 2, session = 3, protocolfile=protocolfile)
   actigraph_pro3 <- loaddata(path = my_data_folder, brand = "Actigraph", protocol = 3, session = 3)
@@ -66,10 +61,11 @@ if (focus_pro1 == TRUE) {
   activpal_pro2_ses2 <- loaddata(path = my_data_folder, brand = "Activpal", protocol = 2, session = 2, protocolfile=protocolfile)
   activpal_pro2_ses3 <- loaddata(path = my_data_folder, brand = "Activpal", protocol = 2, session = 3, protocolfile=protocolfile)
   activpal_pro3 <- loaddata(path = my_data_folder, brand = "Activpal", protocol = 3, session = 3, protocolfile=protocolfile)
-  # checkdimensions(activpal_pro2_ses1$data)
-  # checkdimensions(activpal_pro2_ses2$data)
-  # checkdimensions(activpal_pro2_ses3$data)
-  # checkdimensions(activpal_pro3$data)
+  print("Check dimensions of Activpal data: Protocol 2")
+  checkdimensions(activpal_pro2_ses1$data)
+  checkdimensions(activpal_pro2_ses2$data)
+  checkdimensions(activpal_pro2_ses3$data)
+  checkdimensions(activpal_pro3$data)
   
   acttrust_pro2_ses1 <- loaddata(path = my_data_folder, brand = "Acttrust", protocol = 2, session = 1, protocolfile=protocolfile)
   acttrust_pro2_ses2 <- loaddata(path = my_data_folder, brand = "Acttrust", protocol = 2, session = 2, protocolfile=protocolfile)
