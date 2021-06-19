@@ -68,7 +68,7 @@ loaddata <- function(path, brand, protocol, session, windows = TRUE, protocolfil
       tz = "Europe/Amsterdam"
       if(brand == "Actigraph") {
         rawdata <- as.data.frame(read.gt3x(paste(file_path, file_list[i], sep = "/"), asDataFrame = TRUE))
-        rawdata$time = as.POSIXlt(rawdata$time, tz = tz)
+        rawdata$time = as.POSIXlt(as.character(rawdata$time), tz = tz, origin = "1970-01-01")
       } else if (brand == "Activpal") {
         rawdata <- read.activpal(paste(file_path, file_list[i], sep = "/"))
       } else if(brand == "Acttrust") {
