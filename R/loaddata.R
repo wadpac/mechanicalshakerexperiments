@@ -17,19 +17,9 @@ loaddata <- function(path, brand, protocol, session, windows = TRUE, protocolfil
   if(brand == "MOX") { # temporarily change name of brand to enable getting the folder path right
     brand <- "MOX_exportedCSV/exportedCSV/MOX" 
   }
-  if((protocol == 1 || protocol == 3) && (brand != "Acttrust" || brand != "Fitbit")) {
-    folder <- paste0(brand, paste0("_pro", protocol))
-    if (brand == "Axivity" | brand == "GENEActiv") {
-      if (session != 1) {
-        folder <- paste0(brand, paste0(paste0("_pro", protocol), paste0("_ses", session))) 
-      } else {
-        folder <- paste0(brand, paste0(paste0("_pro", protocol))) 
-      }
-    }
-  }
-  if(protocol == 2 && (brand != "Acttrust" || brand != "Fitbit")) {
-    if (brand == "Activpal") {
-      folder <- paste0(brand, paste0("_pro", protocol)) 
+  if (brand %in% c("Acttrust", "Fitbit") == FALSE) {
+    if (protocol == 1 | brand == "Activpal" | (protocol == 3 & brand != "Axivity")) {
+      folder <- paste0(brand, paste0("_pro", protocol))
     } else {
       folder <- paste0(brand, paste0(paste0("_pro", protocol), paste0("_ses", session))) 
     }
@@ -62,7 +52,8 @@ loaddata <- function(path, brand, protocol, session, windows = TRUE, protocolfil
     warning("\nNo recordings identified. Check folder path.")
   }
   file_list <- list.files(file_path, pattern = pattern, all.files = FALSE)
-  print(paste0(length(file_list), " files identified for loading:"))
+  cat(paste0("\nLooking inside: ",file_path," for ", pattern," files"))
+  cat(paste0("\n...", length(file_list), " files identified for loading:"))
   
   # Load data in parallel
   closeAllConnections() # in case there is a still something running from last time, kill it.
@@ -83,13 +74,14 @@ loaddata <- function(path, brand, protocol, session, windows = TRUE, protocolfil
       } else if(brand == "Acttrust") {
         rawdata <- read.csv(paste(file_path, file_list[i], sep = "/"), sep = ";", skip = 25)
       } else if(brand == "Axivity") {
-        rawdata <- g.cwaread(paste(file_path, file_list[i], sep = "/"), start = 1, end = 1000000, desiredtz = tz)
+        rawdata <- g.cwaread(paste(file_path, file_list[i], sep = "/"), start = 1, end = 1000000, desiredtz = tz, interpolationType=2)
         # rawdata = rawdata$data # ignore header already at this stage
       } else if (brand == "GENEActiv") {
         rawdata <- read.bin(paste(file_path, file_list[i], sep = "/")) 
         rawdata$data.out = as.data.frame(rawdata$data.out)
         colnames(rawdata$data.out)[1] = "time"
-        rawdata$data.out$time = as.POSIXlt(rawdata$data.out$time, desiredtz = tz, origin = "1970-01-01")
+        # We may have configured device relative to UTC, which is 1 hour earlier, therefore subtract 3600
+        rawdata$data.out$time = as.POSIXlt(rawdata$data.out$time-3600, desiredtz = tz, origin = "1970-01-01")
       } else if (brand == "MOX") {
         rawdata <- read.csv(paste(file_path, file_list[i], sep = "/")) 
       } else if (brand == "Shimmer") {
@@ -148,10 +140,10 @@ loaddata <- function(path, brand, protocol, session, windows = TRUE, protocolfil
           rawdata$data = rawdata$data[which(rawdata$data$time >= start & rawdata$data$time <= end),]
         } 
       }
-      return(rawdata)  }
+      # } # for loop
+      return(rawdata)
+    }
   }
-  # } # for loop
-  
   data <- tryCatch(parallelLoad(file_path, file_list, brand, protocol, windows, session, path), error = function(e) print(e))
   parallel::stopCluster(cl)
   #Get data specifications
