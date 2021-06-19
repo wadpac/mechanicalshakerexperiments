@@ -8,10 +8,10 @@ getwindows <- function(brand, protocol, session, path, data, protocolfile) {
   end_time <- c()
   tz = "Europe/Amsterdam"
   if (protocol == 1) {
-    if (brand == "Actigraph" || brand == "Activpal") {
+    if (brand == "Actigraph" | brand == "Activpal") {
       selection <- description[description$accelerometers_used == "activpal_actigraph",]
     }
-    if (brand == "Axivity" || brand == "GENEActiv" || brand == "Acttrust" || brand == "Shimmer" || brand == "MOX"){
+    if (brand == "Axivity" | brand == "GENEActiv" | brand == "Acttrust" | brand == "Shimmer" | brand == "MOX"){
       selection <- description[description$accelerometers_used == "axivity_geneactiv_acttrust_shimmer_mox",]
     }
     start <- strftime(paste0(selection$date[1], selection$start_time[1]), format = "%Y-%m-%d %H:%M:%OS2", tz = tz)
@@ -34,7 +34,6 @@ getwindows <- function(brand, protocol, session, path, data, protocolfile) {
   #Select the windows
   cat("file ")
   tz = "Europe/Amsterdam"
-  
   for(pp in 1:length(data)) { # pp is file number?
     cat(paste0(" ",pp))
     if (brand %in% c("Axivity", "GENEActiv")) {
@@ -49,7 +48,7 @@ getwindows <- function(brand, protocol, session, path, data, protocolfile) {
     }
     if (nrow(data[[pp]]) > 0) {
       selected_data = data[[pp]]
-      selected_data$shaking_freqency = -1 # default is -1 frequency
+      selected_data$shaking_frequency = -1 # default is -1 frequency
       selected_data$condition = ""
       for(w in 1:length(start_time)) { # w is condition within the experiment (e.g. shaker frequency)
         if(brand == "Actigraph") {
@@ -70,13 +69,24 @@ getwindows <- function(brand, protocol, session, path, data, protocolfile) {
         }
         segment = which(selected_data$time >= stime & selected_data$time < etime)
         if(length(segment) > 0) {
-          selected_data$shaking_freqency[segment] = as.numeric(description$mechanical_shaker_setting[w])
+          selected_data$shaking_frequency[segment] = as.numeric(description$mechanical_shaker_setting[w])
           selected_data$condition[segment] = as.character(description$condition[w])
         }
       }
-      MissingFreqs = which(selected_data$shaking_freqency == -1)
-      if (length(MissingFreqs) > 0) {
-        selected_data = selected_data[-MissingFreqs,]
+      # DO NOT DELETE ALL TIME SEGMENTS WITHOUT SHAKING FREQUENCY
+      # BECAUS THIS WILL CAUSE ARTIFACT IN SIGNAL DURING TRANSITIONS
+      # ONLY DELETE IIME BEFORE FIRST AND AFTER LAST CONDITION
+      # MissingFreqs = which(selected_data$shaking_frequency == -1)
+      # if (length(MissingFreqs) > 0) {
+      #   selected_data = selected_data[-MissingFreqs,]
+      # }
+      validdata = which(selected_data$shaking_frequency != -1)
+      if (validdata[1] != 1 & validdata[length(validdata)] != nrow(selected_data)) {
+        MissingFreqs = c(1:(validdata[1]-1),
+                         (validdata[length(validdata)]+1):nrow(selected_data))
+        if (length(MissingFreqs) > 0) {
+          selected_data = selected_data[-MissingFreqs,]
+        }
       }
       selected_data_list[[pp]] <- selected_data
     } else {
@@ -85,7 +95,6 @@ getwindows <- function(brand, protocol, session, path, data, protocolfile) {
   }
   rm(selected_data)
   return(selected_data_list)
-  
 }
 
 
