@@ -28,7 +28,7 @@ for (ses_name in c("pro3_ses3", "pro2_ses1", "pro2_ses2", "pro2_ses3")) {
         # check that this goes well for Axivity AX6
         DR = as.numeric(extractedata$specifications[i, "dynamic_range"])
         sf = as.numeric(extractedata$specifications[i, "sampling_frequency"])
-        sn = as.numeric(extractedata$specifications[i, "serial_number"])
+        sn = as.character(extractedata$specifications[i, "serial_number"])
         tmp$time = as.POSIXct(tmp$time, origin = "1970-01-01", tz="Europe/Amsterdam")
         if (brand == "Actigraph") {
           tmp$time = as.POSIXct(tmp$time)
@@ -38,6 +38,7 @@ for (ses_name in c("pro3_ses3", "pro2_ses1", "pro2_ses2", "pro2_ses3")) {
           tmp = tmp[, c("time","x","y","z")]
           colnames(tmp)[2:4] = c("X", "Y", "Z")
         }
+        row.names(tmp) = 1:nrow(tmp)
         colnames(tmp)[1] = "HEADER_TIME_STAMP"
         S = MIMSunit::mims_unit(df = tmp, epoch = '5 sec', dynamic_range = c(-DR, DR), output_mims_per_axis = TRUE)
         # calculate EN to check data alignment
@@ -48,6 +49,7 @@ for (ses_name in c("pro3_ses3", "pro2_ses1", "pro2_ses2", "pro2_ses3")) {
         }
         EN_raw = sqrt(tmp$X^2 + tmp$Y^2 + tmp$Z^2)
         EN = averageperws3(EN_raw,sf,ws3=5)
+        
         if (length(EN) > nrow(S)) {
           EN = EN[1:nrow(S)]
         } else if (length(EN) < nrow(S)) {
@@ -56,6 +58,7 @@ for (ses_name in c("pro3_ses3", "pro2_ses1", "pro2_ses2", "pro2_ses3")) {
         S$brand = brand
         S$sf = sf
         S$EN = EN
+        
         combineddata[[cnt]] = S # store result for later use
         # visually compare values across brands
         par(mfrow=c(2,1))
