@@ -1,7 +1,7 @@
 read.activpal <- function(file.name.and.path) 
   #function adapted from package (activalProcessing), as the original function (activpal.file.reader) is not suitable for the raw data
 {
-  data <- read.csv(file.name.and.path, stringsAsFactors = FALSE, skip = 1, sep = ";")
+  data <- as.data.frame(data.table::fread(file.name.and.path, stringsAsFactors = FALSE, skip = 1, sep = ";"))
   #data <- data[,(1:5)]
   names(data) <- c("time","sample_index","X","Y","Z")
   
