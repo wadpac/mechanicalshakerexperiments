@@ -65,6 +65,7 @@ loaddata <- function(path, brand, protocol, session, windows = TRUE, protocolfil
     foreach(i = 1:length(file_list), .packages = c("read.gt3x", "GGIR", "GENEAread"), .export = "read.activpal") %dopar% {
       # for (i in 1:length(file_list)) {
       # Load in the data
+      options(digits.secs=7)
       tz = "Europe/Amsterdam"
       if(brand == "Actigraph") {
         rawdata <- as.data.frame(read.gt3x(paste(file_path, file_list[i], sep = "/"), asDataFrame = TRUE))
@@ -144,13 +145,12 @@ loaddata <- function(path, brand, protocol, session, windows = TRUE, protocolfil
       return(rawdata)
     }
   }
+  options(digits.secs=7) # critical step, because otherwishe decimal places are lost
   data <- tryCatch(parallelLoad(file_path, file_list, brand, protocol, windows, session, path), error = function(e) print(e))
   parallel::stopCluster(cl)
   #Get data specifications
   names(data) <- file_list
   specifications <- getspecs(brand, data)
-  
-  
   #Get and select windows
   if (windows == TRUE) {
     data <- getwindows(brand, protocol, session, path, data, protocolfile)
