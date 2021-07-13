@@ -1,5 +1,21 @@
 rm(list=ls())
 graphics.off()
+
+#-----------------------------------
+# libraries needed for running SummarizedActigraph)
+# library(SummarizedActigraphy)
+library(tidyverse)
+library(lubridate)
+library(lme4)
+library(knitr)
+remotes::install_github("muschellij2/SummarizedActigraphy")
+library(SummarizedActigraphy)
+library(MIMSunit)
+library(activityCounts)
+options(digits.secs = 3)
+options(scipen=999)
+#-----------------------------------
+
 extracted_data_path = "~/data/VUMC/shaker_experiments/extracteddata"
 
 # Exploration of MIMSunit and how it compares across accelerometer brands
@@ -7,7 +23,7 @@ library("MIMSunit")
 # identify subset of files relevant to experimental session
 fns = dir(extracted_data_path, full.names = TRUE)
 outputfile = "~/data/VUMC/shaker_experiments/explore_MIMS.RData"
-sessionames = c("pro3_ses3" , "pro2_ses1", "pro2_ses2", "pro2_ses3")
+sessionames = c("pro2_ses1", "pro2_ses2", "pro2_ses3") #"pro3_ses3" #<= ignore protocol session 3 for now as this did not have flat orientation
 if (!file.exists(outputfile)) {
   combineddata <- list()
   cnt  = 1
@@ -43,6 +59,65 @@ if (!file.exists(outputfile)) {
           }
           row.names(tmp) = 1:nrow(tmp)
           colnames(tmp)[1] = "HEADER_TIME_STAMP"
+          #-----------------------------------------
+          # fill time gaps for Actigraph
+          time_gaps= 1
+          while(length(time_gaps) > 0) {
+            dt = diff(as.numeric(tmp$HEADER_TIME_STAMP))
+            time_gaps = which(dt > 1)
+            if (length(time_gaps) > 0) {
+              cnt = 1
+              tmp2 = tmp
+              for (j in 1:length(time_gaps)) {
+                inpute = as.data.frame(matrix(0, dt[time_gaps[j]]*sf, ncol(tmp)))
+                colnames(inpute) = colnames(tmp)
+                newtime = seq(tmp$HEADER_TIME_STAMP[time_gaps[j]], 
+                              tmp$HEADER_TIME_STAMP[time_gaps[j]+1], by = 1/sf)
+                inpute$HEADER_TIME_STAMP = newtime[1:nrow(inpute)]
+                if (j == 1) {
+                  cnt = time_gaps[j]-1
+                } else {
+                  cnt = nrow(tmp2)
+                }
+                inpute[, c("X", "Y", "Z")] = tmp[time_gaps[j], c("X", "Y", "Z")]
+                if (j != length(time_gaps)) {
+                  tmp2 = rbind(tmp2[1:cnt,], inpute)
+                } else {
+                  tmp2 = rbind(tmp2[1:cnt,], inpute, tmp[(time_gaps[j]+1):nrow(tmp),])
+                }
+              }
+              tmp = tmp2
+            }
+          }
+          #-----------------------------------------------------------
+          # offset calibration, based on first 90 seconds
+          MX = mean(tmp$X[1:(90*sf)])
+          MY = mean(tmp$Y[1:(90*sf)])
+          MZ = mean(tmp$Z[1:(90*sf)])
+          tmp$X = (tmp$X - MX) + round(MX)
+          tmp$Y = (tmp$Y - MY) + round(MY)
+          tmp$Z = (tmp$Z - MZ) + round(MZ)
+          
+          
+          
+          # #=================
+          # # Try apply code from:
+          # # https://martakarass.github.io/post/2021-06-29-pa_measures_and_summarizedactigraphy/#dataset-labeled-raw-accelerometry-data
+          tmp_tible = as_tibble(tmp)
+          out_i = SummarizedActigraphy::calculate_measures(
+            df = tmp_tible,
+            unit = "5 sec",
+            dynamic_range = c(-8, 8),  # dynamic range
+            fix_zeros = TRUE,         # fixes zeros from idle sleep mode -- not needed in our case
+            calculate_mims = FALSE,     # uses algorithm from MIMSunit package
+            calculate_ac = FALSE,       # uses algorithm from activityCounts package
+            flag_data = TRUE,         # runs raw data quality control flags algorithm -- not used in our case
+            verbose = FALSE)
+          #
+          # 
+          # kkkkk
+          #=======
+          
           S = MIMSunit::mims_unit(df = tmp, epoch = '5 sec', dynamic_range = c(-DR, DR), output_mims_per_axis = TRUE)
           # calculate EN to check data alignment
           averageperws3 = function(x,sf,ws3) {
@@ -51,17 +126,40 @@ if (!file.exists(outputfile)) {
             x3 = diff(x2[round(select)]) / abs(diff(round(select)))
           }
           EN_raw = sqrt(tmp$X^2 + tmp$Y^2 + tmp$Z^2)
+          EN_raw = EN_raw[1:(floor(nrow(tmp)/sf)*sf)]
           EN = averageperws3(EN_raw,sf,ws3=5)
+          ENMOraw = pmax(EN_raw - 1, 0)
+          ENMO = averageperws3(ENMOraw,sf,ws3=5)
+          MEANS = rep(EN, each = sf*5)
+          MAD = abs(EN_raw - MEANS)
+          MAD = averageperws3(x=MAD,sf,ws3=5)
+          AI = out_i$AI
           
-          if (length(EN) > nrow(S)) {
-            EN = EN[1:nrow(S)]
-          } else if (length(EN) < nrow(S)) {
-            EN = c(EN, rep(NA, nrow(S) - length(EN)))
+          checklen = function(x, y, RR=0) {
+            if (length(x) > nrow(y)) {
+              x = x[1:nrow(y)]
+            } else if (length(x) < nrow(y)) {
+              if ((nrow(y) - length(x)) == 1) {
+                x = c(x, rep(RR, nrow(y) - length(x)))
+              } else {
+                stop()
+              }
+            }
+            return(x)
           }
+          EN  = checklen(EN, S, RR= 1)
+          AI  = checklen(AI, S)
+          MAD  = checklen(MAD, S)
+          ENMO  = checklen(ENMO, S)
+          
           S$brand = brand
           S$sf = sf
           S$EN = EN
+          S$ENMO = ENMO
+          S$MAD = MAD
+          S$AI = AI
           S$ses_name = ses_name
+          S$sn = sn
           combineddata[[cnt]] = S # store result for later use
           # visually compare values across brands
           par(mfrow=c(2,1))
@@ -80,15 +178,25 @@ if (!file.exists(outputfile)) {
 
 # combine into data.frame
 DATA = do.call("rbind", combineddata)
+
+# stratify Actigraph by version:
+
+
+MOS = grep(pattern = "MOS", x = DATA$sn)
+CLE = grep(pattern = "CLE", x = DATA$sn)
+DATA$brand[MOS] = "ActigraphMOS"
+DATA$brand[CLE] = "ActigraphCLE"
+
+
 # aggregate
-D2 = aggregate(x = DATA[,c("MIMS_UNIT")],by = list(DATA$HEADER_TIME_STAMP, DATA$brand, DATA$ses_name), FUN = mean)
-myq1 = function(x) as.numeric(quantile(x = x, probs=0.25))
-myq3 = function(x) quantile(x, probs=0.75)
-D1 = aggregate(x = DATA[,c("MIMS_UNIT")],by = list(DATA$HEADER_TIME_STAMP, DATA$brand, DATA$ses_name), FUN = myq1)
-D3 = aggregate(x = DATA[,c("MIMS_UNIT")],by = list(DATA$HEADER_TIME_STAMP, DATA$brand, DATA$ses_name), FUN = myq3)
+D2 = aggregate(x = DATA[,c("MIMS_UNIT", "EN", "MAD", "AI", "ENMO")],by = list(DATA$HEADER_TIME_STAMP, DATA$brand, DATA$ses_name), FUN = median)
+myq1 = function(x) as.numeric(quantile(x = x, probs=0.25, na.rm= TRUE))
+myq3 = function(x) as.numeric(quantile(x, probs=0.75, na.rm= TRUE))
+D1 = aggregate(x = DATA[,c("MIMS_UNIT", "EN", "MAD", "AI", "ENMO")],by = list(DATA$HEADER_TIME_STAMP, DATA$brand, DATA$ses_name), FUN = myq1)
+D3 = aggregate(x = DATA[,c("MIMS_UNIT", "EN", "MAD", "AI", "ENMO")],by = list(DATA$HEADER_TIME_STAMP, DATA$brand, DATA$ses_name), FUN = myq3)
 tidyupname = function(x) {
   # x = x[,-which(colnames(x) == "brand")]
-  colnames(x)[1:4] = c("time", "brand", "ses_name", "MIMS_UNIT")
+  colnames(x)[1:8] = c("time", "brand", "ses_name", "MIMS_UNIT", "EN", "MAD", "AI", "ENMO")
   return(x)
 }
 D1 = tidyupname(D1)
@@ -96,22 +204,30 @@ D2 = tidyupname(D2)
 D3 = tidyupname(D3)
 D = merge(D1, D3, by = c("time", "brand", "ses_name"), suffixes = c("q1","q3"))
 D = merge(D, D2, by = c("time", "brand", "ses_name"))
+
 # create plot per session
-for (ses_name in c("pro3_ses3" , "pro2_ses1", "pro2_ses2", "pro2_ses3")) {
+for (metric in c("MIMS_UNIT", "EN", "MAD", "AI", "ENMO")) { #
   x11()
-  par(mfrow=c(2,1))
-  GA = which(D$brand == "GENEActiv" & D$ses_name == ses_name)
-  AX = which(D$brand == "Axivity" & D$ses_name == ses_name)
-  AG = which(D$brand == "Actigraph" & D$ses_name == ses_name)
-  plot(D$time[GA], D$MIMS_UNIT[GA], type="l", lwd=1.5, main= ses_name)
-  lines(D$time[GA], D$MIMS_UNITq1[GA], type="l", lty=2)
-  lines(D$time[GA], D$MIMS_UNITq3[GA], type="l", lty=2)
-  lines(D$time[AX], D$MIMS_UNIT[AX], type="l", col="blue", lwd=1.5)
-  lines(D$time[AX], D$MIMS_UNITq1[AX], type="l", lty=2, col="blue")
-  lines(D$time[AX], D$MIMS_UNITq3[AX], type="l", lty=2, col="blue")
-  lines(D$time[AG], D$MIMS_UNIT[AG], type="l", col="red", lwd=1.5)
-  lines(D$time[AG], D$MIMS_UNITq1[AG], type="l", lty=2, col="red")
-  lines(D$time[AG], D$MIMS_UNITq3[AG], type="l", lty=2, col="red")
-  plot(D$time[GA],  D$MIMS_UNIT[GA] /  D$MIMS_UNIT[AX], col="green", type="l", ylim=c(0.9, 1.5))
-  abline(h = 1, col="black", lwd=2)
+  par(mfrow=c(1,3))
+  
+  for (ses_name in c("pro2_ses1", "pro2_ses2", "pro2_ses3")) { #"pro3_ses3" ,
+    GA = which(D$brand == "GENEActiv" & D$ses_name == ses_name)
+    AX = which(D$brand == "Axivity" & D$ses_name == ses_name)
+    AGC = which(D$brand == "ActigraphCLE" & D$ses_name == ses_name)
+    AGM = which(D$brand == "ActigraphMOS" & D$ses_name == ses_name)
+    plot(D$time[GA], D[GA, metric], type="l", lwd=1.5, main= ses_name, ylab=metric, 
+         xlab="time", ylim=range(D[,metric], na.rm=TRUE))
+    # lines(D$time[GA], D[GA, paste0(metric,"q1")], type="l", lty=2)
+    # lines(D$time[GA], D[GA, paste0(metric,"q3")], type="l", lty=2)
+    lines(D$time[AX], D[AX, metric], type="l", col="blue", lwd=1.5)
+    # lines(D$time[AX], D[AX, paste0(metric,"q1")], type="l", lty=2, col="blue")
+    # lines(D$time[AX], D[AX, paste0(metric,"q3")], type="l", lty=2, col="blue")
+    lines(D$time[AGC], D[AGC, metric], type="l", col="red", lwd=1.5)
+    # lines(D$time[AGC], D[AGC, paste0(metric,"q1")], type="l", lty=2, col="red")
+    # lines(D$time[AGC], D[AGC, paste0(metric,"q3")], type="l", lty=2, col="red")
+    lines(D$time[AGM], D[AGM, metric], type="l", col="green", lwd=1.5)
+    # lines(D$time[AGM], D[AGM, paste0(metric,"q1")], type="l", lty=2, col="green")
+    # lines(D$time[AGM], D[AGM, paste0(metric,"q3")], type="l", lty=2, col="green")
+    legend("topleft",legend = c("GENEActiv","Axivity","Actigraph_CLE","Actigraph_MOS"), col = c("black","blue","red", "green"), lty=1)
+  }
 }
