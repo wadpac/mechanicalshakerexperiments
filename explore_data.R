@@ -97,7 +97,7 @@ if (!file.exists(outputfile)) {
           tmp$X = (tmp$X - MX) + round(MX)
           tmp$Y = (tmp$Y - MY) + round(MY)
           tmp$Z = (tmp$Z - MZ) + round(MZ)
-          
+         
           
           
           # #=================
@@ -117,12 +117,69 @@ if (!file.exists(outputfile)) {
           # 
           # kkkkk
           #=======
-          
+          x0 = Sys.time()
           S = MIMSunit::mims_unit(df = tmp, epoch = '5 sec', dynamic_range = c(-DR, DR), output_mims_per_axis = TRUE)
+          x1 = Sys.time()
+          
+          # implement simplified and faster mims:
+          epochsize = 5
+          averageperepoch = function(x,sf,epochsize) {
+            x2 =cumsum(c(0,x))
+            select = seq(1,length(x2),by=sf*epochsize)
+            x3 = diff(x2[round(select)]) / abs(diff(round(select)))
+          }
+          bf_filter = function(lb, hb, n, sf) {
+            Wc = matrix(0,2,1)
+            Wc[1,1] = lb / (sf/2)
+            Wc[2,1] = hb / (sf/2)
+            return(signal::butter(n,Wc,type=c("pass")))
+          }
+          mymims = matrix(NA, floor(nrow(tmp) / (sf*5)), 3)
+          for (ki in 2:4) {
+            coef = bf_filter(lb=0.2, hb=5, n=4, sf=sf)
+            filtered_signal = abs(signal::filter(coef, tmp[,ki]))
+            mymims[,ki-1] = averageperepoch(filtered_signal, sf, epochsize) * epochsize
+          }
+          x2 = Sys.time()
+          
+          MIMS_BFEN = rowSums(mymims)
+          
+          if (nrow(S) > nrow(mymims)) {
+            S = S[1:nrow(mymims),]
+          }
+          # 
+          # dx = mymims[,1]-S$MIMS_UNIT_X
+          # dy = mymims[,2]-S$MIMS_UNIT_Y
+          # dz = mymims[,3]-S$MIMS_UNIT_Z
+          # x11()
+          # par(mfrow=c(2,1))
+          # plot(S$MIMS_UNIT, MIMS-S$MIMS_UNIT, type="p", pch=20)
+          # plot(S$MIMS_UNIT, ((MIMS-S$MIMS_UNIT)/S$MIMS_UNIT)*100, type="p", pch=20)
+          # 
+          # x11()
+          # plot(S$MIMS_UNIT, MIMS, type="p", pch=20)
+          # 
+          # x11()
+          # par(mfrow=c(4,1))
+          # plot(mymims[,1], type="l", ylim=range(mymims), main="MIMS based on BFEN metric in GGIR with setting: lb=0.2, hb=5, n=5, multiplied by epoch length")
+          # lines(mymims[,2], type="l", col="red")
+          # lines(mymims[,3], type="l", col="green")
+          # plot(S$MIMS_UNIT_X, type="l", ylim=range(S[,3:5]), main= "MIMS from MIMSunit package")
+          # lines(S$MIMS_UNIT_Y, type="l", col="red")
+          # lines(S$MIMS_UNIT_Z, type="l", col="green")
+          # plot(dx, type="l", ylim=c(-0.1, 0.1), main="Difference")
+          # lines(dy, type="l", col="red")
+          # lines(dz, type="l", col="green")
+          # plot((dx / S$MIMS_UNIT_X)*100, type="l", ylim=c(-5, 5), main="Difference")
+          # 
+          # print(difftime(x1, x0))
+          # print(difftime(x2, x1))
+          # 
+          # kkkk
           # calculate EN to check data alignment
           averageperws3 = function(x,sf,ws3) {
             x2 =cumsum(c(0,x))
-            select = seq(1,length(x2),by=sf*ws3)
+            select = seq(1,length(x2),by=sf*epochsize)
             x3 = diff(x2[round(select)]) / abs(diff(round(select)))
           }
           EN_raw = sqrt(tmp$X^2 + tmp$Y^2 + tmp$Z^2)
@@ -151,13 +208,14 @@ if (!file.exists(outputfile)) {
           AI  = checklen(AI, S)
           MAD  = checklen(MAD, S)
           ENMO  = checklen(ENMO, S)
-          
+          MIMS_BFEN = checklen(MIMS_BFEN, S)
           S$brand = brand
           S$sf = sf
           S$EN = EN
           S$ENMO = ENMO
           S$MAD = MAD
           S$AI = AI
+          S$MIMS_BFEN = MIMS_BFEN
           S$ses_name = ses_name
           S$sn = sn
           combineddata[[cnt]] = S # store result for later use
@@ -189,14 +247,14 @@ DATA$brand[CLE] = "ActigraphCLE"
 
 
 # aggregate
-D2 = aggregate(x = DATA[,c("MIMS_UNIT", "EN", "MAD", "AI", "ENMO")],by = list(DATA$HEADER_TIME_STAMP, DATA$brand, DATA$ses_name), FUN = median)
+D2 = aggregate(x = DATA[,c("MIMS_UNIT", "EN", "MAD", "AI", "ENMO", "MIMS_BFEN")],by = list(DATA$HEADER_TIME_STAMP, DATA$brand, DATA$ses_name), FUN = median)
 myq1 = function(x) as.numeric(quantile(x = x, probs=0.25, na.rm= TRUE))
 myq3 = function(x) as.numeric(quantile(x, probs=0.75, na.rm= TRUE))
-D1 = aggregate(x = DATA[,c("MIMS_UNIT", "EN", "MAD", "AI", "ENMO")],by = list(DATA$HEADER_TIME_STAMP, DATA$brand, DATA$ses_name), FUN = myq1)
-D3 = aggregate(x = DATA[,c("MIMS_UNIT", "EN", "MAD", "AI", "ENMO")],by = list(DATA$HEADER_TIME_STAMP, DATA$brand, DATA$ses_name), FUN = myq3)
+D1 = aggregate(x = DATA[,c("MIMS_UNIT", "EN", "MAD", "AI", "ENMO", "MIMS_BFEN")],by = list(DATA$HEADER_TIME_STAMP, DATA$brand, DATA$ses_name), FUN = myq1)
+D3 = aggregate(x = DATA[,c("MIMS_UNIT", "EN", "MAD", "AI", "ENMO", "MIMS_BFEN")],by = list(DATA$HEADER_TIME_STAMP, DATA$brand, DATA$ses_name), FUN = myq3)
 tidyupname = function(x) {
   # x = x[,-which(colnames(x) == "brand")]
-  colnames(x)[1:8] = c("time", "brand", "ses_name", "MIMS_UNIT", "EN", "MAD", "AI", "ENMO")
+  colnames(x)[1:8] = c("time", "brand", "ses_name", "MIMS_UNIT", "EN", "MAD", "AI", "ENMO", "MIMS_BFEN")
   return(x)
 }
 D1 = tidyupname(D1)
@@ -206,10 +264,10 @@ D = merge(D1, D3, by = c("time", "brand", "ses_name"), suffixes = c("q1","q3"))
 D = merge(D, D2, by = c("time", "brand", "ses_name"))
 
 # create plot per session
-for (metric in c("MIMS_UNIT", "EN", "MAD", "AI", "ENMO")) { #
-  x11()
-  par(mfrow=c(1,3))
-  
+pdf(file = "~/data/VUMC/shaker_experiments/inspect_metrics.pdf")
+
+for (metric in c("MIMS_UNIT", "EN", "MAD", "AI", "ENMO", "MIMS_BFEN")) { #
+  par(mfrow=c(1,3))  
   for (ses_name in c("pro2_ses1", "pro2_ses2", "pro2_ses3")) { #"pro3_ses3" ,
     GA = which(D$brand == "GENEActiv" & D$ses_name == ses_name)
     AX = which(D$brand == "Axivity" & D$ses_name == ses_name)
