@@ -113,9 +113,7 @@ if (!file.exists(outputfile)) {
             calculate_ac = FALSE,       # uses algorithm from activityCounts package
             flag_data = TRUE,         # runs raw data quality control flags algorithm -- not used in our case
             verbose = FALSE)
-          #
-          # 
-          # kkkkk
+
           #=======
           x0 = Sys.time()
           S = MIMSunit::mims_unit(df = tmp, epoch = '5 sec', dynamic_range = c(-DR, DR), output_mims_per_axis = TRUE)
@@ -134,9 +132,14 @@ if (!file.exists(outputfile)) {
             Wc[2,1] = hb / (sf/2)
             return(signal::butter(n,Wc,type=c("pass")))
           }
-          mymims = matrix(NA, floor(nrow(tmp) / (sf*5)), 3)
+          mymims = matrix(NA, floor(nrow(tmp) / (sf*epochsize)), 3)
+          if (sf <= 10) {
+            hb = (sf / 2) - 0.1
+          } else {
+            hb = 5
+          }
           for (ki in 2:4) {
-            coef = bf_filter(lb=0.2, hb=5, n=4, sf=sf)
+            coef = bf_filter(lb=0.2, hb=hb, n=4, sf=sf)
             filtered_signal = abs(signal::filter(coef, tmp[,ki]))
             mymims[,ki-1] = averageperepoch(filtered_signal, sf, epochsize) * epochsize
           }
@@ -175,7 +178,6 @@ if (!file.exists(outputfile)) {
           # print(difftime(x1, x0))
           # print(difftime(x2, x1))
           # 
-          # kkkk
           # calculate EN to check data alignment
           averageperws3 = function(x,sf,ws3) {
             x2 =cumsum(c(0,x))
@@ -188,7 +190,7 @@ if (!file.exists(outputfile)) {
           ENMOraw = pmax(EN_raw - 1, 0)
           ENMO = averageperws3(ENMOraw,sf,ws3=5)
           MEANS = rep(EN, each = sf*5)
-          MAD = abs(EN_raw - MEANS)
+          MAD = abs(EN_raw[1:length(MEANS)] - MEANS)
           MAD = averageperws3(x=MAD,sf,ws3=5)
           AI = out_i$AI
           
@@ -247,7 +249,7 @@ DATA$brand[CLE] = "ActigraphCLE"
 
 
 # aggregate
-D2 = aggregate(x = DATA[,c("MIMS_UNIT", "EN", "MAD", "AI", "ENMO", "MIMS_BFEN")],by = list(DATA$HEADER_TIME_STAMP, DATA$brand, DATA$ses_name), FUN = median)
+D2 = aggregate(x = DATA[,c("MIMS_UNIT", "EN", "MAD", "AI", "ENMO", "MIMS_BFEN")],by = list(DATA$HEADER_TIME_STAMP, DATA$brand, DATA$ses_name), FUN = mean)
 myq1 = function(x) as.numeric(quantile(x = x, probs=0.25, na.rm= TRUE))
 myq3 = function(x) as.numeric(quantile(x, probs=0.75, na.rm= TRUE))
 D1 = aggregate(x = DATA[,c("MIMS_UNIT", "EN", "MAD", "AI", "ENMO", "MIMS_BFEN")],by = list(DATA$HEADER_TIME_STAMP, DATA$brand, DATA$ses_name), FUN = myq1)
@@ -268,13 +270,15 @@ pdf(file = "~/data/VUMC/shaker_experiments/inspect_metrics.pdf")
 
 for (metric in c("MIMS_UNIT", "EN", "MAD", "AI", "ENMO", "MIMS_BFEN")) { #
   par(mfrow=c(1,3))  
+  YLIM = range(D[,metric], na.rm=TRUE)
+  YLIM[2] = min(YLIM[2], 4)
   for (ses_name in c("pro2_ses1", "pro2_ses2", "pro2_ses3")) { #"pro3_ses3" ,
     GA = which(D$brand == "GENEActiv" & D$ses_name == ses_name)
     AX = which(D$brand == "Axivity" & D$ses_name == ses_name)
     AGC = which(D$brand == "ActigraphCLE" & D$ses_name == ses_name)
     AGM = which(D$brand == "ActigraphMOS" & D$ses_name == ses_name)
     plot(D$time[GA], D[GA, metric], type="l", lwd=1.5, main= ses_name, ylab=metric, 
-         xlab="time", ylim=range(D[,metric], na.rm=TRUE))
+         xlab="time", ylim=YLIM)
     # lines(D$time[GA], D[GA, paste0(metric,"q1")], type="l", lty=2)
     # lines(D$time[GA], D[GA, paste0(metric,"q3")], type="l", lty=2)
     lines(D$time[AX], D[AX, metric], type="l", col="blue", lwd=1.5)
@@ -289,3 +293,5 @@ for (metric in c("MIMS_UNIT", "EN", "MAD", "AI", "ENMO", "MIMS_BFEN")) { #
     legend("topleft",legend = c("GENEActiv","Axivity","Actigraph_CLE","Actigraph_MOS"), col = c("black","blue","red", "green"), lty=1)
   }
 }
+
+dev.off()
