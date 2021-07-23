@@ -71,6 +71,8 @@ loaddata <- function(path, brand, protocol, session, windows = TRUE, protocolfil
         rawdata$time = as.POSIXlt(as.character(rawdata$time), tz = tz, origin = "1970-01-01")
       } else if (brand == "Activpal") {
         rawdata <- read.activpal(paste(file_path, file_list[i], sep = "/"))
+        rawdata[,c("X","Y","Z")] = ((rawdata[,c("X","Y","Z")] / (2^8)) - 0.5) * 2 * 2
+        rawdata = rawdata[,c("time", "X", "Y", "Z")]
       } else if(brand == "Acttrust") {
         rawdata <- read.csv(paste(file_path, file_list[i], sep = "/"), sep = ";", skip = 25)
       } else if(brand == "Axivity") {
