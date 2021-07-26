@@ -14,7 +14,7 @@ for (function_file in dir(my_functions_folder, full.names = T)) source(function_
 
 # installing GGIR separately for now to aid in experimenting with GGIR implementation
 library("remotes")
-remotes::install_github("wadpac/GGIR", ref= "resampleupdate")
+remotes::install_github("wadpac/GGIR")
 library("GGIR")
 
 # Check for missing packages and install if missing:
@@ -40,7 +40,7 @@ checkdimensions = function(x) {
   }
 }
 
-brands_to_extract = "Actigraph" #c("Actigraph", "Axivity", "GENEActiv") #"Activpal", "Acttrust", 
+brands_to_extract = "Activpal" #"Actigraph" #c("Actigraph", "Axivity", "GENEActiv") #"Activpal", "Acttrust", 
 focus_pro1 = FALSE # to avoid loading all data at once as that will never be needed
 if (focus_pro1 == TRUE) {
   for (brand in brands_to_extract) {
