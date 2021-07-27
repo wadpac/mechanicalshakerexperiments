@@ -1,6 +1,6 @@
 rm(list=ls())
 graphics.off()
-extracted_data_path = "~/data/VUMC/shaker_experiments/extracteddata"
+extracted_data_path = "/Users/annelindelettink/Documents/Work MacBook Pro Annelinde/Mechanical Shaker Machine/extracteddata" #extracted_data_path = "~/data/VUMC/shaker_experiments/extracteddata"
 
 # Exploration of MIMSunit and how it compares across accelerometer brands
 library("MIMSunit")

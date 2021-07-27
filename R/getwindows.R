@@ -66,6 +66,9 @@ getwindows <- function(brand, protocol, session, path, data, protocolfile) {
         } else if(brand == "GENEActiv") {
           stime = as.POSIXct(start_time[w], tz = tz)
           etime = as.POSIXct(end_time[w], tz = tz)
+        }else if(brand == "MOX") {
+          stime = as.POSIXct(start_time[w], tz = tz)
+          etime = as.POSIXct(end_time[w], tz = tz)
         }
         segment = which(selected_data$time >= stime & selected_data$time < etime)
         if(length(segment) > 0) {
@@ -74,13 +77,18 @@ getwindows <- function(brand, protocol, session, path, data, protocolfile) {
         }
       }
       # DO NOT DELETE ALL TIME SEGMENTS WITHOUT SHAKING FREQUENCY
-      # BECAUS THIS WILL CAUSE ARTIFACT IN SIGNAL DURING TRANSITIONS
+      # BECAUSE THIS WILL CAUSE ARTIFACT IN SIGNAL DURING TRANSITIONS
       # ONLY DELETE IIME BEFORE FIRST AND AFTER LAST CONDITION
       # MissingFreqs = which(selected_data$shaking_frequency == -1)
       # if (length(MissingFreqs) > 0) {
       #   selected_data = selected_data[-MissingFreqs,]
       # }
-      validdata = which(selected_data$shaking_frequency != -1)
+      if (protocol == 1){
+        validdata = which(is.na(selected_data$shaking_frequency))
+      }else {
+        validdata = which(selected_data$shaking_frequency != -1) #Doesn't work for protocol 1, where shaking frequency is NA
+      }
+      
       if (validdata[1] != 1 & validdata[length(validdata)] != nrow(selected_data)) {
         MissingFreqs = c(1:(validdata[1]-1),
                          (validdata[length(validdata)]+1):nrow(selected_data))

@@ -34,6 +34,12 @@ getspecs <- function(brand, data) {
       sampling_frequency <- c(sampling_frequency, head[which(rownames(head) == "Measurement_Frequency"),])
       dynamic_range <- c(dynamic_range, 8)
     }
+    if(brand == "MOX"){ #No information available in the data itself, but in the configuration sheet of data description file
+      configurations <- read.xls(protocolfile, header = TRUE, sheet = 2)
+      serial_number <- c(serial_number, data_file) #Not specified in the config file
+      sampling_frequency <- c(sampling_frequency, configurations$sample_rate[which(configurations$protocol == protocol & configurations$session == session & configurations$number == data_file)])
+      dynamic_range <- c(dynamic_range, 8)
+    }
   }
   specifications <- cbind(serial_number, sampling_frequency, dynamic_range)
   

@@ -1,12 +1,12 @@
 ### Load data and select windows
 rm(list=ls()) # freeing up memory
 # user input required:
-my_data_folder = "/home/vincent/data/VUMC/shaker_experiments" 
+my_data_folder = "/Users/annelindelettink/Documents/Work MacBook Pro Annelinde/Mechanical Shaker Machine/data"  #my_data_folder = "/home/vincent/data/VUMC/shaker_experiments" 
 protocolfile = paste0(my_data_folder, "/data_description_V3.xlsx")
-outputdir = "~/data/VUMC/shaker_experiments/extracteddata"
+outputdir = "/Users/annelindelettink/Documents/Work MacBook Pro Annelinde/Mechanical Shaker Machine/extracteddata"
 
 # Following lines only needed when running debugging code:
-my_functions_folder =   "/home/vincent/projects/mechanicalshakerexperiments/R" 
+my_functions_folder =   "/Users/annelindelettink/Documents/Work MacBook Pro Annelinde/Mechanical Shaker Machine/mechanicalshakerexperiments/R"  #my_functions_folder =   "/home/vincent/projects/mechanicalshakerexperiments/R" 
 
 
 #=========================================================================================
@@ -40,7 +40,7 @@ checkdimensions = function(x) {
   }
 }
 
-brands_to_extract = "Activpal" #"Actigraph" #c("Actigraph", "Axivity", "GENEActiv") #"Activpal", "Acttrust", 
+brands_to_extract = "MOX" #c("Actigraph", "Axivity", "GENEActiv", "Activpal", "MOX") #"Acttrust", "Shimmer"
 focus_pro1 = FALSE # to avoid loading all data at once as that will never be needed
 if (focus_pro1 == TRUE) {
   for (brand in brands_to_extract) {
@@ -49,7 +49,7 @@ if (focus_pro1 == TRUE) {
     extractedata <- loaddata(path = my_data_folder, brand = brand, protocol = protocol, session = session, protocolfile=protocolfile)
     cat(paste0("\nCheck dimensions of ", brand, ": Protocol ",protocol,"\n"))
     checkdimensions(extractedata)
-    save_data(extractedata,outputdir=outputdir, objectname=paste0("_", brand, "_pro",protocol,"_ses", session))
+    save(extractedata,file = paste0(outputdir, "/", brand, "_pro",protocol))
     rm(extractedata)
   }
 } else {

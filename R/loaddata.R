@@ -11,6 +11,7 @@ loaddata <- function(path, brand, protocol, session, windows = TRUE, protocolfil
   library(GGIR)
   library(GENEAread)
   library(read.gt3x)
+  library(lubridate)
   cat(paste0("\nAttempting to load ",brand, " | protocol: ", protocol, " | session: ", session, ":\n"))
   #------------------------------------------------------------
   # Get folder name of the data files and set path to files
@@ -62,7 +63,7 @@ loaddata <- function(path, brand, protocol, session, windows = TRUE, protocolfil
   cl <- parallel::makeCluster(Ncores-2) #not to overload your computer
   doParallel::registerDoParallel(cl)
   parallelLoad <- function(file_path, file_list, brand, protocol, windows, session, path) {
-    foreach(i = 1:length(file_list), .packages = c("read.gt3x", "GGIR", "GENEAread"), .export = "read.activpal") %dopar% {
+    foreach(i = 1:length(file_list), .packages = c("read.gt3x", "GGIR", "GENEAread", "lubridate"), .export = "read.activpal") %dopar% {
       # for (i in 1:length(file_list)) {
       # Load in the data
       tz = "Europe/Amsterdam"
@@ -86,6 +87,12 @@ loaddata <- function(path, brand, protocol, session, windows = TRUE, protocolfil
         rawdata$data.out$time = as.POSIXlt(rawdata$data.out$time-3600, desiredtz = tz, origin = "1970-01-01")
       } else if (brand == "MOX") {
         rawdata <- read.csv(paste(file_path, file_list[i], sep = "/")) 
+        # We may have configured device relative to UTC, which is 1 hour earlier, therefore subtract 3600; 86400 = number of s in 1 day to convert Time Number
+        timestamps <- format(as.POSIXct((rawdata$DateTimeNumber * 86400) - 3600, origin = "1970-01-01", tz = tz), "%H:%M:%OS")
+        # Date cannot be converted correctly, but this can be derived from the filenames
+        date <- ymd(strsplit(strsplit(file_list[i], "_")[[1]][2], ".csv")[[1]])
+        time <- as.POSIXct(paste(rep(date, length(timestamps)), timestamps), format="%Y-%m-%d %H:%M:%OS")
+        rawdata <- cbind(rawdata, time)
       } else if (brand == "Shimmer") {
         rawdata <- read.csv(paste(file_path, file_list[i], sep = "/"), nrow = 10, skip = 1, sep = '\t')
       } else {
@@ -133,7 +140,7 @@ loaddata <- function(path, brand, protocol, session, windows = TRUE, protocolfil
         start = as.numeric(start)
         end = as.numeric(end)
       }
-      if (brand %in% c("Axivity", "GENEActiv") == FALSE) {
+      if (brand %in% c("Axivity", "GENEActiv", "MOX") == FALSE) {
         rawdata = rawdata[which(rawdata$time >= start & rawdata$time <= end),] 
       } else {
         if (brand == "GENEActiv") {
