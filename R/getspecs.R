@@ -40,6 +40,11 @@ getspecs <- function(brand, data) {
       sampling_frequency <- c(sampling_frequency, configurations$sample_rate[which(configurations$protocol == protocol & configurations$session == session & configurations$number == data_file)])
       dynamic_range <- c(dynamic_range, 8)
     }
+    if (brand == "Shimmer") {#No information available in the data
+      serial_number <- c(serial_number, 1)
+      sampling_frequency <- c(sampling_frequency, 20)
+      dynamic_range <- c(dynamic_range, 2)
+    }
   }
   specifications <- cbind(serial_number, sampling_frequency, dynamic_range)
   

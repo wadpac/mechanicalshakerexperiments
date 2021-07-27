@@ -66,7 +66,10 @@ getwindows <- function(brand, protocol, session, path, data, protocolfile) {
         } else if(brand == "GENEActiv") {
           stime = as.POSIXct(start_time[w], tz = tz)
           etime = as.POSIXct(end_time[w], tz = tz)
-        }else if(brand == "MOX") {
+        } else if(brand == "MOX") {
+          stime = as.POSIXct(start_time[w], tz = tz)
+          etime = as.POSIXct(end_time[w], tz = tz)
+        } else if(brand == "Shimmer") {
           stime = as.POSIXct(start_time[w], tz = tz)
           etime = as.POSIXct(end_time[w], tz = tz)
         }

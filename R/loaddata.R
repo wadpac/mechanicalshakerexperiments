@@ -94,7 +94,10 @@ loaddata <- function(path, brand, protocol, session, windows = TRUE, protocolfil
         time <- as.POSIXct(paste(rep(date, length(timestamps)), timestamps), format="%Y-%m-%d %H:%M:%OS")
         rawdata <- cbind(rawdata, time)
       } else if (brand == "Shimmer") {
-        rawdata <- read.csv(paste(file_path, file_list[i], sep = "/"), nrow = 10, skip = 1, sep = '\t')
+        rawdata <- read.csv(paste(file_path, file_list[i], sep = "/"), header = TRUE, skip = 1, sep = '\t')
+        rawdata <- rawdata[-1,] #ignore units on first line
+        #Convert timestamps
+        rawdata$time <- as.POSIXct((as.numeric(rawdata$Shimmer_0000_TimestampSync_Unix_CAL)/1000), origin="1970-01-01", tz="Europe/Amsterdam") #/1000 as UNIX was in ms
       } else {
       }# brand = Fitbit
       
@@ -140,7 +143,7 @@ loaddata <- function(path, brand, protocol, session, windows = TRUE, protocolfil
         start = as.numeric(start)
         end = as.numeric(end)
       }
-      if (brand %in% c("Axivity", "GENEActiv", "MOX") == FALSE) {
+      if (brand %in% c("Axivity", "GENEActiv", "MOX", "Shimmer") == FALSE) {
         rawdata = rawdata[which(rawdata$time >= start & rawdata$time <= end),] 
       } else {
         if (brand == "GENEActiv") {
