@@ -21,6 +21,8 @@ loaddata <- function(path, brand, protocol, session, windows = TRUE, protocolfil
   if (brand %in% c("Acttrust", "Fitbit") == FALSE) {
     if (protocol == 1 | brand == "Activpal" | (protocol == 3 & brand != "Axivity")) {
       folder <- paste0(brand, paste0("_pro", protocol))
+    } else if (protocol == 2 & brand == "Shimmer") {
+      #hier iets om de folder 3A en 3B te scheiden zodat het inladen van de data goed gaat
     } else {
       folder <- paste0(brand, paste0(paste0("_pro", protocol), paste0("_ses", session))) 
     }
@@ -143,7 +145,7 @@ loaddata <- function(path, brand, protocol, session, windows = TRUE, protocolfil
         start = as.numeric(start)
         end = as.numeric(end)
       }
-      if (brand %in% c("Axivity", "GENEActiv", "MOX", "Shimmer") == FALSE) {
+      if (brand %in% c("Axivity", "GENEActiv") == FALSE) {
         rawdata = rawdata[which(rawdata$time >= start & rawdata$time <= end),] 
       } else {
         if (brand == "GENEActiv") {

@@ -40,7 +40,7 @@ checkdimensions = function(x) {
   }
 }
 
-brands_to_extract = "Shimmer" #c("Actigraph", "Axivity", "GENEActiv", "Activpal", "MOX") #"Acttrust", "Shimmer"
+brands_to_extract = "MOX" #c("Actigraph", "Axivity", "GENEActiv", "Activpal", "MOX", "Shimmer) #"Acttrust"
 focus_pro1 = FALSE # to avoid loading all data at once as that will never be needed
 if (focus_pro1 == TRUE) {
   for (brand in brands_to_extract) {
