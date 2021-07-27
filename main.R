@@ -2,7 +2,7 @@
 rm(list=ls()) # freeing up memory
 # user input required:
 my_data_folder = "/Users/annelindelettink/Documents/Work MacBook Pro Annelinde/Mechanical Shaker Machine/data"  #my_data_folder = "/home/vincent/data/VUMC/shaker_experiments" 
-protocolfile = paste0(my_data_folder, "/data_description_V3.xlsx")
+protocolfile = paste0(my_data_folder, "/data_description_V4.xlsx")
 outputdir = "/Users/annelindelettink/Documents/Work MacBook Pro Annelinde/Mechanical Shaker Machine/extracteddata"
 
 # Following lines only needed when running debugging code:
@@ -40,7 +40,7 @@ checkdimensions = function(x) {
   }
 }
 
-brands_to_extract = "MOX" #c("Actigraph", "Axivity", "GENEActiv", "Activpal", "MOX") #"Acttrust", "Shimmer"
+brands_to_extract = "Shimmer" #c("Actigraph", "Axivity", "GENEActiv", "Activpal", "MOX") #"Acttrust", "Shimmer"
 focus_pro1 = FALSE # to avoid loading all data at once as that will never be needed
 if (focus_pro1 == TRUE) {
   for (brand in brands_to_extract) {
