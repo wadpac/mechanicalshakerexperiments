@@ -1,12 +1,12 @@
 ### Load data and select windows
 rm(list=ls()) # freeing up memory
 # user input required:
-my_data_folder = "/home/vincent/data/VUMC/shaker_experiments" 
-protocolfile = paste0(my_data_folder, "/data_description_V3.xlsx")
+my_data_folder = "/home/vincent/data/VUMC/shaker_experiments"
+protocolfile = paste0(my_data_folder, "/data_description_V4.xlsx")
 outputdir = "~/data/VUMC/shaker_experiments/extracteddata"
 
 # Following lines only needed when running debugging code:
-my_functions_folder =   "/home/vincent/projects/mechanicalshakerexperiments/R" 
+my_functions_folder =   "/home/vincent/projects/mechanicalshakerexperiments/R"
 
 
 #=========================================================================================
@@ -14,7 +14,7 @@ for (function_file in dir(my_functions_folder, full.names = T)) source(function_
 
 # installing GGIR separately for now to aid in experimenting with GGIR implementation
 library("remotes")
-remotes::install_github("wadpac/GGIR", ref= "resampleupdate")
+remotes::install_github("wadpac/GGIR")
 library("GGIR")
 
 # Check for missing packages and install if missing:
@@ -40,7 +40,7 @@ checkdimensions = function(x) {
   }
 }
 
-brands_to_extract = c("Actigraph", "Axivity", "GENEActiv") #"Activpal", "Acttrust", 
+brands_to_extract = c("Actigraph", "Axivity", "GENEActiv") #"Activpal", "Acttrust",
 focus_pro1 = FALSE # to avoid loading all data at once as that will never be needed
 if (focus_pro1 == TRUE) {
   for (brand in brands_to_extract) {
