@@ -39,8 +39,8 @@ checkdimensions = function(x) {
     print(dim(x$data[[1]]))
   }
 }
-
-brands_to_extract = c("Actigraph", "Axivity", "GENEActiv") #"Activpal", "Acttrust",
+options(digits.secs = 7)
+brands_to_extract = c("Actigraph", "Activpal") # c("Actigraph", "Axivity", "GENEActiv") #"Activpal", "Acttrust",
 focus_pro1 = FALSE # to avoid loading all data at once as that will never be needed
 if (focus_pro1 == TRUE) {
   for (brand in brands_to_extract) {
