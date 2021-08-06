@@ -22,7 +22,7 @@ read.activpal <- function(file.name.and.path)
     data$time <- as.numeric(data$time)
     data$time <- as.POSIXct(as.Date(data$time,origin="1899-12-30"))
     data$time <- as.POSIXlt(data$time,tz="GMT")
-    data$time <- strptime(data$time,format="%Y-%m-%d %H:%M:%S")
+    data$time <- strptime(data$time,format="%Y-%m-%d %H:%M:%OS")
   }
   return(data)
 }
