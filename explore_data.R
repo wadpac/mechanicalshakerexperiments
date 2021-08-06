@@ -12,7 +12,7 @@ remotes::install_github("muschellij2/SummarizedActigraphy")
 library(SummarizedActigraphy)
 library(MIMSunit)
 library(activityCounts)
-options(digits.secs = 3)
+options(digits.secs = 7)
 options(scipen=999)
 #-----------------------------------
 
@@ -24,7 +24,14 @@ library("MIMSunit")
 fns = dir(extracted_data_path, full.names = TRUE)
 outputfile = "~/data/VUMC/shaker_experiments/explore_MIMS.RData"
 sessionames = c("pro2_ses1", "pro2_ses2", "pro2_ses3") #"pro3_ses3" #<= ignore protocol session 3 for now as this did not have flat orientation
-if (!file.exists(outputfile)) {
+overwrite= TRUE
+epochsize = 5
+averageperws3 = function(x,sf,epochsize) {
+  x2 =cumsum(c(0,x))
+  select = seq(1,length(x2),by=sf*epochsize)
+  x3 = diff(x2[round(select)]) / abs(diff(round(select)))
+}
+if (!file.exists(outputfile) | overwrite == TRUE) {
   combineddata <- list()
   cnt  = 1
   for (ses_name in sessionames) { #
@@ -39,22 +46,27 @@ if (!file.exists(outputfile)) {
         brand = "Axivity"
       } else if (length(grep(fn, pattern = "GENEActiv")) > 0) {
         brand = "GENEActiv"
+      } else if (length(grep(fn, pattern = "Activpal")) > 0) {
+        brand = "Activpal"
       }
       for (i in 1:length(extractedata$data)) {
         tmp = extractedata$data[[i]]
+        
         if (length(tmp) > 0) {
           # apply aggregation function
           # check that this goes well for Axivity AX6
           DR = as.numeric(extractedata$specifications[i, "dynamic_range"])
           sf = as.numeric(extractedata$specifications[i, "sampling_frequency"])
           sn = as.character(extractedata$specifications[i, "serial_number"])
-          tmp$time = as.POSIXct(tmp$time, origin = "1970-01-01", tz="Europe/Amsterdam")
-          if (brand == "Actigraph") {
-            tmp$time = as.POSIXct(tmp$time)
-            tmp = tmp[, c("time","X","Y","Z")]
-          } else if (brand == "Axivity" | brand == "GENEActiv") {
+          
+          # table(diff(tmp$time))
+          kkkkk
+          if (brand == "Actigraph" | brand == "Activpal") {
             tmp$time = as.POSIXct(tmp$time, origin = "1970-01-01", tz="Europe/Amsterdam")
-            tmp = tmp[, c("time","x","y","z")]
+            tmp = tmp[, c("time","X","Y","Z","shaking_frequency")] #,"shaking_frequency"
+          } else if (brand == "Axivity" | brand == "GENEActiv" ) {
+            tmp$time = as.POSIXct(tmp$time, origin = "1970-01-01", tz="Europe/Amsterdam")
+            tmp = tmp[, c("time","x","y","z","shaking_frequency")] #
             colnames(tmp)[2:4] = c("X", "Y", "Z")
           }
           row.names(tmp) = 1:nrow(tmp)
@@ -65,6 +77,7 @@ if (!file.exists(outputfile)) {
           while(length(time_gaps) > 0) {
             dt = diff(as.numeric(tmp$HEADER_TIME_STAMP))
             time_gaps = which(dt > 1)
+
             if (length(time_gaps) > 0) {
               cnt = 1
               tmp2 = tmp
@@ -79,7 +92,8 @@ if (!file.exists(outputfile)) {
                 } else {
                   cnt = nrow(tmp2)
                 }
-                inpute[, c("X", "Y", "Z")] = tmp[time_gaps[j], c("X", "Y", "Z")]
+                cols_of_interest = c("X", "Y", "Z", "shaking_frequency")
+                inpute[, cols_of_interest] = tmp[time_gaps[j], cols_of_interest]
                 if (j != length(time_gaps)) {
                   tmp2 = rbind(tmp2[1:cnt,], inpute)
                 } else {
@@ -89,17 +103,24 @@ if (!file.exists(outputfile)) {
               tmp = tmp2
             }
           }
+          negativ_shakef = which(tmp$shaking_frequency == -1)
+          if (length(negativ_shakef) > 0) {
+            tmp$shaking_frequency[negativ_shakef] = -100000
+          }
+          shakefreq = averageperws3(x= tmp$shaking_frequency,sf,epochsize=5)
+          shakefreq[which(shakefreq < 0)] = -1
+          tmp = tmp[,-which(colnames(tmp) == "shaking_frequency")]
           #-----------------------------------------------------------
           # offset calibration, based on first 90 seconds
           MX = mean(tmp$X[1:(90*sf)])
           MY = mean(tmp$Y[1:(90*sf)])
           MZ = mean(tmp$Z[1:(90*sf)])
-          tmp$X = (tmp$X - MX) + round(MX)
-          tmp$Y = (tmp$Y - MY) + round(MY)
-          tmp$Z = (tmp$Z - MZ) + round(MZ)
+          VM = sqrt(MX^2 + MY^2 + MZ^2)
+          tmp$X = tmp$X / VM
+          tmp$Y = tmp$Y / VM
+          tmp$Z = tmp$Z / VM  #(tmp$Z - MZ) + round(MZ)
+          
          
-          
-          
           # #=================
           # # Try apply code from:
           # # https://martakarass.github.io/post/2021-06-29-pa_measures_and_summarizedactigraphy/#dataset-labeled-raw-accelerometry-data
@@ -113,87 +134,64 @@ if (!file.exists(outputfile)) {
             calculate_ac = FALSE,       # uses algorithm from activityCounts package
             flag_data = TRUE,         # runs raw data quality control flags algorithm -- not used in our case
             verbose = FALSE)
-
-          #=======
+          
           x0 = Sys.time()
           S = MIMSunit::mims_unit(df = tmp, epoch = '5 sec', dynamic_range = c(-DR, DR), output_mims_per_axis = TRUE)
           x1 = Sys.time()
           
+          #=======
           # implement simplified and faster mims:
-          epochsize = 5
-          averageperepoch = function(x,sf,epochsize) {
-            x2 =cumsum(c(0,x))
-            select = seq(1,length(x2),by=sf*epochsize)
-            x3 = diff(x2[round(select)]) / abs(diff(round(select)))
+          MIMSlight_fun = function(df, epochsize=5, acc_columns = 2:4, range=8) {
+            averageperepoch = function(x,sf,epochsize) { 
+              # I am aware that this is numerically unstable, but in our use-case
+              # expected drop in precision is far beyond required precision
+              # and by that acceptable.
+              x2 =cumsum(c(0,x))
+              select = seq(1,length(x2),by=sf*epochsize)
+              x3 = diff(x2[round(select)]) / abs(diff(round(select)))
+            }
+            bf_filter = function(lb, hb, n, sf) {
+              hb = ifelse(test = sf <= (hb*2), yes = (sf / 2) - 0.1, no = hb)
+              Wc = matrix(0,2,1)
+              Wc[1,1] = lb / (sf/2) # lb: lower boundary
+              Wc[2,1] = hb / (sf/2) # hb: higher boundary
+              return(signal::butter(n,Wc,type=c("pass"))) 
+            }
+            mims_per_axis = matrix(NA, floor(nrow(df) / (sf*epochsize)), 3)
+            # df = MIMSunit::extrapolate(df, range=range)
+            for (i in acc_columns) {
+              coef = bf_filter(lb=0.2, hb=5, n=4, sf=sf)
+              filtered_signal = signal::filter(coef, df[,i])
+              # using this way of aggregating is a lot faster, but comes at the price of
+              # new value differences with the original approach, if I insert the orignal approach
+              # value differences are zero for the full range, expect close to zero,
+              # which relates to interpolation step we are not doing
+              BFSM_per_axis = averageperepoch(abs(filtered_signal), sf, epochsize)
+              noise = which(BFSM_per_axis < 0.01) # MIMSunit gives zeros when sensor not moving, so we do same
+              if (length(noise) > 0) BFSM_per_axis[noise] = 0
+              mims_per_axis[,i-1] = BFSM_per_axis * epochsize
+            }
+            MIMSlight = rowSums(mims_per_axis)
+            return(MIMSlight)
           }
-          bf_filter = function(lb, hb, n, sf) {
-            Wc = matrix(0,2,1)
-            Wc[1,1] = lb / (sf/2)
-            Wc[2,1] = hb / (sf/2)
-            return(signal::butter(n,Wc,type=c("pass")))
-          }
-          mymims = matrix(NA, floor(nrow(tmp) / (sf*epochsize)), 3)
-          if (sf <= 10) {
-            hb = (sf / 2) - 0.1
-          } else {
-            hb = 5
-          }
-          for (ki in 2:4) {
-            coef = bf_filter(lb=0.2, hb=hb, n=4, sf=sf)
-            filtered_signal = abs(signal::filter(coef, tmp[,ki]))
-            mymims[,ki-1] = averageperepoch(filtered_signal, sf, epochsize) * epochsize
-          }
-          x2 = Sys.time()
+          MIMSlight = MIMSlight_fun(df=tmp, epochsize=5, acc_columns = 2:4, range = 8)
           
-          MIMS_BFEN = rowSums(mymims)
-          
-          if (nrow(S) > nrow(mymims)) {
-            S = S[1:nrow(mymims),]
+          if (nrow(S) > length(MIMSlight)) {
+            S = S[1:length(MIMSlight),]
           }
-          # 
-          # dx = mymims[,1]-S$MIMS_UNIT_X
-          # dy = mymims[,2]-S$MIMS_UNIT_Y
-          # dz = mymims[,3]-S$MIMS_UNIT_Z
-          # x11()
-          # par(mfrow=c(2,1))
-          # plot(S$MIMS_UNIT, MIMS-S$MIMS_UNIT, type="p", pch=20)
-          # plot(S$MIMS_UNIT, ((MIMS-S$MIMS_UNIT)/S$MIMS_UNIT)*100, type="p", pch=20)
-          # 
-          # x11()
-          # plot(S$MIMS_UNIT, MIMS, type="p", pch=20)
-          # 
-          # x11()
-          # par(mfrow=c(4,1))
-          # plot(mymims[,1], type="l", ylim=range(mymims), main="MIMS based on BFEN metric in GGIR with setting: lb=0.2, hb=5, n=5, multiplied by epoch length")
-          # lines(mymims[,2], type="l", col="red")
-          # lines(mymims[,3], type="l", col="green")
-          # plot(S$MIMS_UNIT_X, type="l", ylim=range(S[,3:5]), main= "MIMS from MIMSunit package")
-          # lines(S$MIMS_UNIT_Y, type="l", col="red")
-          # lines(S$MIMS_UNIT_Z, type="l", col="green")
-          # plot(dx, type="l", ylim=c(-0.1, 0.1), main="Difference")
-          # lines(dy, type="l", col="red")
-          # lines(dz, type="l", col="green")
-          # plot((dx / S$MIMS_UNIT_X)*100, type="l", ylim=c(-5, 5), main="Difference")
-          # 
-          # print(difftime(x1, x0))
-          # print(difftime(x2, x1))
-          # 
+          
           # calculate EN to check data alignment
-          averageperws3 = function(x,sf,ws3) {
-            x2 =cumsum(c(0,x))
-            select = seq(1,length(x2),by=sf*epochsize)
-            x3 = diff(x2[round(select)]) / abs(diff(round(select)))
-          }
+          
           EN_raw = sqrt(tmp$X^2 + tmp$Y^2 + tmp$Z^2)
           EN_raw = EN_raw[1:(floor(nrow(tmp)/sf)*sf)]
-          EN = averageperws3(EN_raw,sf,ws3=5)
+          EN = averageperws3(EN_raw,sf,epochsize=5)
           ENMOraw = pmax(EN_raw - 1, 0)
-          ENMO = averageperws3(ENMOraw,sf,ws3=5)
+          ENMO = averageperws3(ENMOraw,sf,epochsize=5)
           MEANS = rep(EN, each = sf*5)
           MAD = abs(EN_raw[1:length(MEANS)] - MEANS)
-          MAD = averageperws3(x=MAD,sf,ws3=5)
+          MAD = averageperws3(x=MAD,sf,epochsize=5)
           AI = out_i$AI
-          
+
           checklen = function(x, y, RR=0) {
             if (length(x) > nrow(y)) {
               x = x[1:nrow(y)]
@@ -210,16 +208,21 @@ if (!file.exists(outputfile)) {
           AI  = checklen(AI, S)
           MAD  = checklen(MAD, S)
           ENMO  = checklen(ENMO, S)
-          MIMS_BFEN = checklen(MIMS_BFEN, S)
+          MIMSlight = checklen(MIMSlight, S)
+          shakefreq = checklen(shakefreq, S)
           S$brand = brand
           S$sf = sf
           S$EN = EN
           S$ENMO = ENMO
           S$MAD = MAD
           S$AI = AI
-          S$MIMS_BFEN = MIMS_BFEN
+          S$MIMSlight = MIMSlight
           S$ses_name = ses_name
           S$sn = sn
+          S$shakefreq = shakefreq
+          negativ_shakef = which(S$shakefreq < 0)
+          S = S[-negativ_shakef,]
+          
           combineddata[[cnt]] = S # store result for later use
           # visually compare values across brands
           par(mfrow=c(2,1))
@@ -249,14 +252,14 @@ DATA$brand[CLE] = "ActigraphCLE"
 
 
 # aggregate
-D2 = aggregate(x = DATA[,c("MIMS_UNIT", "EN", "MAD", "AI", "ENMO", "MIMS_BFEN")],by = list(DATA$HEADER_TIME_STAMP, DATA$brand, DATA$ses_name), FUN = mean)
+D2 = aggregate(x = DATA[,c("MIMS_UNIT", "EN", "MAD", "AI", "ENMO", "MIMSlight")],by = list(DATA$HEADER_TIME_STAMP, DATA$brand, DATA$ses_name), FUN = mean)
 myq1 = function(x) as.numeric(quantile(x = x, probs=0.25, na.rm= TRUE))
 myq3 = function(x) as.numeric(quantile(x, probs=0.75, na.rm= TRUE))
-D1 = aggregate(x = DATA[,c("MIMS_UNIT", "EN", "MAD", "AI", "ENMO", "MIMS_BFEN")],by = list(DATA$HEADER_TIME_STAMP, DATA$brand, DATA$ses_name), FUN = myq1)
-D3 = aggregate(x = DATA[,c("MIMS_UNIT", "EN", "MAD", "AI", "ENMO", "MIMS_BFEN")],by = list(DATA$HEADER_TIME_STAMP, DATA$brand, DATA$ses_name), FUN = myq3)
+D1 = aggregate(x = DATA[,c("MIMS_UNIT", "EN", "MAD", "AI", "ENMO", "MIMSlight")],by = list(DATA$HEADER_TIME_STAMP, DATA$brand, DATA$ses_name), FUN = myq1)
+D3 = aggregate(x = DATA[,c("MIMS_UNIT", "EN", "MAD", "AI", "ENMO", "MIMSlight")],by = list(DATA$HEADER_TIME_STAMP, DATA$brand, DATA$ses_name), FUN = myq3)
 tidyupname = function(x) {
   # x = x[,-which(colnames(x) == "brand")]
-  colnames(x)[1:8] = c("time", "brand", "ses_name", "MIMS_UNIT", "EN", "MAD", "AI", "ENMO", "MIMS_BFEN")
+  colnames(x)[1:8] = c("time", "brand", "ses_name", "MIMS_UNIT", "EN", "MAD", "AI", "ENMO", "MIMSlight")
   return(x)
 }
 D1 = tidyupname(D1)
@@ -268,7 +271,7 @@ D = merge(D, D2, by = c("time", "brand", "ses_name"))
 # create plot per session
 pdf(file = "~/data/VUMC/shaker_experiments/inspect_metrics.pdf")
 
-for (metric in c("MIMS_UNIT", "EN", "MAD", "AI", "ENMO", "MIMS_BFEN")) { #
+for (metric in c("MIMS_UNIT", "EN", "MAD", "AI", "ENMO", "MIMSlight")) { #
   par(mfrow=c(1,3))  
   YLIM = range(D[,metric], na.rm=TRUE)
   YLIM[2] = min(YLIM[2], 4)
@@ -277,20 +280,15 @@ for (metric in c("MIMS_UNIT", "EN", "MAD", "AI", "ENMO", "MIMS_BFEN")) { #
     AX = which(D$brand == "Axivity" & D$ses_name == ses_name)
     AGC = which(D$brand == "ActigraphCLE" & D$ses_name == ses_name)
     AGM = which(D$brand == "ActigraphMOS" & D$ses_name == ses_name)
+    AP = which(D$brand == "Activpal" & D$ses_name == ses_name)
     plot(D$time[GA], D[GA, metric], type="l", lwd=1.5, main= ses_name, ylab=metric, 
          xlab="time", ylim=YLIM)
-    # lines(D$time[GA], D[GA, paste0(metric,"q1")], type="l", lty=2)
-    # lines(D$time[GA], D[GA, paste0(metric,"q3")], type="l", lty=2)
     lines(D$time[AX], D[AX, metric], type="l", col="blue", lwd=1.5)
-    # lines(D$time[AX], D[AX, paste0(metric,"q1")], type="l", lty=2, col="blue")
-    # lines(D$time[AX], D[AX, paste0(metric,"q3")], type="l", lty=2, col="blue")
     lines(D$time[AGC], D[AGC, metric], type="l", col="red", lwd=1.5)
-    # lines(D$time[AGC], D[AGC, paste0(metric,"q1")], type="l", lty=2, col="red")
-    # lines(D$time[AGC], D[AGC, paste0(metric,"q3")], type="l", lty=2, col="red")
     lines(D$time[AGM], D[AGM, metric], type="l", col="green", lwd=1.5)
-    # lines(D$time[AGM], D[AGM, paste0(metric,"q1")], type="l", lty=2, col="green")
-    # lines(D$time[AGM], D[AGM, paste0(metric,"q3")], type="l", lty=2, col="green")
-    legend("topleft",legend = c("GENEActiv","Axivity","Actigraph_CLE","Actigraph_MOS"), col = c("black","blue","red", "green"), lty=1)
+    lines(D$time[AP], D[AP, metric], type="l", col="purple", lwd=1.5)
+    legend("topleft",legend = c("GENEActiv","Axivity","Actigraph_CLE","Actigraph_MOS", "Activpal"),
+           col = c("black","blue","red", "green", "purple"), lty=1)
   }
 }
 
