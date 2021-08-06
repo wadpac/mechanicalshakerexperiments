@@ -46,7 +46,8 @@ if (focus_pro1 == TRUE) {
   for (brand in brands_to_extract) {
     protocol = 1
     session = 1
-    extractedata <- loaddata(path = my_data_folder, brand = brand, protocol = protocol, session = session, protocolfile=protocolfile)
+    extractedata <- loaddata(path = my_data_folder, brand = brand, 
+                             protocol = protocol, session = session, protocolfile=protocolfile)
     cat(paste0("\nCheck dimensions of ", brand, ": Protocol ",protocol,"\n"))
     checkdimensions(extractedata)
     save_data(extractedata,outputdir=outputdir, objectname=paste0("_", brand, "_pro",protocol,"_ses", session))
@@ -57,7 +58,8 @@ if (focus_pro1 == TRUE) {
     for (protocol in 2:3) {
       for (session in 1:3) {
         if (protocol == 2 | (protocol == 3 & session == 3) | (protocol == 3 & brand == "Axivity")) {
-          extractedata <- loaddata(path = my_data_folder, brand = brand, protocol = protocol, session = session, protocolfile=protocolfile)
+          extractedata <- loaddata(path = my_data_folder, 
+                                   brand = brand, protocol = protocol, session = session, protocolfile=protocolfile)
           cat(paste0("\nCheck dimensions of ", brand, ": Protocol ",protocol," session", session,"\n"))
           checkdimensions(extractedata)
           save(extractedata, file = paste0(outputdir, "/", brand, "_pro",protocol,"_ses", session))
