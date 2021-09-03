@@ -23,8 +23,8 @@ library("MIMSunit")
 # identify subset of files relevant to experimental session
 fns = dir(extracted_data_path, full.names = TRUE)
 outputfile = "~/data/VUMC/shaker_experiments/explore_MIMS.RData"
-sessionames = c("pro2_ses1", "pro2_ses2", "pro2_ses3") #"pro3_ses3" #<= ignore protocol session 3 for now as this did not have flat orientation
-overwrite= FALSE
+sessionames = c("pro2_ses1", "pro2_ses2", "pro2_ses3") # "pro3_ses3" #<= ignore protocol session 3 for now as this did not have flat orientation
+overwrite= TRUE
 epochsize = 5
 averageperws3 = function(x,sf,epochsize) {
   x2 =cumsum(c(0,x))
@@ -51,7 +51,6 @@ if (!file.exists(outputfile) | overwrite == TRUE) {
       }
       for (i in 1:length(extractedata$data)) {
         tmp = extractedata$data[[i]]
-        
         if (length(tmp) > 0) {
           # apply aggregation function
           # check that this goes well for Axivity AX6
@@ -108,14 +107,11 @@ if (!file.exists(outputfile) | overwrite == TRUE) {
           shakefreq[which(shakefreq < 0)] = -1
           tmp = tmp[,-which(colnames(tmp) == "shaking_frequency")]
           #-----------------------------------------------------------
-          # offset calibration, based on first 90 seconds
-          MX = mean(tmp$X[1:(90*sf)])
-          MY = mean(tmp$Y[1:(90*sf)])
-          MZ = mean(tmp$Z[1:(90*sf)])
-          VM = sqrt(MX^2 + MY^2 + MZ^2)
-          tmp$X = tmp$X / VM
-          tmp$Y = tmp$Y / VM
-          tmp$Z = tmp$Z / VM  #(tmp$Z - MZ) + round(MZ)
+          # load here previously derived calibration factors
+          # if autocalibrationw as succesful apply coefficients
+          # if not skip file
+          
+          
           # #=================
           # # Try apply code from:
           # # https://martakarass.github.io/post/2021-06-29-pa_measures_and_summarizedactigraphy/#dataset-labeled-raw-accelerometry-data

@@ -55,8 +55,8 @@ if (focus_pro1 == TRUE) {
   }
 } else {
   for (brand in brands_to_extract) {
-    for (protocol in 3) { #2:3
-      for (session in 2) { #1:3
+    for (protocol in 2) { #2:3
+      for (session in 3) { #1:3
         if (protocol == 2 | (protocol == 3 & session == 3) | (protocol == 3 & brand == "Axivity")) {
           extractedata <- loaddata(path = my_data_folder, 
                                    brand = brand, protocol = protocol, session = session, protocolfile=protocolfile)

@@ -154,6 +154,7 @@ loaddata <- function(path, brand, protocol, session, windows = TRUE, protocolfil
   #Get data specifications
   names(data) <- file_list
   specifications <- getspecs(brand, data)
+  
   #Get and select windows
   if (windows == TRUE) {
     data <- getwindows(brand, protocol, session, path, data, protocolfile)
