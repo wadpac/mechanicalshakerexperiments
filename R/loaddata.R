@@ -52,9 +52,10 @@ loaddata <- function(path, brand, protocol, session, windows = TRUE, protocolfil
     warning("\nNo recordings identified. Check folder path.")
   }
   file_list <- list.files(file_path, pattern = pattern, all.files = FALSE)
+  print(file_list)
+  
   cat(paste0("\nLooking inside: ",file_path," for ", pattern," files"))
   cat(paste0("\n...", length(file_list), " files identified for loading:"))
-  
   # Load data in parallel
   closeAllConnections() # in case there is a still something running from last time, kill it.
   cores = parallel::detectCores()
@@ -108,10 +109,10 @@ loaddata <- function(path, brand, protocol, session, windows = TRUE, protocolfil
       }
       if (protocol == 2 & session == 3) {
         start = as.POSIXlt("2020-11-24 15:07:00", tz = tz)
-        end = as.POSIXlt("2020-11-24 15:50:00", tz = tz)
-      }
-      if (protocol == 2 & session == 4) {
-        start = as.POSIXlt("2020-11-24 15:54:00", tz = tz)
+      #   end = as.POSIXlt("2020-11-24 15:50:00", tz = tz)
+      # }
+      # if (protocol == 2 & session == 4) {
+      #   start = as.POSIXlt("2020-11-24 15:54:00", tz = tz)
         end = as.POSIXlt("2020-11-24 16:55:00", tz = tz)
       }
       if (protocol == 3 & session == 1) {
