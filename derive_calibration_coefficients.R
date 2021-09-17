@@ -1,15 +1,24 @@
 rm(list=ls())
 graphics.off()
 
+shaker_experiments_folder = "~/data/VUMC/shaker_experiments"
+my_functions_folder =   "/home/vincent/projects/mechanicalshakerexperiments/R"
+
+
+#-----------------------------------
 options(digits.secs = 7)
 options(scipen=999)
-#-----------------------------------
 
-extracted_data_path = "~/data/VUMC/shaker_experiments/extracteddata"
+
+extracted_data_path = paste0(shaker_experiments_folder, "/labelled_data")
 fns = dir(extracted_data_path, full.names = TRUE)
-outputfile = "~/data/VUMC/shaker_experiments/explore_MIMS.RData"
-my_functions_folder =   "/home/vincent/projects/mechanicalshakerexperiments/R"
-calib_files = "~/data/VUMC/shaker_experiments/calibration"
+calib_files = paste0(shaker_experiments_folder, "/autocalibration_results")
+
+if (!dir.exists(extracted_data_path)) {
+  stop("\nLabelled data folder not recognised. Did you specify shaker_experiments_folder and did you run main.R?")
+}
+if (!dir.exists(calib_files)) dir.create(calib_files)
+
 
 if (!dir.exists(calib_files)) {
   dir.create(calib_files)

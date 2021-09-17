@@ -1,17 +1,25 @@
 ### Load data and select windows
 rm(list=ls()) # freeing up memory
 # user input required:
-my_data_folder = "/home/vincent/data/VUMC/shaker_experiments"
-protocolfile = paste0(my_data_folder, "/data_description_V4.xlsx")
-outputdir = "~/data/VUMC/shaker_experiments/extracteddata"
-
+shaker_experiments_folder = "/home/vincent/data/VUMC/shaker_experiments"
 # Following lines only needed when running debugging code:
+
+
+#----------------------------------------------------------------
+protocolfile = paste0(shaker_experiments_folder, "/data_description_V4.xlsx")
+outputdir = paste0(shaker_experiments_folder, "/labelled_data")
+rawdatadir = paste0(shaker_experiments_folder, "/raw_data")
+
+if (!dir.exists(outputdir)) dir.create(outputdir)
+if (!dir.exists(rawdatadir)) dir.create(rawdatadir)
+
+# source functions directly from file, to be replaced by package installation:
 my_functions_folder =   "/home/vincent/projects/mechanicalshakerexperiments/R"
+for (function_file in dir(my_functions_folder, full.names = T)) source(function_file) #load functions
+
 
 
 #=========================================================================================
-for (function_file in dir(my_functions_folder, full.names = T)) source(function_file) #load functions
-
 # installing GGIR separately for now to aid in experimenting with GGIR implementation
 library("remotes")
 remotes::install_github("wadpac/GGIR")
@@ -46,7 +54,7 @@ if (focus_pro1 == TRUE) {
   for (brand in brands_to_extract) {
     protocol = 1
     session = 1
-    extractedata <- loaddata(path = my_data_folder, brand = brand, 
+    extractedata <- loaddata(path = rawdatadir, brand = brand, 
                              protocol = protocol, session = session, protocolfile=protocolfile)
     cat(paste0("\nCheck dimensions of ", brand, ": Protocol ",protocol,"\n"))
     checkdimensions(extractedata)
@@ -55,10 +63,10 @@ if (focus_pro1 == TRUE) {
   }
 } else {
   for (brand in brands_to_extract) {
-    for (protocol in 2) { #2:3
-      for (session in 3) { #1:3
+    for (protocol in 2:3) {
+      for (session in 1:3) {
         if (protocol == 2 | (protocol == 3 & session == 3) | (protocol == 3 & brand == "Axivity")) {
-          extractedata <- loaddata(path = my_data_folder, 
+          extractedata <- loaddata(path = rawdatadir, 
                                    brand = brand, protocol = protocol, session = session, protocolfile=protocolfile)
           cat(paste0("\nCheck dimensions of ", brand, ": Protocol ",protocol," session", session,"\n"))
           checkdimensions(extractedata)

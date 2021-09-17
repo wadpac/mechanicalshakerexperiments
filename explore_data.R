@@ -1,6 +1,8 @@
 rm(list=ls())
 graphics.off()
 
+shaker_experiments_folder = "~/data/VUMC/shaker_experiments"
+
 #-----------------------------------
 # libraries needed for running SummarizedActigraph)
 # library(SummarizedActigraphy)
@@ -14,15 +16,16 @@ library(MIMSunit)
 library(activityCounts)
 options(digits.secs = 7)
 options(scipen=999)
-#-----------------------------------
-
-extracted_data_path = "~/data/VUMC/shaker_experiments/extracteddata"
-
 # Exploration of MIMSunit and how it compares across accelerometer brands
 library("MIMSunit")
+
+#-----------------------------------
+
+extracted_data_path = paste0(shaker_experiments_folder, "/labelled_data")
+
 # identify subset of files relevant to experimental session
 fns = dir(extracted_data_path, full.names = TRUE)
-outputfile = "~/data/VUMC/shaker_experiments/explore_MIMS.RData"
+outputfile = paste0(shaker_experiments_folder, "/analyses/explore_MIMS.RData")
 sessionames = c("pro2_ses1", "pro2_ses2", "pro2_ses3") # "pro3_ses3" #<= ignore protocol session 3 for now as this did not have flat orientation
 overwrite= TRUE
 epochsize = 5
@@ -36,7 +39,7 @@ if (!file.exists(outputfile) | overwrite == TRUE) {
   cnt  = 1
   for (ses_name in sessionames) { #
     ses1 = grep(basename(fns), pattern = ses_name)
-    pdf(file = paste0("~/data/VUMC/shaker_experiments/explore_MIMS",ses_name,".pdf"))
+    pdf(file = paste0(shaker_experiments_folder, "/analyses/explore_MIMS",ses_name,".pdf"))
     for (fn in fns[ses1]) {
       print(fn)
       load(fn)
