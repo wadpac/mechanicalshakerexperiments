@@ -10,7 +10,7 @@ options(digits.secs = 7)
 options(scipen=999)
 
 
-extracted_data_path = paste0(shaker_experiments_folder, "/labelled_data")
+extracted_data_path = paste0(shaker_experiments_folder, "/structured_raw_data")
 fns = dir(extracted_data_path, full.names = TRUE)
 calib_files = paste0(shaker_experiments_folder, "/autocalibration_results")
 

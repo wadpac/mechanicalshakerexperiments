@@ -7,12 +7,13 @@ shaker_experiments_folder = "/home/vincent/data/VUMC/shaker_experiments"
 
 #----------------------------------------------------------------
 protocolfile = paste0(shaker_experiments_folder, "/data_description_V4.xlsx")
-outputdir = paste0(shaker_experiments_folder, "/labelled_data")
-rawdatadir = paste0(shaker_experiments_folder, "/raw_data")
+outputdir = paste0(shaker_experiments_folder, "/structured_raw_data")
+rawdatadir = paste0(shaker_experiments_folder, "/unstructured_raw_data")
 
 if (!dir.exists(outputdir)) dir.create(outputdir)
 if (!dir.exists(rawdatadir)) {
-  stop("\nCannot find folder raw_data. Make sure all folders with the raw accelerometer files are stored inside a folder named raw_data.")
+  stop(paste0("\nCannot find folder unstructured_raw_data. Make sure all folders with the ",
+              "raw accelerometer files are stored inside a folder named unstructured_raw_data."))
 }
 # source functions directly from file, to be replaced by package installation:
 my_functions_folder =   "/home/vincent/projects/mechanicalshakerexperiments/R"
