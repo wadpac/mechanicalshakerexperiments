@@ -4,6 +4,8 @@ graphics.off()
 # Update to be your local directory, if all goes well this is the only line you will have to update
 shaker_experiments_folder = "~/data/VUMC/shaker_experiments"
 
+source("~/projects/mechanicalshakerexperiments/R/applymetrics.R")
+
 #========================================================================================
 # Most of these libraries are needed for running SummarizedActigraph and/or MIMSunit
 library(tidyverse)
@@ -42,7 +44,7 @@ if (!file.exists(outputfile) | overwrite == TRUE) {
   cnt  = 1
   for (ses_name in sessionames) { #
     ses1 = grep(basename(fns), pattern = ses_name)
-    pdf(file = paste0(shaker_experiments_folder, "/metric_analyses/explore_metrics",ses_name,".pdf"))
+    # pdf(file = paste0(shaker_experiments_folder, "/metric_analyses/explore_metrics",ses_name,".pdf"))
     for (fn in fns[ses1]) {
       print(fn)
       load(fn) # TO DO: This loads object extractedata => maybe rename this "structured_data"???
@@ -125,122 +127,152 @@ if (!file.exists(outputfile) | overwrite == TRUE) {
           calib_fn = dir(calib_files, pattern = sn, full.names = T)
           if (length(calib_fn) > 0) {
             load(calib_fn)
-            if (all(calib$scale != c(1,1,1)) & all(calib$scale != c(0,0,0)) & calib$C$cal.error.end < 0.01 &
-                calib$C$npoints > 50) {
-              tmp[,c("X","Y","Z")] = scale(tmp[,c("X","Y","Z")],
-                                           center = -calib$offset,
-                                           scale = 1/calib$scale)
-              
-              # #=================
-              # # Try apply code from:
-              # # https://martakarass.github.io/post/2021-06-29-pa_measures_and_summarizedactigraphy/#dataset-labeled-raw-accelerometry-data
-              tmp_tible = as_tibble(tmp)
-              out_i = SummarizedActigraphy::calculate_measures(
-                df = tmp_tible,
-                unit = "5 sec",
-                dynamic_range = c(-8, 8),  # dynamic range
-                fix_zeros = TRUE,         # fixes zeros from idle sleep mode -- not needed in our case
-                calculate_mims = FALSE,     # uses algorithm from MIMSunit package
-                calculate_ac = FALSE,       # uses algorithm from activityCounts package
-                flag_data = TRUE,         # runs raw data quality control flags algorithm -- not used in our case
-                verbose = FALSE)
-              x0 = Sys.time()
-              S = MIMSunit::mims_unit(df = tmp, epoch = '5 sec', dynamic_range = c(-DR, DR), output_mims_per_axis = TRUE)
-              x1 = Sys.time()
-              
-              #=======
-              # implement simplified and faster mims:
-              MIMSlight_fun = function(df, epochsize=5, acc_columns = 2:4, range=8) {
-                averageperepoch = function(x,sf,epochsize) { 
-                  # I am aware that this is numerically unstable, but in our use-case
-                  # expected drop in precision is far beyond required precision
-                  # and by that acceptable.
-                  x2 =cumsum(c(0,x))
-                  select = seq(1,length(x2),by=sf*epochsize)
-                  x3 = diff(x2[round(select)]) / abs(diff(round(select)))
+            if (all(calib$scale != c(1,1,1)) & all(calib$scale != c(0,0,0))) {
+              if (calib$C$cal.error.end < 0.01 & calib$C$npoints > 50) {
+                tmp[,c("X","Y","Z")] = scale(tmp[,c("X","Y","Z")],
+                                             center = -calib$offset,
+                                             scale = 1/calib$scale)
+                
+                
+                
+                #===================================================================
+                # Calculate metrics
+                EN_raw = sqrt(tmp$X^2 + tmp$Y^2 + tmp$Z^2)
+                EN_raw = EN_raw[1:(floor(nrow(tmp)/sf)*sf)]
+                EN = averageperws3(EN_raw,sf,epochsize=5)
+                ENMOraw = pmax(EN_raw - 1, 0)
+                ENMO = averageperws3(ENMOraw,sf,epochsize=5)
+                MEANS = rep(EN, each = sf*5)
+                MAD = abs(EN_raw[1:length(MEANS)] - MEANS)
+                MAD = averageperws3(x=MAD,sf,epochsize=5)
+                # For additional metrics use separate function:
+                metrics = applymetrics(data = tmp[,c("X","Y","Z")], sf = sf, epochsize=5)
+                HFEN = metrics$HFEN
+                HFENplus = metrics$HFENplus
+                BFEN = metrics$BFEN
+                ZCX = metrics$ZCX
+                ZCY = metrics$ZCY
+                ZCZ = metrics$ZCZ
+                
+                # #=================
+                # # Try apply code from:
+                # # https://martakarass.github.io/post/2021-06-29-pa_measures_and_summarizedactigraphy/#dataset-labeled-raw-accelerometry-data
+                tmp_tible = as_tibble(tmp)
+                out_i = SummarizedActigraphy::calculate_measures(
+                  df = tmp_tible,
+                  unit = "5 sec",
+                  dynamic_range = c(-8, 8),  # dynamic range
+                  fix_zeros = TRUE,         # fixes zeros from idle sleep mode -- not needed in our case
+                  calculate_mims = FALSE,     # uses algorithm from MIMSunit package
+                  calculate_ac = FALSE,       # uses algorithm from activityCounts package
+                  flag_data = TRUE,         # runs raw data quality control flags algorithm -- not used in our case
+                  verbose = FALSE)
+                x0 = Sys.time()
+                S = MIMSunit::mims_unit(df = tmp, epoch = '5 sec', dynamic_range = c(-DR, DR), output_mims_per_axis = TRUE)
+                x1 = Sys.time()
+                AI = out_i$AI
+                
+                #========================================================
+                # implement simplified and faster mims:
+                MIMSlight_fun = function(df, epochsize=5, acc_columns = 2:4, range=8) {
+                  averageperepoch = function(x,sf,epochsize) { 
+                    # I am aware that this is numerically unstable, but in our use-case
+                    # expected drop in precision is far beyond required precision
+                    # and by that acceptable.
+                    x2 =cumsum(c(0,x))
+                    select = seq(1,length(x2),by=sf*epochsize)
+                    x3 = diff(x2[round(select)]) / abs(diff(round(select)))
+                  }
+                  bf_filter = function(lb, hb, n, sf) {
+                    hb = ifelse(test = sf <= (hb*2), yes = (sf / 2) - 0.1, no = hb)
+                    Wc = matrix(0,2,1)
+                    Wc[1,1] = lb / (sf/2) # lb: lower boundary
+                    Wc[2,1] = hb / (sf/2) # hb: higher boundary
+                    return(signal::butter(n,Wc,type=c("pass"))) 
+                  }
+                  mims_per_axis = matrix(NA, floor(nrow(df) / (sf*epochsize)), 3)
+                  # df = MIMSunit::extrapolate(df, range=range)
+                  for (i in acc_columns) {
+                    coef = bf_filter(lb=0.2, hb=5, n=4, sf=sf)
+                    filtered_signal = signal::filter(coef, df[,i])
+                    # using this way of aggregating is a lot faster, but comes at the price of
+                    # new value differences with the original approach, if I insert the orignal approach
+                    # value differences are zero for the full range, expect close to zero,
+                    # which relates to interpolation step we are not doing
+                    BFSM_per_axis = averageperepoch(abs(filtered_signal), sf, epochsize)
+                    noise = which(BFSM_per_axis < 0.01) # MIMSunit gives zeros when sensor not moving, so we do same
+                    if (length(noise) > 0) BFSM_per_axis[noise] = 0
+                    mims_per_axis[,i-1] = BFSM_per_axis * epochsize
+                  }
+                  MIMSlight = rowSums(mims_per_axis)
+                  return(MIMSlight)
                 }
-                bf_filter = function(lb, hb, n, sf) {
-                  hb = ifelse(test = sf <= (hb*2), yes = (sf / 2) - 0.1, no = hb)
-                  Wc = matrix(0,2,1)
-                  Wc[1,1] = lb / (sf/2) # lb: lower boundary
-                  Wc[2,1] = hb / (sf/2) # hb: higher boundary
-                  return(signal::butter(n,Wc,type=c("pass"))) 
+                MIMSlight = MIMSlight_fun(df=tmp, epochsize=5, acc_columns = 2:4, range = 8)
+                
+               
+                
+                
+                #===================================================================
+                # Standardise size of objects and put in single data.frame
+                checklen = function(x, y, RR=0) {
+                  if (length(x) > nrow(y)) {
+                    x = x[1:nrow(y)]
+                  } else if (length(x) < nrow(y)) {
+                    x = c(x, rep(RR, nrow(y) - length(x)))
+                  }
+                  return(x)
                 }
-                mims_per_axis = matrix(NA, floor(nrow(df) / (sf*epochsize)), 3)
-                # df = MIMSunit::extrapolate(df, range=range)
-                for (i in acc_columns) {
-                  coef = bf_filter(lb=0.2, hb=5, n=4, sf=sf)
-                  filtered_signal = signal::filter(coef, df[,i])
-                  # using this way of aggregating is a lot faster, but comes at the price of
-                  # new value differences with the original approach, if I insert the orignal approach
-                  # value differences are zero for the full range, expect close to zero,
-                  # which relates to interpolation step we are not doing
-                  BFSM_per_axis = averageperepoch(abs(filtered_signal), sf, epochsize)
-                  noise = which(BFSM_per_axis < 0.01) # MIMSunit gives zeros when sensor not moving, so we do same
-                  if (length(noise) > 0) BFSM_per_axis[noise] = 0
-                  mims_per_axis[,i-1] = BFSM_per_axis * epochsize
+                if (nrow(S) > length(MIMSlight)) {
+                  S = S[1:length(MIMSlight),]
                 }
-                MIMSlight = rowSums(mims_per_axis)
-                return(MIMSlight)
+                EN  = checklen(EN, S, RR= 1)
+                AI  = checklen(AI, S)
+                MAD  = checklen(MAD, S)
+                ENMO  = checklen(ENMO, S)
+                MIMSlight = checklen(MIMSlight, S)
+                shakefreq = checklen(shakefreq, S)
+                
+                HFEN =checklen(HFEN, S)
+                HFENplus =checklen(HFENplus, S)
+                BFEN =checklen(BFEN, S)
+                ZCX =checklen(ZCX, S)
+                ZCY =checklen(ZCY, S)
+                ZCZ =checklen(ZCZ, S)
+                
+                
+                S$brand = brand
+                S$sf = sf
+                S$EN = EN
+                S$ENMO = ENMO
+                S$MAD = MAD
+                S$AI = AI
+                S$MIMSlight = MIMSlight
+                S$HFEN = HFEN
+                S$HFENplus = HFENplus
+                S$BFEN = BFEN
+                S$ZCX = ZCX
+                S$ZCY = ZCY
+                S$ZCZ = ZCZ
+                
+                S$ses_name = ses_name
+                S$sn = sn
+                S$shakefreq = shakefreq
+                negativ_shakef = which(S$shakefreq < 0)
+                S = S[-negativ_shakef,]
+                
+                combineddata[[cnt]] = S # store result for later use
+                # visually compare values across brands
+                # par(mfrow=c(2,1))
+                # plot(S$HEADER_TIME_STAMP, S$MIMS_UNIT, type="l", main=paste0(brand," ",sf," ",DR)) #, ylim=c(0,6))
+                # plot(S$HEADER_TIME_STAMP, S$ENMO, type="l", col="black")
+                # cnt = cnt + 1
               }
-              MIMSlight = MIMSlight_fun(df=tmp, epochsize=5, acc_columns = 2:4, range = 8)
-              
-              #===================================================================
-              # Calculate other metrics
-              EN_raw = sqrt(tmp$X^2 + tmp$Y^2 + tmp$Z^2)
-              EN_raw = EN_raw[1:(floor(nrow(tmp)/sf)*sf)]
-              EN = averageperws3(EN_raw,sf,epochsize=5)
-              ENMOraw = pmax(EN_raw - 1, 0)
-              ENMO = averageperws3(ENMOraw,sf,epochsize=5)
-              MEANS = rep(EN, each = sf*5)
-              MAD = abs(EN_raw[1:length(MEANS)] - MEANS)
-              MAD = averageperws3(x=MAD,sf,epochsize=5)
-              AI = out_i$AI
-              
-              #===================================================================
-              # Standardise size of objects and put in single data.frame
-              checklen = function(x, y, RR=0) {
-                if (length(x) > nrow(y)) {
-                  x = x[1:nrow(y)]
-                } else if (length(x) < nrow(y)) {
-                  x = c(x, rep(RR, nrow(y) - length(x)))
-                }
-                return(x)
-              }
-              if (nrow(S) > length(MIMSlight)) {
-                S = S[1:length(MIMSlight),]
-              }
-              EN  = checklen(EN, S, RR= 1)
-              AI  = checklen(AI, S)
-              MAD  = checklen(MAD, S)
-              ENMO  = checklen(ENMO, S)
-              MIMSlight = checklen(MIMSlight, S)
-              shakefreq = checklen(shakefreq, S)
-              S$brand = brand
-              S$sf = sf
-              S$EN = EN
-              S$ENMO = ENMO
-              S$MAD = MAD
-              S$AI = AI
-              S$MIMSlight = MIMSlight
-              S$ses_name = ses_name
-              S$sn = sn
-              S$shakefreq = shakefreq
-              negativ_shakef = which(S$shakefreq < 0)
-              S = S[-negativ_shakef,]
-              
-              combineddata[[cnt]] = S # store result for later use
-              # visually compare values across brands
-              par(mfrow=c(2,1))
-              plot(S$HEADER_TIME_STAMP, S$MIMS_UNIT, type="l", main=paste0(brand," ",sf," ",DR)) #, ylim=c(0,6))
-              plot(S$HEADER_TIME_STAMP, S$ENMO, type="l", col="black")
-              cnt = cnt + 1
             }
           }
         }
       }
     }
-    dev.off()
+    # dev.off()
   }
   save(combineddata, file = outputfile)
 } else {
@@ -259,8 +291,10 @@ DATA$brand[CLE] = "ActigraphCLE"
 
 #========================================================================================
 # Aggregate epochs to one value per shaker frequency x serial number combination.
-D = aggregate(x = DATA[,c("MIMS_UNIT", "EN", "MAD", "AI", "ENMO", "MIMSlight", "shakefreq")],
-               by = list(DATA$HEADER_TIME_STAMP, DATA$brand, DATA$ses_name, DATA$sn), FUN = mean)
+D = aggregate(x = DATA[,c("MIMS_UNIT", "EN", "MAD", "AI", "ENMO", 
+                          "MIMSlight", "HFENplus", "HFEN", "BFEN", 
+                          "ZCX", "ZCY", "ZCZ", "shakefreq")],
+              by = list(DATA$HEADER_TIME_STAMP, DATA$brand, DATA$ses_name, DATA$sn), FUN = mean)
 colnames(D)[1:11] = c("time", "brand", "ses_name", "sn", "MIMS_UNIT",
                       "EN", "MAD", "AI", "ENMO", "MIMSlight", "shakefreq")
 # Remove epochs with rare frequencies, these are the frequencies
