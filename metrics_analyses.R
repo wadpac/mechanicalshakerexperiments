@@ -4,6 +4,8 @@ graphics.off()
 # Update to be your local directory, if all goes well this is the only line you will have to update
 shaker_experiments_folder = "~/data/VUMC/shaker_experiments"
 
+# TO DO: Check which GENEActiv was removed towards end of one of the experiments, and make sure data is not included
+
 source("~/projects/mechanicalshakerexperiments/R/applymetrics.R")
 
 #========================================================================================
@@ -18,7 +20,7 @@ library(MIMSunit)
 library(activityCounts)
 options(digits.secs = 7)
 options(scipen=999)
-library("MIMSunit")
+# library("MIMSunit")
 
 #====================================================================================
 # Specify file paths
@@ -32,7 +34,7 @@ if (!dir.exists(calib_files)) {
 fns = dir(extracted_data_path, full.names = TRUE)
 outputfile = paste0(shaker_experiments_folder, "/metric_analyses/explore_metrics.RData")
 sessionames = c("pro2_ses1", "pro2_ses2", "pro2_ses3") # "pro3_ses3" #<= ignore protocol session 3 for now as this did not have flat orientation
-overwrite= TRUE #TRUE
+overwrite= FALSE
 epochsize = 5
 averageperws3 = function(x,sf,epochsize) {
   x2 =cumsum(c(0,x))
@@ -41,6 +43,7 @@ averageperws3 = function(x,sf,epochsize) {
 }
 if (!file.exists(outputfile) | overwrite == TRUE) {
   combineddata <- list()
+  sn_ignored= c()
   cnt  = 1
   for (ses_name in sessionames) { #
     ses1 = grep(basename(fns), pattern = ses_name)
@@ -89,7 +92,7 @@ if (!file.exists(outputfile) | overwrite == TRUE) {
             time_gaps = which(dt > 1)
             
             if (length(time_gaps) > 0) {
-              cnt = 1
+              cnt2 = 1
               tmp2 = tmp
               for (j in 1:length(time_gaps)) {
                 inpute = as.data.frame(matrix(0, dt[time_gaps[j]]*sf, ncol(tmp)))
@@ -98,16 +101,16 @@ if (!file.exists(outputfile) | overwrite == TRUE) {
                               tmp$HEADER_TIME_STAMP[time_gaps[j]+1], by = 1/sf)
                 inpute$HEADER_TIME_STAMP = newtime[1:nrow(inpute)]
                 if (j == 1) {
-                  cnt = time_gaps[j]-1
+                  cnt2 = time_gaps[j]-1
                 } else {
-                  cnt = nrow(tmp2)
+                  cnt2 = nrow(tmp2)
                 }
                 cols_of_interest = c("X", "Y", "Z", "shaking_frequency")
                 inpute[, cols_of_interest] = tmp[time_gaps[j], cols_of_interest]
                 if (j != length(time_gaps)) {
-                  tmp2 = rbind(tmp2[1:cnt,], inpute)
+                  tmp2 = rbind(tmp2[1:cnt2,], inpute)
                 } else {
-                  tmp2 = rbind(tmp2[1:cnt,], inpute, tmp[(time_gaps[j]+1):nrow(tmp),])
+                  tmp2 = rbind(tmp2[1:cnt2,], inpute, tmp[(time_gaps[j]+1):nrow(tmp),])
                 }
               }
               tmp = tmp2
@@ -133,8 +136,6 @@ if (!file.exists(outputfile) | overwrite == TRUE) {
                                              center = -calib$offset,
                                              scale = 1/calib$scale)
                 
-                
-                
                 #===================================================================
                 # Calculate metrics
                 EN_raw = sqrt(tmp$X^2 + tmp$Y^2 + tmp$Z^2)
@@ -150,10 +151,7 @@ if (!file.exists(outputfile) | overwrite == TRUE) {
                 HFEN = metrics$HFEN
                 HFENplus = metrics$HFENplus
                 BFEN = metrics$BFEN
-                ZCX = metrics$ZCX
-                ZCY = metrics$ZCY
-                ZCZ = metrics$ZCZ
-                
+
                 # #=================
                 # # Try apply code from:
                 # # https://martakarass.github.io/post/2021-06-29-pa_measures_and_summarizedactigraphy/#dataset-labeled-raw-accelerometry-data
@@ -167,9 +165,9 @@ if (!file.exists(outputfile) | overwrite == TRUE) {
                   calculate_ac = FALSE,       # uses algorithm from activityCounts package
                   flag_data = TRUE,         # runs raw data quality control flags algorithm -- not used in our case
                   verbose = FALSE)
-                x0 = Sys.time()
-                S = MIMSunit::mims_unit(df = tmp, epoch = '5 sec', dynamic_range = c(-DR, DR), output_mims_per_axis = TRUE)
-                x1 = Sys.time()
+                # # Turned off because too slow to compute
+                # S_MIMSunit = MIMSunit::mims_unit(df = tmp, epoch = '5 sec', dynamic_range = c(-DR, DR), output_mims_per_axis = TRUE)
+                TIMESTAMPS = tmp$HEADER_TIME_STAMP[seq(1,nrow(tmp), by = sf*5)]
                 AI = out_i$AI
                 
                 #========================================================
@@ -209,71 +207,52 @@ if (!file.exists(outputfile) | overwrite == TRUE) {
                 }
                 MIMSlight = MIMSlight_fun(df=tmp, epochsize=5, acc_columns = 2:4, range = 8)
                 
-               
-                
-                
                 #===================================================================
                 # Standardise size of objects and put in single data.frame
                 checklen = function(x, y, RR=0) {
-                  if (length(x) > nrow(y)) {
-                    x = x[1:nrow(y)]
-                  } else if (length(x) < nrow(y)) {
-                    x = c(x, rep(RR, nrow(y) - length(x)))
+                  # x is acc metric vector, y is timestamp vector
+                  if (length(x) > length(y)) {
+                    x = x[1:length(y)]
+                  } else if (length(x) < length(y)) {
+                    x = c(x, rep(RR, length(y) - length(x)))
                   }
                   return(x)
                 }
-                if (nrow(S) > length(MIMSlight)) {
-                  S = S[1:length(MIMSlight),]
-                }
-                EN  = checklen(EN, S, RR= 1)
-                AI  = checklen(AI, S)
-                MAD  = checklen(MAD, S)
-                ENMO  = checklen(ENMO, S)
-                MIMSlight = checklen(MIMSlight, S)
-                shakefreq = checklen(shakefreq, S)
+                EN  = checklen(EN, TIMESTAMPS, RR= 1)
+                AI  = checklen(AI, TIMESTAMPS)
+                MAD  = checklen(MAD, TIMESTAMPS)
+                ENMO  = checklen(ENMO, TIMESTAMPS)
+                MIMSlight = checklen(MIMSlight, TIMESTAMPS)
+                HFEN =checklen(HFEN, TIMESTAMPS)
+                HFENplus =checklen(HFENplus, TIMESTAMPS)
+                BFEN =checklen(BFEN, TIMESTAMPS)
+                # MIMS_UNIT= checklen(MIMS_UNIT, TIMESTAMPS) 
+                shakefreq = checklen(shakefreq, TIMESTAMPS)
                 
-                HFEN =checklen(HFEN, S)
-                HFENplus =checklen(HFENplus, S)
-                BFEN =checklen(BFEN, S)
-                ZCX =checklen(ZCX, S)
-                ZCY =checklen(ZCY, S)
-                ZCZ =checklen(ZCZ, S)
-                
-                
-                S$brand = brand
-                S$sf = sf
-                S$EN = EN
-                S$ENMO = ENMO
-                S$MAD = MAD
-                S$AI = AI
-                S$MIMSlight = MIMSlight
-                S$HFEN = HFEN
-                S$HFENplus = HFENplus
-                S$BFEN = BFEN
-                S$ZCX = ZCX
-                S$ZCY = ZCY
-                S$ZCZ = ZCZ
-                
-                S$ses_name = ses_name
-                S$sn = sn
-                S$shakefreq = shakefreq
+                S = data.frame(HEADER_TIME_STAMP = TIMESTAMPS,
+                               brand = brand, sf = sf,
+                               EN = EN, ENMO = ENMO, MAD = MAD,
+                               AI = AI, MIMSlight = MIMSlight,
+                               HFEN = HFEN, HFENplus = HFENplus,
+                               BFEN = BFEN, ses_name = ses_name,
+                               sn = sn, shakefreq = shakefreq)
                 negativ_shakef = which(S$shakefreq < 0)
                 S = S[-negativ_shakef,]
-                
                 combineddata[[cnt]] = S # store result for later use
-                # visually compare values across brands
-                # par(mfrow=c(2,1))
-                # plot(S$HEADER_TIME_STAMP, S$MIMS_UNIT, type="l", main=paste0(brand," ",sf," ",DR)) #, ylim=c(0,6))
-                # plot(S$HEADER_TIME_STAMP, S$ENMO, type="l", col="black")
-                # cnt = cnt + 1
+                cnt = cnt + 1
+              } else {
+                print(paste0(sn, " ignored")) 
+                sn_ignored = c(sn_ignored, paste0(sn,"_", brand,"_", ses_name))
               }
             }
           }
         }
       }
     }
-    # dev.off()
   }
+  print("serial numbers ignored")
+  print(sn_ignored)
+  
   save(combineddata, file = outputfile)
 } else {
   load(file = outputfile)
@@ -281,7 +260,7 @@ if (!file.exists(outputfile) | overwrite == TRUE) {
 #====================================================================
 # Combine into data.frame
 DATA = do.call("rbind", combineddata)
-
+DATA = DATA[-which(DATA$sn %in% c(21950, 37727) == TRUE & DATA$sf == 800),] # remove extreme configuration that caused artifacts
 #====================================================================
 # Stratify Actigraph by version:
 MOS = grep(pattern = "MOS", x = DATA$sn)
@@ -291,12 +270,10 @@ DATA$brand[CLE] = "ActigraphCLE"
 
 #========================================================================================
 # Aggregate epochs to one value per shaker frequency x serial number combination.
-D = aggregate(x = DATA[,c("MIMS_UNIT", "EN", "MAD", "AI", "ENMO", 
-                          "MIMSlight", "HFENplus", "HFEN", "BFEN", 
-                          "ZCX", "ZCY", "ZCZ", "shakefreq")],
+D = aggregate(x = DATA[,c("EN", "MAD", "AI", "ENMO", 
+                          "MIMSlight", "HFENplus", "HFEN", "BFEN", "shakefreq")],
               by = list(DATA$HEADER_TIME_STAMP, DATA$brand, DATA$ses_name, DATA$sn), FUN = mean)
-colnames(D)[1:11] = c("time", "brand", "ses_name", "sn", "MIMS_UNIT",
-                      "EN", "MAD", "AI", "ENMO", "MIMSlight", "shakefreq")
+colnames(D)[1:4] = c("time", "brand", "ses_name", "sn")
 # Remove epochs with rare frequencies, these are the frequencies
 # that result from the frequency transitions
 Dnew = c()
@@ -322,9 +299,11 @@ selection = which(D$ses_name=="pro2_ses2" & D$brand %in% brands_of_interest)
 fitEN = aov(EN ~ brand + Error(shakefreq), data=D[selection,])
 fitENMO = aov(ENMO ~ brand + Error(shakefreq),data=D[selection,])
 fitMAD = aov(ENMO ~ brand + Error(shakefreq),data=D[selection,])
-fitMIMSunit = aov(MIMS_UNIT ~ brand + Error(shakefreq), data=D[selection,])
 fitMIMSlight = aov(MIMSlight ~ brand + Error(shakefreq), data=D[selection,])
 fitAI = aov(AI ~ brand + Error(shakefreq), data=D[selection,])
+fitBFEN = aov(BFEN ~ brand + Error(shakefreq), data=D[selection,])
+fitHFEN = aov(HFEN ~ brand + Error(shakefreq), data=D[selection,])
+fitHFENplus = aov(HFENplus ~ brand + Error(shakefreq), data=D[selection,])
 
 # print("EN, ENMO, MAD")
 # print(summary(fitEN))
@@ -342,28 +321,29 @@ fitAI = aov(AI ~ brand + Error(shakefreq), data=D[selection,])
 D$time=as.numeric(D$time) # convert to numeric to ease aggregation
 D = aggregate(D, list(D$ses_name, D$shakefreq, D$brand, D$sn), FUN = mean)
 colnames(D)[1:4] = c("ses_name", "shakefreq", "brand", "sn")
-D = D[,c("brand","ses_name", "sn", "time", "MIMS_UNIT", "EN", "MAD",
-         "AI", "ENMO", "MIMSlight", "shakefreq",  "brand")]
+D = D[,c("brand","ses_name", "sn", "time", "EN", "MAD",
+         "AI", "ENMO", "MIMSlight", "HFENplus", "HFEN", "BFEN", "shakefreq")]
 D$time=as.POSIXlt(D$time, tz = "Europe/Amsterdam", origin ="1970-01-01")
 # D = D[-which(D$brand == "Activpal"),]
 
+CX = 0.7
 pdf(file = "~/data/VUMC/shaker_experiments/metric_analyses/inspect_metrics.pdf")
-for (metric in c("MIMS_UNIT", "EN", "MAD", "AI", "ENMO", "MIMSlight")) { #
+for (metric in c("EN", "MAD", "AI", "ENMO", "MIMSlight",  "HFENplus", "HFEN", "BFEN")) { #
   par(mfrow=c(1,3))  
   YLIM = range(D[,metric], na.rm=TRUE)
   YLIM[2] = min(YLIM[2], 4)
-  for (ses_name in c("pro2_ses1", "pro2_ses2", "pro2_ses3")) { #"pro3_ses3" ,
+  for (ses_name in sessionames) {
     GA = which(D$brand == "GENEActiv" & D$ses_name == ses_name)
     AX = which(D$brand == "Axivity" & D$ses_name == ses_name)
     AGC = which(D$brand == "ActigraphCLE" & D$ses_name == ses_name)
     AGM = which(D$brand == "ActigraphMOS" & D$ses_name == ses_name)
     AP = which(D$brand == "Activpal" & D$ses_name == ses_name)
-    plot(D$time[GA], D[GA, metric], type="p",pch=20, lwd=1.5, main= ses_name, ylab=metric, 
+    plot(D$time[GA], D[GA, metric], type="p", pch=20, cex=CX, main= ses_name, ylab=metric, 
          xlab="time", ylim=YLIM)
-    lines(D$time[AX], D[AX, metric], type="p",pch=20, col="blue", lwd=1.5)
-    lines(D$time[AGC], D[AGC, metric], type="p",pch=20, col="red", lwd=1.5)
-    lines(D$time[AGM], D[AGM, metric], type="p",pch=20, col="green", lwd=1.5)
-    lines(D$time[AP], D[AP, metric], type="p", pch=20, col="purple", lwd=1.5)
+    lines(D$time[AX], D[AX, metric], type="p", pch=20, col="blue", cex=CX)
+    lines(D$time[AGC], D[AGC, metric], type="p", pch=20, col="red", cex=CX)
+    lines(D$time[AGM], D[AGM, metric], type="p",pch=20, col="green", cex=CX)
+    lines(D$time[AP], D[AP, metric], type="p", pch=20, col="purple", cex=CX)
     legend("topleft",legend = c("GENEActiv","Axivity","Actigraph_CLE","Actigraph_MOS", "Activpal"),
            col = c("black","blue","red", "green", "purple"), lty=1) #, 
   }
