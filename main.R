@@ -11,8 +11,9 @@ outputdir = paste0(shaker_experiments_folder, "/labelled_data")
 rawdatadir = paste0(shaker_experiments_folder, "/raw_data")
 
 if (!dir.exists(outputdir)) dir.create(outputdir)
-if (!dir.exists(rawdatadir)) dir.create(rawdatadir)
-
+if (!dir.exists(rawdatadir)) {
+  stop("\nCannot find folder raw_data. Make sure all folders with the raw accelerometer files are stored inside a folder named raw_data.")
+}
 # source functions directly from file, to be replaced by package installation:
 my_functions_folder =   "/home/vincent/projects/mechanicalshakerexperiments/R"
 for (function_file in dir(my_functions_folder, full.names = T)) source(function_file) #load functions
