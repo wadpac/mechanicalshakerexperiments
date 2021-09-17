@@ -338,7 +338,7 @@ fitAI = aov(AI ~ brand + Error(shakefreq), data=D[selection,])
 
 #=============================================================================
 # Create plot per protocol session
-# to ease visualisation we only look at average per shaker frequency for now: 
+# to ease visualisation we only look at average per shaker frequency per device (so, no epoch values): 
 D$time=as.numeric(D$time) # convert to numeric to ease aggregation
 D = aggregate(D, list(D$ses_name, D$shakefreq, D$brand, D$sn), FUN = mean)
 colnames(D)[1:4] = c("ses_name", "shakefreq", "brand", "sn")
