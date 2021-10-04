@@ -52,9 +52,10 @@ loaddata <- function(path, brand, protocol, session, windows = TRUE, protocolfil
     warning("\nNo recordings identified. Check folder path.")
   }
   file_list <- list.files(file_path, pattern = pattern, all.files = FALSE)
+  print(file_list)
+  
   cat(paste0("\nLooking inside: ",file_path," for ", pattern," files"))
   cat(paste0("\n...", length(file_list), " files identified for loading:"))
-  
   # Load data in parallel
   closeAllConnections() # in case there is a still something running from last time, kill it.
   cores = parallel::detectCores()
@@ -65,6 +66,7 @@ loaddata <- function(path, brand, protocol, session, windows = TRUE, protocolfil
     foreach(i = 1:length(file_list), .packages = c("read.gt3x", "GGIR", "GENEAread"), .export = "read.activpal") %dopar% {
       # for (i in 1:length(file_list)) {
       # Load in the data
+      options(digits.secs=7)
       tz = "Europe/Amsterdam"
       if(brand == "Actigraph") {
         rawdata <- as.data.frame(read.gt3x(paste(file_path, file_list[i], sep = "/"), asDataFrame = TRUE))
@@ -107,10 +109,10 @@ loaddata <- function(path, brand, protocol, session, windows = TRUE, protocolfil
       }
       if (protocol == 2 & session == 3) {
         start = as.POSIXlt("2020-11-24 15:07:00", tz = tz)
-        end = as.POSIXlt("2020-11-24 15:50:00", tz = tz)
-      }
-      if (protocol == 2 & session == 4) {
-        start = as.POSIXlt("2020-11-24 15:54:00", tz = tz)
+      #   end = as.POSIXlt("2020-11-24 15:50:00", tz = tz)
+      # }
+      # if (protocol == 2 & session == 4) {
+      #   start = as.POSIXlt("2020-11-24 15:54:00", tz = tz)
         end = as.POSIXlt("2020-11-24 16:55:00", tz = tz)
       }
       if (protocol == 3 & session == 1) {
@@ -146,12 +148,12 @@ loaddata <- function(path, brand, protocol, session, windows = TRUE, protocolfil
       return(rawdata)
     }
   }
+  options(digits.secs=7) # critical step, because otherwishe decimal places are lost
   data <- tryCatch(parallelLoad(file_path, file_list, brand, protocol, windows, session, path), error = function(e) print(e))
   parallel::stopCluster(cl)
   #Get data specifications
   names(data) <- file_list
   specifications <- getspecs(brand, data)
-  
   
   #Get and select windows
   if (windows == TRUE) {
