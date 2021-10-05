@@ -1,13 +1,13 @@
-# Read in data description and select relevant information based on protocol and session
-getwindows <- function(brand, protocol, session, path, data, protocolfile) {
+# Read in data description and select relevant information based on experiment
+getwindows <- function(brand, experiment, path, data, experimentfile) {
   library(gdata)
-  description <- read.xls(protocolfile, header = TRUE)
-  description <- description[which(description$protocol == protocol & description$session == session),]
+  description <- read.xls(experimentfile, header = TRUE)
+  description <- description[which(description$experiment == experiment),]
   # Calculate indices for the windows to select
   start_time <- c()
   end_time <- c()
   tz = "Europe/Amsterdam"
-  if (protocol == 1) {
+  if (experiment == "timer_check") {
     if (brand == "Actigraph" | brand == "Activpal") {
       selection <- description[description$accelerometers_used == "activpal_actigraph",]
     }
@@ -19,7 +19,7 @@ getwindows <- function(brand, protocol, session, path, data, protocolfile) {
     end <- strftime(paste0(selection$date[nrow(selection)], selection$start_time[nrow(selection)]), format = "%Y-%m-%d %H:%M:%OS2", tz = tz)
     end_time <- end
   }
-  if (protocol == 2 || protocol == 3) {
+  if (startsWith(experiment, "ms")) { #does not work yet for extracting data for door and box experiment!
     for (r in 1:nrow(description)) {
       if(startsWith(description$accelerometers_used[r], "all") || (brand == "Axivity" & description$accelerometers_used[r] == "axivity")){
         start <- strftime(toString(paste(description$date[r], description$start_time[r]), sep = " "), format = "%Y-%m-%d %H:%M:%OS2", tz = tz)

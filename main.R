@@ -1,12 +1,12 @@
 ### Load data and select windows
 rm(list=ls()) # freeing up memory
 # user input required:
-shaker_experiments_folder = "/home/vincent/data/VUMC/shaker_experiments"
+shaker_experiments_folder = "/Users/annelindelettink/Documents/Work MacBook Pro Annelinde/Mechanical Shaker Machine"  #my_data_folder = "/home/vincent/data/VUMC/shaker_experiments" 
 # Following lines only needed when running debugging code:
 
 
 #----------------------------------------------------------------
-protocolfile = paste0(shaker_experiments_folder, "/data_description_V4.xlsx")
+experimentfile = paste0(shaker_experiments_folder, "/unstructured_raw_data/data_description_V5.xlsx")
 outputdir = paste0(shaker_experiments_folder, "/structured_raw_data")
 rawdatadir = paste0(shaker_experiments_folder, "/unstructured_raw_data")
 
@@ -16,7 +16,8 @@ if (!dir.exists(rawdatadir)) {
               "raw accelerometer files are stored inside a folder named unstructured_raw_data."))
 }
 # source functions directly from file, to be replaced by package installation:
-my_functions_folder =   "/home/vincent/projects/mechanicalshakerexperiments/R"
+my_functions_folder =   "/Users/annelindelettink/Documents/Work MacBook Pro Annelinde/Mechanical Shaker Machine/mechanicalshakerexperiments/R"  #my_functions_folder =   "/home/vincent/projects/mechanicalshakerexperiments/R" 
+
 for (function_file in dir(my_functions_folder, full.names = T)) source(function_file) #load functions
 
 
@@ -50,32 +51,22 @@ checkdimensions = function(x) {
   }
 }
 options(digits.secs = 7)
-brands_to_extract = c("Actigraph", "Activpal", "Axivity", "GENEActiv") #"Activpal", "Acttrust",
-focus_pro1 = FALSE # to avoid loading all data at once as that will never be needed
-if (focus_pro1 == TRUE) {
-  for (brand in brands_to_extract) {
-    protocol = 1
-    session = 1
-    extractedata <- loaddata(path = rawdatadir, brand = brand, 
-                             protocol = protocol, session = session, protocolfile=protocolfile)
-    cat(paste0("\nCheck dimensions of ", brand, ": Protocol ",protocol,"\n"))
-    checkdimensions(extractedata)
-    save_data(extractedata,outputdir=outputdir, objectname=paste0("_", brand, "_pro",protocol,"_ses", session))
-    rm(extractedata)
-  }
-} else {
-  for (brand in brands_to_extract) {
-    for (protocol in 2:3) {
-      for (session in 1:3) {
-        if (protocol == 2 | (protocol == 3 & session == 3) | (protocol == 3 & brand == "Axivity")) {
-          extractedata <- loaddata(path = rawdatadir, 
-                                   brand = brand, protocol = protocol, session = session, protocolfile=protocolfile)
-          cat(paste0("\nCheck dimensions of ", brand, ": Protocol ",protocol," session", session,"\n"))
-          checkdimensions(extractedata)
-          save(extractedata, file = paste0(outputdir, "/", brand, "_pro",protocol,"_ses", session))
-          rm(extractedata)
-        }
-      }
+brands_to_extract = c("Actigraph", "Activpal", "Axivity", "GENEActiv", "Acttrust")
+# To avoid loading all data at once as that will never be needed: don't include experiment "timer_check"
+experiments_to_extract <- "door" #c("ms_hfcr", "ms_lfcr", "ms_mfcr", "ms_hfmr", "ms_lfmr", "ms_bag", "door") #Does not work for box yet
+for (brand in brands_to_extract) {
+  for (experiment in experiments_to_extract) {
+    if (brand != "Axivity" & endsWith(experiment, "mr")) { #To avoid loading mixed dynamic range experiments for other devices
+      cat(paste0("\nThis device was not included in experiment:"), experiment)
+      next
+    } else{
+      extractedata <- loaddata(path = rawdatadir, 
+                                brand = brand, experiment = experiment, experimentfile = experimentfile)
+      cat(paste0("\nCheck dimensions of ", brand, ": Experiment ",experiment,"\n"))
+      checkdimensions(extractedata)
+      save(extractedata, file = paste0(outputdir, "/", brand, "_",experiment))
+      rm(extractedata)
     }
   }
 }
+

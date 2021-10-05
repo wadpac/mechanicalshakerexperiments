@@ -25,7 +25,7 @@ if (!dir.exists(calib_files)) {
 }
 for (function_file in dir(my_functions_folder, full.names = T)) source(function_file) #load functions
 
-sessionames = c("pro2_ses3") # only perform autocalibration based on session 3 because that is where non-movement was simulated
+sessionames = c("ms_mfcr") # only perform autocalibration based on session 3 because that is where non-movement was simulated
 overwrite= TRUE
 epochsize = 5
 averageperws3 = function(x,sf,epochsize) {
