@@ -3,9 +3,9 @@ autocalibration = function(data, sf) {
   # without temperature and without loading the data in blocks
   
   spherecrit=0.3
-  minloadcrit=72
+  minloadcrit=20
   printsummary=TRUE
-  windowsizes=c(5,600,600)
+  windowsizes=c(5,300,300)
   
   use.temp = FALSE
   # filename = unlist(strsplit(as.character(datafile),"/"))
@@ -101,7 +101,7 @@ autocalibration = function(data, sf) {
     meta_temp = meta_temp[-cut,]
   }
   nhoursused = (nrow(meta_temp) * 10)/3600
-  if (nrow(meta_temp) > (minloadcrit-21)) {  # enough data for the sphere?
+  if (nrow(meta_temp) > minloadcrit) {  # enough data for the sphere?
     meta_temp = meta_temp[-1,]
     #select parts with no movement
     sdcriter = 0.013 # NO IDEA WHAT REST NOISE IS FOR MOVISENS....test needed

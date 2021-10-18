@@ -2,11 +2,9 @@
 rm(list=ls()) # freeing up memory
 # user input required:
 shaker_experiments_folder = "/home/vincent/data/VUMC/shaker_experiments"
-# Following lines only needed when running debugging code:
-
 
 #----------------------------------------------------------------
-protocolfile = paste0(shaker_experiments_folder, "/data_description_V4.xlsx")
+protocolfile = paste0(shaker_experiments_folder, "/unstructured_raw_data/data_description_V4.xlsx")
 outputdir = paste0(shaker_experiments_folder, "/structured_raw_data")
 rawdatadir = paste0(shaker_experiments_folder, "/unstructured_raw_data")
 
