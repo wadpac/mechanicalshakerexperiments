@@ -5,7 +5,7 @@ graphics.off()
 shaker_experiments_folder = "~/data/VUMC/shaker_experiments"
 
 # TO DO: Check which GENEActiv was removed towards end of one of the experiments, and make sure data is not included
-
+epochsize=15
 
 #====================================================================================
 # Specify file paths
@@ -22,9 +22,8 @@ if (!dir.exists(calib_files)) {
 # Load relevant files, apply calibration correction coefficients, and apply metrics
 fns = dir(extracted_data_path, full.names = TRUE)
 outputfile = paste0(non_wear_analyses_output, "/explore_non_wear_metrics.RData")
-sessionames = c("pro2_ses1", "pro2_ses2", "pro2_ses3") # "pro3_ses3" #<= ignore protocol session 3 for now as this did not have flat orientation
+sessionames =  c("pro2_ses1", "pro2_ses2", "pro2_ses3", "pro3_ses1", "pro3_ses2") # "pro3_ses3" #<= ignore protocol session 3 for now as this did not have flat orientation
 overwrite= FALSE
-epochsize = 5
 averageperws3 = function(x,sf,epochsize) {
   x2 =cumsum(c(0,x))
   select = seq(1,length(x2),by=sf*epochsize)
@@ -109,7 +108,7 @@ if (!file.exists(outputfile) | overwrite == TRUE) {
           if (length(negativ_shakef) > 0) {
             tmp$shaking_frequency[negativ_shakef] = -100000
           }
-          shakefreq = averageperws3(x= tmp$shaking_frequency,sf,epochsize=5)
+          shakefreq = averageperws3(x= tmp$shaking_frequency,sf,epochsize=epochsize)
           shakefreq[which(shakefreq < 0)] = -1
           tmp = tmp[,-which(colnames(tmp) == "shaking_frequency")]
           #-----------------------------------------------------------
@@ -131,13 +130,13 @@ if (!file.exists(outputfile) | overwrite == TRUE) {
                 cat(". ")
                 EN_raw = sqrt(tmp$X^2 + tmp$Y^2 + tmp$Z^2)
                 EN_raw = EN_raw[1:(floor(nrow(tmp)/sf)*sf)]
-                EN = averageperws3(EN_raw,sf,epochsize=5)
+                EN = averageperws3(EN_raw,sf,epochsize=epochsize)
                 
-                SDX = zoo::rollapply(data = tmp$X, width=sf*5, by= sf*5, FUN = sd, na.rm = TRUE)
-                SDY = zoo::rollapply(data = tmp$Y, width=sf*5, by= sf*5,  FUN = sd, na.rm = TRUE)
-                SDZ = zoo::rollapply(data = tmp$Z, width=sf*5, by= sf*5,  FUN = sd, na.rm = TRUE)
+                SDX = zoo::rollapply(data = tmp$X, width=sf*epochsize, by= sf*epochsize, FUN = sd, na.rm = TRUE)
+                SDY = zoo::rollapply(data = tmp$Y, width=sf*epochsize, by= sf*epochsize,  FUN = sd, na.rm = TRUE)
+                SDZ = zoo::rollapply(data = tmp$Z, width=sf*epochsize, by= sf*epochsize,  FUN = sd, na.rm = TRUE)
                 
-                TIMESTAMPS = tmp$HEADER_TIME_STAMP[seq(1,nrow(tmp), by = sf*5)]
+                TIMESTAMPS = tmp$HEADER_TIME_STAMP[seq(1,nrow(tmp), by = sf*epochsize)]
                 
                 #===================================================================
                 # Standardise size of objects and put in single data.frame
@@ -160,7 +159,7 @@ if (!file.exists(outputfile) | overwrite == TRUE) {
                                brand = brand, sf = sf,
                                EN = EN, SDX = SDX, SDY = SDY, 
                                SDZ = SDZ, ses_name = ses_name,
-                               sn = sn, shakefreq = shakefreq)
+                               sn = sn, DR = DR,shakefreq = shakefreq)
                 negativ_shakef = which(S$shakefreq < 0)
                 S = S[-negativ_shakef,]
                 combineddata[[cnt]] = S # store result for later use
@@ -176,7 +175,7 @@ if (!file.exists(outputfile) | overwrite == TRUE) {
             sn_skip = TRUE
           }
           if (sn_skip == TRUE) {
-            print(paste0(sn, " ignored")) 
+            cat(paste0(sn, " ignored ")) 
             sn_ignored = c(sn_ignored, paste0(sn,"_", brand,"_", ses_name))
           }
         }
@@ -204,12 +203,12 @@ DATA$brand[CLE] = "ActigraphCLE"
 #========================================================================================
 # Aggregate epochs to one value per shaker frequency x serial number combination.
 D = aggregate(x = DATA[,c("EN", "SDX", "SDY", "SDZ", "shakefreq")],
-              by = list(DATA$HEADER_TIME_STAMP, DATA$brand, DATA$ses_name, DATA$sn, DATA$sf), FUN = mean)
-colnames(D)[1:5] = c("time", "brand", "ses_name", "sn", "sf")
+              by = list(DATA$HEADER_TIME_STAMP, DATA$brand, DATA$ses_name, DATA$sn, DATA$sf, DATA$DR), FUN = mean)
+colnames(D)[1:6] = c("time", "brand", "ses_name", "sn", "sf", "DR")
 # Remove epochs with rare frequencies, these are the frequencies
 # that result from the frequency transitions
 Dnew = c()
-for (ses_name in c("pro2_ses1", "pro2_ses2", "pro2_ses3")) { #"pro3_ses3" ,
+for (ses_name in c("pro2_ses1", "pro2_ses2", "pro2_ses3", "pro3_ses1", "pro3_ses2")) { #"pro3_ses3" ,
   Dtmp = D[which(D$ses_name == ses_name),]
   FT = table(Dtmp$shakefreq)
   conditions_to_exclude = names(FT[which(as.numeric(FT) < 12)])
@@ -227,23 +226,56 @@ D = Dnew
 D$SDX = D$SDX * 1000
 D$SDY = D$SDY * 1000
 D$SDZ = D$SDZ * 1000
+
+NN = 100
+compdf = data.frame(median_sd_x=numeric(NN),
+                    median_sd_y=numeric(NN),
+                    median_sd_z=numeric(NN),
+                    mean_sd_x=numeric(NN),
+                    mean_sd_y=numeric(NN),
+                    mean_sd_z=numeric(NN),
+                    p95_sd_x=numeric(NN),
+                    p95_sd_y=numeric(NN),
+                    p95_sd_z=numeric(NN),
+                    sd_sdx=numeric(NN),
+                    sd_sdy=numeric(NN),
+                    sd_sdz=numeric(NN),
+                    N=numeric(NN),
+                    sf=numeric(NN),
+                    dynrange=numeric(NN),
+                    brand=character(NN))
+cnt = 1
 for (brand in c("GENEActiv","Axivity","ActigraphCLE","ActigraphMOS", "Activpal")) {
-  for (samfre in unique(D$sf)) {
-    selection = which(D$brand==brand &D$shakefreq==0 & D$sf == samfre)
-    mx = mean(D$SDX[selection], na.rm = T)
-    my = mean(D$SDY[selection], na.rm = T)
-    mz = mean(D$SDZ[selection], na.rm = T)
-    sx = sd(D$SDX[selection], na.rm = T)
-    sy = sd(D$SDY[selection], na.rm = T)
-    sz = sd(D$SDZ[selection], na.rm = T)
-    if (!is.nan(mx)) {
-      print(paste0("brand: ", brand," sf: ", samfre))
-      print(paste0("sd x ", round(mx, digits = 1), " ", round(sx, digits = 1)))
-      print(paste0("sd(y) ", round(my, digits = 1), " ", round(sy, digits = 1)))
-      print(paste0("sd(z) ", round(mz, digits = 1), " ", round(sz, digits = 1)))
+  for (dynrange in unique(D$DR)) {
+    for (samfre in unique(D$sf)) {
+      selection = which(D$brand==brand & D$shakefreq==0 & D$sf == samfre & D$DR == dynrange)
+      mx = median(D$SDX[selection], na.rm = T)
+      if (!is.na(mx)) {
+        compdf$median_sd_x[cnt] = round(median(D$SDX[selection], na.rm = T), digits = 2)
+        compdf$median_sd_y[cnt] = round(median(D$SDY[selection], na.rm = T), digits = 2)
+        compdf$median_sd_z[cnt] = round(median(D$SDZ[selection], na.rm = T), digits = 2)
+        compdf$mean_sd_x[cnt] = round(mean(D$SDX[selection], na.rm = T), digits = 2)
+        compdf$mean_sd_y[cnt] = round(mean(D$SDY[selection], na.rm = T), digits = 2)
+        compdf$mean_sd_z[cnt] = round(mean(D$SDZ[selection], na.rm = T), digits = 2)
+        compdf$p95_sd_x[cnt] = round(quantile(D$SDX[selection], probs = 0.95, na.rm = T), digits = 2)
+        compdf$p95_sd_y[cnt] = round(quantile(D$SDY[selection], probs = 0.95, na.rm = T), digits = 2)
+        compdf$p95_sd_z[cnt] = round(quantile(D$SDZ[selection], probs = 0.95, na.rm = T), digits = 2)
+        compdf$sd_sdx[cnt] = round(sd(D$SDX[selection], na.rm = T), digits = 2)
+        compdf$sd_sdy[cnt] = round(sd(D$SDY[selection], na.rm = T), digits = 2)
+        compdf$sd_sdz[cnt] = round(sd(D$SDZ[selection], na.rm = T), digits = 2)
+        compdf$dynrange[cnt] = dynrange
+        compdf$sf[cnt] = samfre
+        compdf$brand[cnt] = brand
+        compdf$N[cnt] = length(selection)
+        cnt=cnt+1
+      }
     }
   }
 }
+compdf = compdf[-c(cnt:nrow(compdf)),]
+compdf = compdf[order(compdf$brand,compdf$sf),]
+write.csv(x = compdf, file = paste0("~/data/VUMC/shaker_experiments/non_wear_analyses/stdev_epoch",
+                                    epochsize, "sec_nonwear.csv"), row.names = FALSE)
 kkkk
 #=============================================================================
 # Assess whether metrics differ across brands with repeated measures ANOVA
