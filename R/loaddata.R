@@ -19,7 +19,9 @@ loaddata <- function(path, brand, experiment, windows = TRUE, experimentfile, ac
     brand <- "MOX_exportedCSV/exportedCSV/MOX" 
   }
   if (brand %in% c("Acttrust", "Fitbit") == FALSE) {
-    if (brand == "Activpal" & endsWith(experiment, "cr")){
+    if (experiment == "box"){
+      folder <- paste0(brand, paste0("_", "ms_mfcr"))
+    } else if (brand == "Activpal" & endsWith(experiment, "cr")){
       folder <- paste0(brand, paste0("_", "ms_cr")) 
     } else if((brand == "Actigraph" | brand == "Activpal" | brand == "GENEActiv" | brand == "Shimmer") 
               && (endsWith(experiment, "door") | endsWith(experiment, "bag"))){

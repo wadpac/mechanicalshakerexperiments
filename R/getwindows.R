@@ -89,7 +89,7 @@ getwindows <- function(brand, experiment, path, data, experimentfile) {
       if(experiment == "timer_check" | experiment == "door" | experiment == "box") {
         validdata = which(is.na(selected_data$shaking_frequency))
       } else {
-        validdata = which(selected_data$shaking_frequency != -1) #Doesn't work for experiment timer_check, door and box, door and box as shaking frequency is NA
+        validdata = which(selected_data$shaking_frequency != -1) #Doesn't work for experiment timer_check, door and box as shaking frequency is NA
       }      
       if (validdata[1] != 1 & validdata[length(validdata)] != nrow(selected_data)) {
         MissingFreqs = c(1:(validdata[1]-1),
