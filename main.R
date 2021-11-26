@@ -2,7 +2,7 @@
 rm(list=ls()) # freeing up memory
 # user input required:
 # shaker_experiments_folder = "/Users/annelindelettink/Documents/Work MacBook Pro Annelinde/Mechanical Shaker Machine"
-shaker_experiments_folder = "/home/vincent/data/VUMC/shaker_experiments" 
+shaker_experiments_folder = "/home/vincent/data/VUMC/shaker_experiments"
 # Following lines only needed when running debugging code:
 
 #----------------------------------------------------------------
@@ -17,7 +17,7 @@ if (!dir.exists(rawdatadir)) {
 }
 # source functions directly from file, to be replaced by package installation:
 # my_functions_folder =   "/Users/annelindelettink/Documents/Work MacBook Pro Annelinde/Mechanical Shaker Machine/mechanicalshakerexperiments/R"
-my_functions_folder =   "/home/vincent/projects/mechanicalshakerexperiments/R" 
+my_functions_folder =   "/home/vincent/projects/mechanicalshakerexperiments/R"
 for (function_file in dir(my_functions_folder, full.names = T)) source(function_file) #load functions
 
 
@@ -60,7 +60,7 @@ for (brand in brands_to_extract) {
       cat(paste0("\nThis device was not included in experiment:"), experiment)
       next
     } else{
-      extractedata <- loaddata(path = rawdatadir, 
+      extracteddata <- loaddata(path = rawdatadir,
                                 brand = brand, experiment = experiment, experimentfile = experimentfile)
       cat(paste0("\nCheck dimensions of ", brand, ": Experiment ",experiment,"\n"))
       checkdimensions(extractedata)
@@ -69,4 +69,3 @@ for (brand in brands_to_extract) {
     }
   }
 }
-

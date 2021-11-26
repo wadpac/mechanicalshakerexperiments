@@ -7,6 +7,12 @@ getwindows <- function(brand, experiment, path, data, experimentfile) {
   start_time <- c()
   end_time <- c()
   tz = "Europe/Amsterdam"
+  if (experiment == "box") {
+    start <- strftime(toString(paste(description$date[1], description$start_time[1]), sep = " "), format = "%Y-%m-%d %H:%M:%OS2", tz = tz)
+    start_time <- start
+    end <- strftime(toString(paste(description$date[1], description$end_time[1]), sep = " "), format = "%Y-%m-%d %H:%M:%OS2", tz = tz)
+    end_time <- end
+  }
   if (experiment == "timer_check") {
     if (brand == "Actigraph" | brand == "Activpal") {
       selection <- description[description$accelerometers_used == "activpal_actigraph",]
@@ -74,13 +80,17 @@ getwindows <- function(brand, experiment, path, data, experimentfile) {
         }
       }
       # DO NOT DELETE ALL TIME SEGMENTS WITHOUT SHAKING FREQUENCY
-      # BECAUS THIS WILL CAUSE ARTIFACT IN SIGNAL DURING TRANSITIONS
+      # BECAUSE THIS WILL CAUSE ARTIFACT IN SIGNAL DURING TRANSITIONS
       # ONLY DELETE IIME BEFORE FIRST AND AFTER LAST CONDITION
       # MissingFreqs = which(selected_data$shaking_frequency == -1)
       # if (length(MissingFreqs) > 0) {
       #   selected_data = selected_data[-MissingFreqs,]
       # }
-      validdata = which(selected_data$shaking_frequency != -1)
+      if(experiment == "timer_check" | experiment == "door" | experiment == "box") {
+        validdata = which(is.na(selected_data$shaking_frequency))
+      } else {
+        validdata = which(selected_data$shaking_frequency != -1) #Doesn't work for experiment timer_check, door and box as shaking frequency is NA
+      }      
       if (validdata[1] != 1 & validdata[length(validdata)] != nrow(selected_data)) {
         MissingFreqs = c(1:(validdata[1]-1),
                          (validdata[length(validdata)]+1):nrow(selected_data))
