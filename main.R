@@ -51,9 +51,9 @@ checkdimensions = function(x) {
   }
 }
 options(digits.secs = 7)
-brands_to_extract = c("GENEActiv", "Actigraph", "Activpal", "Axivity") #, "Acttrust")
+brands_to_extract = c("Actigraph", "GENEActiv", "Axivity", "Activpal") # "Acttrust")
 # To avoid loading all data at once as that will never be needed: don't include experiment "timer_check"
-experiments_to_extract <- c("ms_hfcr", "ms_lfcr", "ms_mfcr", "ms_hfmr", "ms_lfmr") #, "ms_bag") #Does not work for box yet
+experiments_to_extract <- c("box", "ms_hfcr", "ms_lfcr", "ms_mfcr", "ms_hfmr", "ms_lfmr") #, "ms_bag") #Does not work for box yet
 for (brand in brands_to_extract) {
   for (experiment in experiments_to_extract) {
     if (brand != "Axivity" & endsWith(experiment, "mr")) { #To avoid loading mixed dynamic range experiments for other devices
@@ -63,9 +63,9 @@ for (brand in brands_to_extract) {
       extracteddata <- loaddata(path = rawdatadir,
                                 brand = brand, experiment = experiment, experimentfile = experimentfile)
       cat(paste0("\nCheck dimensions of ", brand, ": Experiment ",experiment,"\n"))
-      checkdimensions(extractedata)
-      save(extractedata, file = paste0(outputdir, "/", brand, "_",experiment, ".RData"))
-      rm(extractedata)
+      checkdimensions(extracteddata)
+      save(extracteddata, file = paste0(outputdir, "/", brand, "_",experiment, ".RData"))
+      rm(extracteddata)
     }
   }
 }
