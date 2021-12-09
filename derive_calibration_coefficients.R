@@ -25,7 +25,7 @@ if (!dir.exists(calib_files)) {
 }
 for (function_file in dir(my_functions_folder, full.names = T)) source(function_file) #load functions
 
-sessionames = c("pro2_ses3") # only perform autocalibration based on session 3 because that is where non-movement was simulated
+sessionames = c("box") # only perform autocalibration based on session 3 because that is where non-movement was simulated
 overwrite= TRUE
 epochsize = 5
 averageperws3 = function(x,sf,epochsize) {
@@ -33,6 +33,14 @@ averageperws3 = function(x,sf,epochsize) {
   select = seq(1,length(x2),by=sf*epochsize)
   x3 = diff(x2[round(select)]) / abs(diff(round(select)))
 }
+
+# define object to keep track of calibration succesrate per brand
+success_log = list(Actigraph = c(), Axivity = c(), GENEActiv = c(), Activpal = c())
+update_success_log = function(brand, success_log, success) {
+  success_log[[brand]] = c(success_log[[brand]], success)
+  return(success_log)
+}
+# loop over sessions and data files to perform auto-calibration procedure
 for (ses_name in sessionames) { #
   ses = grep(basename(fns), pattern = ses_name)
   for (fn in fns[ses]) {
@@ -47,14 +55,14 @@ for (ses_name in sessionames) { #
     } else if (length(grep(fn, pattern = "Activpal")) > 0) {
       brand = "Activpal"
     }
-    for (i in 1:length(extractedata$data)) {
-      tmp = extractedata$data[[i]]
+    for (i in 1:length(extracteddata$data)) {
+      tmp = extracteddata$data[[i]]
       if (length(tmp) > 0) {
         # apply aggregation function
         # check that this goes well for Axivity AX6
-        DR = as.numeric(extractedata$specifications[i, "dynamic_range"])
-        sf = as.numeric(extractedata$specifications[i, "sampling_frequency"])
-        sn = as.character(extractedata$specifications[i, "serial_number"])
+        DR = as.numeric(extracteddata$specifications[i, "dynamic_range"])
+        sf = as.numeric(extracteddata$specifications[i, "sampling_frequency"])
+        sn = as.character(extracteddata$specifications[i, "serial_number"])
         if (brand == "Actigraph" | brand == "Activpal") {
           tmp$time = as.POSIXct(tmp$time, origin = "1970-01-01", tz="Europe/Amsterdam")
           tmp = tmp[, c("time","X","Y","Z","shaking_frequency")] #,"shaking_frequency"
@@ -70,11 +78,22 @@ for (ses_name in sessionames) { #
         shakefreq[which(shakefreq < 0)] = -1
         tmp = tmp[,-which(colnames(tmp) == "shaking_frequency")]
         # apply autocalibration:
-        C = autocalibration(data=tmp, sf)
+        C = autocalibration(data=tmp, sf, printsummary = FALSE)
         # store results
         calib = list(scale=C$scale, offset=C$offset, sn=sn, C=C)
         save(calib, file = paste0(calib_files, "/calib_sn_",sn,".RData"))
+        if (all(C$offset == c(0,0,0)) & all(C$scale == c(1,1,1))) {
+          success_log = update_success_log(brand, success_log, success = FALSE)
+        } else {
+          success_log = update_success_log(brand, success_log, success = TRUE)
+        }
+      } else {
+        success_log = update_success_log(brand, success_log, success = FALSE)
       }
     }
   }
+}
+for (brand in c( "Actigraph", "GENEActiv", "Axivity", "Activpal")) {
+  cat(paste0("\nSuccessful calibrations for ", brand,"\n"))
+  print(table(success_log[[brand]]))
 }

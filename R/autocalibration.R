@@ -1,10 +1,10 @@
-autocalibration = function(data, sf) {
+autocalibration = function(data, sf, printsummary= TRUE) {
   # simplified version of auto-calibration from R package GGIR
   # without temperature and without loading the data in blocks
   
   spherecrit=0.3
   minloadcrit=72
-  printsummary=TRUE
+  # printsummary=TRUE
   windowsizes=c(5,600,600)
   
   use.temp = FALSE
