@@ -1,8 +1,8 @@
 ### Load data and select windows
 rm(list=ls()) # freeing up memory
 # user input required:
-# shaker_experiments_folder = "/Users/annelindelettink/Documents/Work MacBook Pro Annelinde/Mechanical Shaker Machine"
-shaker_experiments_folder = "/home/vincent/data/VUMC/shaker_experiments"
+shaker_experiments_folder = "/Users/annelindelettink/Documents/Work MacBook Pro Annelinde/Mechanical Shaker Machine"
+#shaker_experiments_folder = "/home/vincent/data/VUMC/shaker_experiments"
 # Following lines only needed when running debugging code:
 
 #----------------------------------------------------------------
@@ -16,8 +16,8 @@ if (!dir.exists(rawdatadir)) {
               "raw accelerometer files are stored inside a folder named unstructured_raw_data."))
 }
 # source functions directly from file, to be replaced by package installation:
-# my_functions_folder =   "/Users/annelindelettink/Documents/Work MacBook Pro Annelinde/Mechanical Shaker Machine/mechanicalshakerexperiments/R"
-my_functions_folder =   "/home/vincent/projects/mechanicalshakerexperiments/R"
+my_functions_folder =   "/Users/annelindelettink/Documents/Work MacBook Pro Annelinde/Mechanical Shaker Machine/mechanicalshakerexperiments/R"
+#my_functions_folder =   "/home/vincent/projects/mechanicalshakerexperiments/R"
 for (function_file in dir(my_functions_folder, full.names = T)) source(function_file) #load functions
 
 
@@ -51,7 +51,7 @@ checkdimensions = function(x) {
   }
 }
 options(digits.secs = 7)
-brands_to_extract = c("Actigraph", "GENEActiv", "Axivity", "Activpal") # "Acttrust")
+brands_to_extract = "Acttrust" #c("Actigraph", "GENEActiv", "Axivity", "Activpal") # "Acttrust")
 # To avoid loading all data at once as that will never be needed: don't include experiment "timer_check"
 experiments_to_extract <- c("box", "ms_hfcr", "ms_lfcr", "ms_mfcr", "ms_hfmr", "ms_lfmr") #, "ms_bag") #Does not work for box yet
 for (brand in brands_to_extract) {

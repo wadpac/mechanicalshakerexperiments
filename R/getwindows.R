@@ -65,7 +65,7 @@ getwindows <- function(brand, experiment, path, data, experimentfile) {
           etime = as.POSIXlt(end_time[w], tz = tz)
         } else if (brand == "Acttrust") {
           stime = as.POSIXlt(start_time[w], tz = tz)
-          etime = as.POSIXct(end_time[w], tz = tz)
+          etime = as.POSIXlt(end_time[w], tz = tz)
         } else if(brand == "Axivity") {
           stime = as.POSIXct(start_time[w], tz = tz)
           etime = as.POSIXct(end_time[w], tz = tz)

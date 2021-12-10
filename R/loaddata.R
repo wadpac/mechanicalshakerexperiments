@@ -82,6 +82,8 @@ loaddata <- function(path, brand, experiment, windows = TRUE, experimentfile, ac
         rawdata = rawdata[,c("time", "X", "Y", "Z")]
       } else if(brand == "Acttrust") {
         rawdata <- read.csv(paste(file_path, file_list[i], sep = "/"), sep = ";", skip = 25)
+        rawdata$time <- strptime(rawdata$DATE.TIME, format = "%d/%m/%Y %H:%M:%OS", tz = tz)
+        rawdata = rawdata[,c("time", "PIM", "PIMn", "TAT", "TATn", "ZCM", "ZCMn")] #Select variables
       } else if(brand == "Axivity") {
         rawdata <- g.cwaread(paste(file_path, file_list[i], sep = "/"), start = 1, end = 1000000, desiredtz = tz, interpolationType=2)
         # rawdata = rawdata$data # ignore header already at this stage

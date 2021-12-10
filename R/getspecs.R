@@ -22,6 +22,11 @@ getspecs <- function(brand, data) {
       sampling_frequency <- c(sampling_frequency, 20)
       dynamic_range <- c(dynamic_range, 2)
     }
+    if(brand == "Acttrust") {#no information available in the data 
+      serial_number <- c(serial_number, strsplit(strsplit(names(data[data_file]), "_")[[1]][2], ".txt")[[1]][1])
+      sampling_frequency <- c(sampling_frequency, 30)
+      dynamic_range <- c(dynamic_range, NA) #What is the dynamic range?
+    }
     if(brand == "Axivity"){
       head <- data[[data_file]]$header
       serial_number <- c(serial_number, data[[data_file]]$header$uniqueSerialCode)
