@@ -25,7 +25,7 @@ getwindows <- function(brand, experiment, path, data, experimentfile) {
     end <- strftime(paste0(selection$date[nrow(selection)], selection$start_time[nrow(selection)]), format = "%Y-%m-%d %H:%M:%OS2", tz = tz)
     end_time <- end
   }
-  if (startsWith(experiment, "ms")) { #does not work yet for extracting data for door and box experiment!
+  if (startsWith(experiment, "ms")) { #does not work yet for extracting data for door experiment
     for (r in 1:nrow(description)) {
       if(startsWith(description$accelerometers_used[r], "all") || (brand == "Axivity" & description$accelerometers_used[r] == "axivity")){
         start <- strftime(toString(paste(description$date[r], description$start_time[r]), sep = " "), format = "%Y-%m-%d %H:%M:%OS2", tz = tz)
@@ -72,6 +72,9 @@ getwindows <- function(brand, experiment, path, data, experimentfile) {
         } else if(brand == "GENEActiv") {
           stime = as.POSIXct(start_time[w], tz = tz)
           etime = as.POSIXct(end_time[w], tz = tz)
+        } else if(brand == "MOX") {
+          stime = as.POSIXct(start_time[w], tz = tz)
+          etime = as.POSIXct(end_time[w], tz = tz)
         }
         segment = which(selected_data$time >= stime & selected_data$time < etime)
         if(length(segment) > 0) {
@@ -89,7 +92,7 @@ getwindows <- function(brand, experiment, path, data, experimentfile) {
       if(experiment == "timer_check" | experiment == "door" | experiment == "box") {
         validdata = which(is.na(selected_data$shaking_frequency))
       } else {
-        validdata = which(selected_data$shaking_frequency != -1) #Doesn't work for experiment timer_check, door and box as shaking frequency is NA
+        validdata = which(selected_data$shaking_frequency != -1) #Doesn't work for experiment timer_check, door as shaking frequency is NA
       }      
       if (validdata[1] != 1 & validdata[length(validdata)] != nrow(selected_data)) {
         MissingFreqs = c(1:(validdata[1]-1),

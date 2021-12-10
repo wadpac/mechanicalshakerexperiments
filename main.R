@@ -6,7 +6,7 @@ shaker_experiments_folder = "/Users/annelindelettink/Documents/Work MacBook Pro 
 # Following lines only needed when running debugging code:
 
 #----------------------------------------------------------------
-experimentfile = paste0(shaker_experiments_folder, "/unstructured_raw_data/data_description_V5.xlsx")
+experimentfile = paste0(shaker_experiments_folder, "/unstructured_raw_data/data_description_V6.xlsx")
 outputdir = paste0(shaker_experiments_folder, "/structured_raw_data")
 rawdatadir = paste0(shaker_experiments_folder, "/unstructured_raw_data")
 
@@ -51,7 +51,7 @@ checkdimensions = function(x) {
   }
 }
 options(digits.secs = 7)
-brands_to_extract = "Acttrust" #c("Actigraph", "GENEActiv", "Axivity", "Activpal") # "Acttrust")
+brands_to_extract = "MOX" #c("Actigraph", "GENEActiv", "Axivity", "Activpal", "Acttrust") # "Shimmer")
 # To avoid loading all data at once as that will never be needed: don't include experiment "timer_check"
 experiments_to_extract <- c("box", "ms_hfcr", "ms_lfcr", "ms_mfcr", "ms_hfmr", "ms_lfmr") #, "ms_bag") #Does not work for box yet
 for (brand in brands_to_extract) {

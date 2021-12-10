@@ -39,6 +39,17 @@ getspecs <- function(brand, data) {
       sampling_frequency <- c(sampling_frequency, head[which(rownames(head) == "Measurement_Frequency"),])
       dynamic_range <- c(dynamic_range, 8)
     }
+    if(brand == "MOX") {#No information available in the data itself, but in the configuration sheet of data description file
+      configurations <- read.xls(experimentfile, header = TRUE, sheet = 2)
+      if(experiment == "box") {
+        serial_number <- c(serial_number, configurations$serial_number[which(configurations$experiment == "ms_mfcr" & configurations$number == data_file)])
+        sampling_frequency <- c(sampling_frequency, configurations$sample_rate[which(configurations$experiment == "ms_mfcr" & configurations$number == data_file)])
+      } else {
+        serial_number <- c(serial_number, configurations$serial_number[which(configurations$experiment == experiment & configurations$number == data_file)])
+        sampling_frequency <- c(sampling_frequency, configurations$sample_rate[which(configurations$experiment == experiment & configurations$number == data_file)])
+      }
+      dynamic_range <- c(dynamic_range, NA) #What is the dynamic range?
+    }
   }
   specifications <- cbind(serial_number, sampling_frequency, dynamic_range)
   

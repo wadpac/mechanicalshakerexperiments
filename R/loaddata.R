@@ -95,6 +95,12 @@ loaddata <- function(path, brand, experiment, windows = TRUE, experimentfile, ac
         rawdata$data.out$time = as.POSIXlt(rawdata$data.out$time-3600, desiredtz = tz, origin = "1970-01-01")
       } else if (brand == "MOX") {
         rawdata <- read.csv(paste(file_path, file_list[i], sep = "/")) 
+        # We may have configured device relative to UTC, which is 1 hour earlier, therefore subtract 3600; 86400 = number of s in 1 day to convert Time Number
+        timestamps <- format(as.POSIXct((rawdata$DateTimeNumber * 86400) - 3600, origin = "1970-01-01", tz = tz), "%H:%M:%OS")
+        # Date cannot be converted correctly, but this can be derived from the filenames
+        date <- lubridate::ymd(strsplit(strsplit(file_list[i], "_")[[1]][2], ".csv")[[1]])
+        rawdata$time <- as.POSIXct(paste(rep(date, length(timestamps)), timestamps), format="%Y-%m-%d %H:%M:%OS")
+        rawdata <- rawdata[, c("time", "AccX", "AccY", "AccZ")]
       } else if (brand == "Shimmer") {
         rawdata <- read.csv(paste(file_path, file_list[i], sep = "/"), nrow = 10, skip = 1, sep = '\t')
       } else {
