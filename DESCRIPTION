@@ -1,0 +1,24 @@
+Package: mechanicalshakerexperiments
+Type: Package
+Title: Mechanicalshakerexperiments
+Version: 0.0-1
+Date: 2021-12-24
+Authors@R: c(person(given = "Annelinde",
+                    family = "Lettink",
+                    role = c("aut","cre"),
+                    email = "a.lettink@amsterdamumc.nl"),
+             person(given = "Vincent",
+                    family = "van Hees",
+                    role=c("aut"),
+                    email="v.vanhees@accelting.com"))
+Maintainer: Annelinde Lettink <a.lettink@amsterdamumc.nl>
+Description: For processesing accelerometer data generated in the mechanical shaker experiments.
+URL: https://github.com/wadpac/mechanicalshakerexperiments
+License: Apache License version 2.0 | file LICENSE
+Suggests: testthat, covr, knitr, rmarkdown
+Imports: gdata, doParallel, foreach, remotes, GENEAread, GGIR, read.gt3x, data.table, lubridate, signal, zoo
+Depends: stats, utils, R (>= 3.5.0)
+NeedsCompilation: no
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.1.2
+Encoding: UTF-8

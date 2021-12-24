@@ -1,5 +1,17 @@
+#' applymetrics
+#'
+#' @description 'applymetrics' adaptation of the g.applymetrics function in GGIR
+#'
+#' @param data Three column acceleration time series
+#' @param n Order of frequency filter to be applied
+#' @param sf Sample frequency (Hertz)
+#' @param lb Lower boundary (Hertz) of frequency filter
+#' @param hb Higher boundary (Hertz) of frequency filter
+#' @param epochsize epochsize to be used
+#' @return Data.frame with acceleration metrics values at epoch level
+#' @export
+#' 
 applymetrics = function(data,n=4,sf, lb=0.2, hb=15, epochsize=5){
-  # This is an adaptation of the g.applymetrics function in GGIR
   allmetrics = c()
   averageperepochsize = function(x,sf,epochsize) {
     x2 =cumsum(c(0,x))

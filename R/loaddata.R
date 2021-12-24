@@ -1,16 +1,23 @@
-## Function to read in the mechanical shaker data using:
-# path;
-# brand: one of c("Actigraph", "Activpal", "Acttrust", "Axivity", "GENEActiv", "MOX", "Shimmer", "Fitbit), 
-# experiment: one of c("timer_check", "ms_hfcr", "ms_lfcr", "ms_hfmr", "ms_lfmr", "ms_bag", "door", "box")
-# windows: TRUE then windows from the data_description file will be selected, FALSE: complete data file will be loaded;
-# actigraph_preprocessing: TRUE then sleepmode segments that jump by >1 sec are filled up using the function fill_sleep
+#' loaddata
+#'
+#' @description 'loaddata' Loads data
+#'
+#' @param path Path to the root of the experimental data (rawdatadir)
+#' @param brand Sensor brand: "Actigraph", "Activpal", "Acttrust", "Axivity", "GENEActiv", or "MOX".
+#' @param experiment Experiment to load: "timer_check", "ms_hfcr", "ms_lfcr", "ms_hfmr", "ms_lfmr", or "box".
+#' @param windows Boolean, if TRUE then windows from the data_description file will be selected, FALSE: complete data file will be loaded;
+#' @param experimentfile xlsx file with protocol description
+#' @param actigraph_preprocessing Boolean,if  TRUE then sleepmode segments that jump by >1 sec are filled up using the function fill_sleep
+#' @return A list of: \item{data}{List of data.frames with the accelerometer time series where each list item represents 1 recording} \item{specifications}{Specifications for each recording}
+#' @importFrom utils read.csv
+#' @importFrom lubridate ymd
+#' @importFrom GGIR g.cwaread
+#' @importFrom GENEAread read.bin
+#' @importFrom read.gt3x read.gt3x
+#' @import foreach
+#' @export
 
 loaddata <- function(path, brand, experiment, windows = TRUE, experimentfile, actigraph_preprocessing = TRUE) {
-  # Load required libraries
-  library(doParallel)
-  library(GGIR)
-  library(GENEAread)
-  library(read.gt3x)
   cat(paste0("\nAttempting to load ",brand, " | experiment: ", experiment, ":\n"))
   
   #------------------------------------------------------------
@@ -41,7 +48,7 @@ loaddata <- function(path, brand, experiment, windows = TRUE, experimentfile, ac
   # Get brand specific file extensions
   if (brand == "Actigraph") {
     pattern ="*.gt3x"
-  } else if (brand == "Activpal" | brand == "MOX" | brand == "Shimmer") {
+  } else if (brand == "Activpal" | brand == "MOX") {
     pattern ="*.csv"
   } else if (brand == "Acttrust") {
     pattern ="*.txt"
@@ -53,10 +60,17 @@ loaddata <- function(path, brand, experiment, windows = TRUE, experimentfile, ac
   #else {} #fitbit
   #------------------------------------------------------------
   # Get file list
-  file_path <- paste(path, folder, sep = "/")
+  # if(exists("folders")){ # commmented out because unclear where object folders should come from
+  #   file_path <- c()
+  #   file_path[1] <- paste(path, folders[1], sep = "/")
+  #   file_path[2] <- paste(path, folders[2], sep = "/")
+  # } else {
+    file_path <- paste(path, folder, sep = "/")
+  # }
+  
   if (length(file_path) == 0) {
     warning("\nNo recordings identified. Check folder path.")
-  }
+  } 
   
   file_list <- list.files(file_path, pattern = pattern, all.files = FALSE)
   cat(paste0("\nLooking inside: ",file_path," for ", pattern," files"))
@@ -68,9 +82,11 @@ loaddata <- function(path, brand, experiment, windows = TRUE, experimentfile, ac
   Ncores = cores[1]
   cl <- parallel::makeCluster(Ncores-2) #not to overload your computer
   doParallel::registerDoParallel(cl)
+  i = NULL
+  `%myinfix%` = foreach::`%dopar%`
   parallelLoad <- function(file_path, file_list, brand, experiment, windows, path) {
-    foreach(i = 1:length(file_list), .packages = c("read.gt3x", "GGIR", "GENEAread"), .export = "read.activpal") %dopar% {
-      # for (i in 1:length(file_list)) {
+    foreach::foreach(i = 1:length(file_list), .packages = c("read.gt3x", "GGIR", "GENEAread"),
+                     .export = "read.activpal")  %myinfix% {
       # Load in the data
       tz = "Europe/Amsterdam"
       if(brand == "Actigraph") {
@@ -82,19 +98,25 @@ loaddata <- function(path, brand, experiment, windows = TRUE, experimentfile, ac
         rawdata = rawdata[,c("time", "X", "Y", "Z")]
       } else if(brand == "Acttrust") {
         rawdata <- read.csv(paste(file_path, file_list[i], sep = "/"), sep = ";", skip = 25)
+        rawdata$time <- strptime(rawdata$DATE.TIME, format = "%d/%m/%Y %H:%M:%OS", tz = tz)
+        rawdata = rawdata[,c("time", "PIM", "PIMn", "TAT", "TATn", "ZCM", "ZCMn")] #Select variables
       } else if(brand == "Axivity") {
-        rawdata <- g.cwaread(paste(file_path, file_list[i], sep = "/"), start = 1, end = 1000000, desiredtz = tz, interpolationType=2)
+        rawdata <- GGIR::g.cwaread(paste(file_path, file_list[i], sep = "/"), start = 1, end = 1000000, desiredtz = tz, interpolationType=2)
         # rawdata = rawdata$data # ignore header already at this stage
       } else if (brand == "GENEActiv") {
-        rawdata <- read.bin(paste(file_path, file_list[i], sep = "/")) 
+        rawdata <- GENEAread::read.bin(paste(file_path, file_list[i], sep = "/")) 
         rawdata$data.out = as.data.frame(rawdata$data.out)
         colnames(rawdata$data.out)[1] = "time"
         # We may have configured device relative to UTC, which is 1 hour earlier, therefore subtract 3600
         rawdata$data.out$time = as.POSIXlt(rawdata$data.out$time-3600, desiredtz = tz, origin = "1970-01-01")
       } else if (brand == "MOX") {
         rawdata <- read.csv(paste(file_path, file_list[i], sep = "/")) 
-      } else if (brand == "Shimmer") {
-        rawdata <- read.csv(paste(file_path, file_list[i], sep = "/"), nrow = 10, skip = 1, sep = '\t')
+        # We may have configured device relative to UTC, which is 1 hour earlier, therefore subtract 3600; 86400 = number of s in 1 day to convert Time Number
+        timestamps <- format(as.POSIXct((rawdata$DateTimeNumber * 86400) - 3600, origin = "1970-01-01", tz = tz), "%H:%M:%OS")
+        # Date cannot be converted correctly, but this can be derived from the filenames
+        date <- lubridate::ymd(strsplit(strsplit(file_list[i], "_")[[1]][2], ".csv")[[1]])
+        rawdata$time <- as.POSIXct(paste(rep(date, length(timestamps)), timestamps), format="%Y-%m-%d %H:%M:%OS")
+        rawdata <- rawdata[, c("time", "AccX", "AccY", "AccZ")]
       } else {
       }# brand = Fitbit
       
@@ -152,7 +174,6 @@ loaddata <- function(path, brand, experiment, windows = TRUE, experimentfile, ac
       #if(actigraph_preprocessing = TRUE) {
       #data <- fill_sleepmode(rawdata, start, end)
       #}
-      # } # for loop
       return(rawdata)
     }
   }
@@ -160,8 +181,7 @@ loaddata <- function(path, brand, experiment, windows = TRUE, experimentfile, ac
   parallel::stopCluster(cl)
   #Get data specifications
   names(data) <- file_list
-  specifications <- getspecs(brand, data)
-  
+  specifications <- getspecs(brand, data, experimentfile, experiment)
   
   #Get and select windows
   if (windows == TRUE) {
