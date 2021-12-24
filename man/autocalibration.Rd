@@ -13,7 +13,7 @@ autocalibration(data, sf, printsummary = TRUE, brand)
 
 \item{printsummary}{Boolean to indicate whether calibration summary should be printed}
 
-\item{brands}{Character vector with sensor brands to consider, which may include: "Actigraph", "Activpal", "Acttrust", "Axivity", "GENEActiv", and "MOX".}
+\item{brand}{Character of sensor brand: "Actigraph", "Activpal", "Acttrust", "Axivity", "GENEActiv", or "MOX".}
 }
 \value{
 List of objects identical to g.calibrate function R package GGIR
