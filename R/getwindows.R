@@ -1,7 +1,23 @@
+#' getwindows
+#'
+#' @description 'getwindows' Called from within loaddata to extract specific time windows
+#'
+#' @param brand Sensor brand: "Actigraph", "Activpal", "Acttrust", "Axivity", "GENEActiv", or "MOX".
+#' @param experiment Experiment to load: "timer_check", "ms_hfcr", "ms_lfcr", "ms_hfmr", "ms_lfmr", or "box".
+#' @param path Path to the root of the experimental data (rawdatadir)
+#' @param data Data object
+#' @param experimentfile xlsx file with protocol description, defaults to file stored inside the code
+#' @return List of data.frames with the accelerometer time series where each list item represents 1 recording
+#' @importFrom gdata read.xls
+#' @export
+
+
 # Read in data description and select relevant information based on experiment
-getwindows <- function(brand, experiment, path, data, experimentfile) {
-  library(gdata)
-  description <- read.xls(experimentfile, header = TRUE)
+getwindows <- function(brand, experiment, path, data, experimentfile = c()) {
+  if (length(experimentfile) == 0) {
+    experimentfile = system.file("datadescription/data_description.xlsx", package = "mechanicalshakerexperiments")[1]
+  }
+  description <- gdata::read.xls(experimentfile, header = TRUE)
   description <- description[which(description$experiment == experiment),]
   # Calculate indices for the windows to select
   start_time <- c()

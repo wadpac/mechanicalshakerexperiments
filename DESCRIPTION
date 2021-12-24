@@ -1,16 +1,23 @@
 Package: mechanicalshakerexperiments
 Type: Package
-Title: mechanicalshakerexperiments
+Title: Mechanicalshakerexperiments
 Version: 0.0-1
 Date: 2021-12-24
-Authors@R: c(person("Vincent T","van Hees",role=c("aut","cre"),
-                    email="vincentvanhees@gmail.com"))
-Maintainer: Vincent T van Hees <vincentvanhees@gmail.com>
+Authors@R: c(person(given = "Annelinde",
+                    family = "Lettink",
+                    role = c("aut","cre"),
+                    email = "a.lettink@amsterdamumc.nl"),
+             person(given = "Vincent",
+                    family = "van Hees",
+                    role=c("aut"),
+                    email="v.vanhees@accelting.com"))
+Maintainer: Annelinde Lettink <a.lettink@amsterdamumc.nl>
 Description: For processesing accelerometer data generated in the mechanical shaker experiments.
-URL: https://github.com/wadpac/barcode-mapping
+URL: https://github.com/wadpac/mechanicalshakerexperiments
 License: Apache License version 2.0 | file LICENSE
-Suggests: testthat, SparseM, zoo, pawacc
-Depends: stats, utils, R (>= 3.5)
+Suggests: testthat, covr, knitr, rmarkdown
+Imports: gdata, doParallel, foreach, remotes, GENEAread, GGIR, read.gt3x, data.table, lubridate, signal, zoo
+Depends: stats, utils, R (>= 3.5.0)
 NeedsCompilation: no
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.2

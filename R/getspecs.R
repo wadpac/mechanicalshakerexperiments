@@ -1,11 +1,24 @@
-getspecs <- function(brand, data) {
-  #serial number
-  #sampling frequency 
-  #dynamic range
+#' getspecs
+#'
+#' @description 'getspecs' Called from within loaddata to extract recording specifications
+#'
+#' @param brand Sensor brand: "Actigraph", "Activpal", "Acttrust", "Axivity", "GENEActiv", or "MOX".
+#' @param data Data object
+#' @param experimentfile xlsx file with protocol description, defaults to file stored inside the code
+#' @param experiment Experiment to load: "timer_check", "ms_hfcr", "ms_lfcr", "ms_hfmr", "ms_lfmr", or "box".
+#' @return specifications, a data.frame with serial_number, sampling_frequency, and dynamic_range
+#' @importFrom gdata read.xls
+#' @export
+
+getspecs <- function(brand, data, experimentfile = c(), experiment) {
   specifications <- data.frame()
   serial_number <- c()
   sampling_frequency <- c()
   dynamic_range <- c()
+  
+  if (length(experimentfile) == 0) {
+    experimentfile = system.file("datadescription/data_description.xlsx", package = "mechanicalshakerexperiments")[1]
+  }
   for (data_file in 1:length(data)) {
     if(brand == "Actigraph") {
       head <- attributes(data[[data_file]])[setdiff(names(attributes(data[[data_file]])), c("dim", "dimnames", "time_index"))]
@@ -40,7 +53,7 @@ getspecs <- function(brand, data) {
       dynamic_range <- c(dynamic_range, 8)
     }
     if(brand == "MOX") {#No information available in the data itself, but in the configuration sheet of data description file
-      configurations <- read.xls(experimentfile, header = TRUE, sheet = 2)
+      configurations <- gdata::read.xls(experimentfile, header = TRUE, sheet = 2)
       if(experiment == "box") {
         serial_number <- c(serial_number, configurations$serial_number[which(configurations$experiment == "ms_mfcr" & configurations$number == data_file)])
         sampling_frequency <- c(sampling_frequency, configurations$sample_rate[which(configurations$experiment == "ms_mfcr" & configurations$number == data_file)])
