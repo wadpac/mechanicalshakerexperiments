@@ -1,6 +1,6 @@
 ## Function to read in the mechanical shaker data using:
 # path;
-# brand: one of c("Actigraph", "Activpal", "Acttrust", "Axivity", "GENEActiv", "MOX", "Shimmer", "Fitbit), 
+# brand: one of c("Actigraph", "Activpal", "Acttrust", "Axivity", "GENEActiv", "MOX", "Fitbit), 
 # experiment: one of c("timer_check", "ms_hfcr", "ms_lfcr", "ms_hfmr", "ms_lfmr", "ms_bag", "door", "box")
 # windows: TRUE then windows from the data_description file will be selected, FALSE: complete data file will be loaded;
 # actigraph_preprocessing: TRUE then sleepmode segments that jump by >1 sec are filled up using the function fill_sleep
@@ -30,6 +30,7 @@ loaddata <- function(path, brand, experiment, windows = TRUE, experimentfile, ac
       folder <- paste0(brand, paste0("_", experiment)) 
     }
   }
+  
   if (brand == "Acttrust") {
     folder <- "Acttrust_Condor"
   } else if (brand == "Fitbit") {
@@ -37,11 +38,13 @@ loaddata <- function(path, brand, experiment, windows = TRUE, experimentfile, ac
   } else if (brand == "MOX_exportedCSV/exportedCSV/MOX") {
     brand <- "MOX"
   }
+  
+  
   #------------------------------------------------------------
   # Get brand specific file extensions
   if (brand == "Actigraph") {
     pattern ="*.gt3x"
-  } else if (brand == "Activpal" | brand == "MOX" | brand == "Shimmer") {
+  } else if (brand == "Activpal" | brand == "MOX") {
     pattern ="*.csv"
   } else if (brand == "Acttrust") {
     pattern ="*.txt"
@@ -53,10 +56,17 @@ loaddata <- function(path, brand, experiment, windows = TRUE, experimentfile, ac
   #else {} #fitbit
   #------------------------------------------------------------
   # Get file list
-  file_path <- paste(path, folder, sep = "/")
+  if(exists("folders")){
+    file_path <- c()
+    file_path[1] <- paste(path, folders[1], sep = "/")
+    file_path[2] <- paste(path, folders[2], sep = "/")
+  } else {
+    file_path <- paste(path, folder, sep = "/")
+  }
+  
   if (length(file_path) == 0) {
     warning("\nNo recordings identified. Check folder path.")
-  }
+  } 
   
   file_list <- list.files(file_path, pattern = pattern, all.files = FALSE)
   cat(paste0("\nLooking inside: ",file_path," for ", pattern," files"))
@@ -101,8 +111,6 @@ loaddata <- function(path, brand, experiment, windows = TRUE, experimentfile, ac
         date <- lubridate::ymd(strsplit(strsplit(file_list[i], "_")[[1]][2], ".csv")[[1]])
         rawdata$time <- as.POSIXct(paste(rep(date, length(timestamps)), timestamps), format="%Y-%m-%d %H:%M:%OS")
         rawdata <- rawdata[, c("time", "AccX", "AccY", "AccZ")]
-      } else if (brand == "Shimmer") {
-        rawdata <- read.csv(paste(file_path, file_list[i], sep = "/"), nrow = 10, skip = 1, sep = '\t')
       } else {
       }# brand = Fitbit
       

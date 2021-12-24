@@ -51,7 +51,7 @@ checkdimensions = function(x) {
   }
 }
 options(digits.secs = 7)
-brands_to_extract = "MOX" #c("Actigraph", "GENEActiv", "Axivity", "Activpal", "Acttrust") # "Shimmer")
+brands_to_extract = "Shimmer" #("Actigraph", "GENEActiv", "Axivity", "Activpal", "Acttrust", "MOX") # "Shimmer")
 # To avoid loading all data at once as that will never be needed: don't include experiment "timer_check"
 experiments_to_extract <- c("box", "ms_hfcr", "ms_lfcr", "ms_mfcr", "ms_hfmr", "ms_lfmr") #, "ms_bag") #Does not work for box yet
 for (brand in brands_to_extract) {

@@ -35,6 +35,9 @@ getwindows <- function(brand, experiment, path, data, experimentfile) {
       }
     }
   }
+  if (experiment == "door") {
+    #code toevoegen
+  }
   selected_data_list <- list()
   selected_data <- data.frame()
   #Select the windows
