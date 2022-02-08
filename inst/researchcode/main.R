@@ -1,16 +1,15 @@
 ### Script to structure data
 
 # user input required:
-# shaker_experiments_folder = "/Users/annelindelettink/Documents/Work MacBook Pro Annelinde/Mechanical Shaker Machine"
-shaker_experiments_folder = "/home/vincent/data/VUMC/shaker_experiments"
+shaker_experiments_folder = "/Users/annelindelettink/Documents/Work MacBook Pro Annelinde/Mechanical Shaker Machine"
+# shaker_experiments_folder = "/home/vincent/data/VUMC/shaker_experiments"
 
 # source functions directly from file, to be replaced by package installation:
-# my_functions_folder =   "/Users/annelindelettink/Documents/Work MacBook Pro Annelinde/Mechanical Shaker Machine/mechanicalshakerexperiments/R"
-my_functions_folder =   "/home/vincent/projects/mechanicalshakerexperiments/R"
+my_functions_folder =   "/Users/annelindelettink/Documents/Work MacBook Pro Annelinde/Mechanical Shaker Machine/mechanicalshakerexperiments/R"
+# my_functions_folder =   "/home/vincent/projects/mechanicalshakerexperiments/R"
 for (function_file in dir(my_functions_folder, full.names = T)) source(function_file) #load functions
 
 #----------------------------------------------------------------
-experimentfile = paste0(shaker_experiments_folder, "/unstructured_raw_data/data_description_V7.xlsx")
 outputdir = paste0(shaker_experiments_folder, "/structured_raw_data")
 rawdatadir = paste0(shaker_experiments_folder, "/unstructured_raw_data")
 
