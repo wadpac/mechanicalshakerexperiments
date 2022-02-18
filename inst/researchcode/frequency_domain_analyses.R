@@ -20,7 +20,7 @@ if (!file.exists(filename_flatHA)) {
 }
 load(filename_flatHA)
 
-deriveSpectrum <- function(x, sampling_frequency, plot = TRUE) {
+deriveSpectrum <- function(x, sampling_frequency) {
   specd.raw <- spectrum(x, log = "no", plot = FALSE) # the default for spectrum is to calculate the spectrum on a log-scale
   #or smooth the spectrum/data using a filter -> Butterworth band-pass filter?
   #spec.smooth <- spectrum(x, log = "no", span = 10) # use the argument span (specifies the parameter(s) for the what is known as the modified Daniell kernel) to smooth data
@@ -59,6 +59,6 @@ for(observation in 1:Nobs){
 names(freq_spec$periodigram_HA) <- ms_flat_HA$specifications$serial_number  
 names(freq_spec$periodigram_normHA) <- ms_flat_HA$specifications$serial_number  
 freq_spec$specifications <- ms_flat_HA$specifications
-print("Save data")
+cat("\nSaving data...")
 # setwd(datadir)
 save(freq_spec, file = paste0(datadir, "frequency_spectra.RData"))
