@@ -22,11 +22,8 @@ experiments_to_load = c("ms_hfcr", "ms_lfcr", "ms_mfcr", "ms_hfmr", "ms_lfmr")
 
 ms_flat_HA <- list()
 specifications <- data.frame()
-sampling_frequency <- c()
-dynamic_range <- c()
 serial_numbers <- c()
-brands <- c()
-experiments <- c()
+
 counter = 1
 for (brand in 1:length(brands_to_load)) {
   for (experiment in 1:length(experiments_to_load)){
@@ -34,9 +31,7 @@ for (brand in 1:length(brands_to_load)) {
       cat(paste0("\nThis device was not included in experiment:"), experiments_to_load[experiment])
       next
     } else{
-      
       load(paste0(structured_data_dir, "/", brands_to_load[brand], "_", experiments_to_load[experiment]))
-      
       for (file in 1:length(extractedata$data)) {
         tmp <- extractedata$data[[file]] #tmp is the structured data now
         if(length(tmp > 0)) {
@@ -44,23 +39,23 @@ for (brand in 1:length(brands_to_load)) {
             names(tmp) <- tolower(names(tmp))
           }
           tmp$time = as.POSIXct(tmp$time, origin = "1970-01-01", tz="Europe/Amsterdam")
-          tmp = tmp[, c("time", "x", "shaking_frequency")] # select data for the HA (x-axis), time and shaking_frequency
+          tmp = tmp[, c("shaking_frequency", "time", "x")] # select data for the HA (x-axis), time and shaking_frequency
           tmp$normHA <- (tmp$x - mean(tmp$x)) / sd(tmp$x) # normalize HA
           ms_flat_HA$data[[counter]] <- tmp
           counter = counter + 1
-          serial_numbers <- c(serial_numbers, extractedata$specifications[file,"serial_number"])
-          brands <- c(brands, brands_to_load[brand])
-          experiments <- c(experiments, experiments_to_load[experiment])
-          sampling_frequency <- c(sampling_frequency, extractedata$specifications[file,"sampling_frequency"])
-          dynamic_range <- c(dynamic_range, extractedata$specifications[file,"dynamic_range"])
+          specs <- c(extractedata$specifications[file,"serial_number"], brands_to_load[brand], experiments_to_load[experiment], 
+                     extractedata$specifications[file,"sampling_frequency"], extractedata$specifications[file,"dynamic_range"])
+          specifications <- rbind(specifications, unname(specs))
         }
       }
     }
   }
 }
-names(ms_flat_HA$data) <- serial_numbers
-specifications <- cbind(serial_numbers, brands, experiments, sampling_frequency, dynamic_range)
 colnames(specifications) <- c("serial_number", "brand", "experiment", "sampling_frequency", "dynamic_range")
+names(ms_flat_HA$data) <- specifications$serial_number
 ms_flat_HA$specifications <- specifications
+as.factor(ms_flat_HA$specifications$brand)
+as.factor(ms_flat_HA$specifications$experiment)
 
-save(ms_flat_HA, file = paste0(outputdir, "ms_flat_HA.RData"))
+setwd(outputdir)
+save(ms_flat_HA, file = "ms_flat_HA.RData")
