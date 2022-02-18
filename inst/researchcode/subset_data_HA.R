@@ -13,6 +13,7 @@ shaker_experiments_folder = "/Users/annelindelettink/Documents/Work MacBook Pro 
 # Specify file paths
 structured_data_dir = paste0(shaker_experiments_folder, "/structured_raw_data")
 outputdir = paste0(shaker_experiments_folder, "/analyses")
+if (!dir.exists(outputdir)) dir.create(outputdir)
 
 ## Subset data for the analyses into one data.frame for shaker experiment - flat
 # Required data: HA (horizontal axis; x-axis), and normalised HA = (HA - M) / SD
@@ -31,9 +32,9 @@ for (brand in 1:length(brands_to_load)) {
       cat(paste0("\nThis device was not included in experiment:"), experiments_to_load[experiment])
       next
     } else{
-      load(paste0(structured_data_dir, "/", brands_to_load[brand], "_", experiments_to_load[experiment]))
-      for (file in 1:length(extractedata$data)) {
-        tmp <- extractedata$data[[file]] #tmp is the structured data now
+      load(paste0(structured_data_dir, "/", brands_to_load[brand], "_", experiments_to_load[experiment], ".RData"))
+      for (file in 1:length(extracteddata$data)) {
+        tmp <- extracteddata$data[[file]] #tmp is the structured data now
         if(length(tmp > 0)) {
           if(brands_to_load[brand] %in% c("Actigraph", "Activpal")) {
             names(tmp) <- tolower(names(tmp))
@@ -43,8 +44,8 @@ for (brand in 1:length(brands_to_load)) {
           tmp$normHA <- (tmp$x - mean(tmp$x)) / sd(tmp$x) # normalize HA
           ms_flat_HA$data[[counter]] <- tmp
           counter = counter + 1
-          specs <- c(extractedata$specifications[file,"serial_number"], brands_to_load[brand], experiments_to_load[experiment], 
-                     extractedata$specifications[file,"sampling_frequency"], extractedata$specifications[file,"dynamic_range"])
+          specs <- c(extracteddata$specifications[file,"serial_number"], brands_to_load[brand], experiments_to_load[experiment], 
+                     extracteddata$specifications[file,"sampling_frequency"], extracteddata$specifications[file,"dynamic_range"])
           specifications <- rbind(specifications, unname(specs))
         }
       }
@@ -57,5 +58,4 @@ ms_flat_HA$specifications <- specifications
 as.factor(ms_flat_HA$specifications$brand)
 as.factor(ms_flat_HA$specifications$experiment)
 
-setwd(outputdir)
-save(ms_flat_HA, file = "ms_flat_HA.RData")
+save(ms_flat_HA, file = paste0(outputdir, "/ms_flat_HA.RData"))
