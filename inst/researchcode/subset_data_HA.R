@@ -7,8 +7,8 @@ graphics.off()
 shaker_experiments_folder = "/Users/annelindelettink/Documents/Work MacBook Pro Annelinde/Mechanical Shaker Machine"
 # shaker_experiments_folder = "~/data/VUMC/shaker_experiments"
 
-# TO DO: Check which GENEActiv was removed towards end of one of the experiments, and make sure data is not included
-
+# Check which GENEActiv was removed towards end of one of the experiments (hfcr), and make sure data is not included
+# Check: this data is not included, only the data of this device (058029) for the ms_mfcr experiment is taken into account
 #====================================================================================
 # Specify file paths
 structured_data_dir = paste0(shaker_experiments_folder, "/structured_raw_data")
@@ -16,7 +16,7 @@ outputdir = paste0(shaker_experiments_folder, "/analyses")
 if (!dir.exists(outputdir)) dir.create(outputdir)
 
 ## Subset data for the analyses into one data.frame for shaker experiment - flat
-# Required data: HA (horizontal axis; x-axis), and normalised HA = (HA - M) / SD
+# Required data: HA (horizontal axis; x-axis), and normalized HA = (HA - M) / SD
 
 brands_to_load = c("Actigraph", "Activpal", "Axivity", "GENEActiv")
 experiments_to_load = c("ms_hfcr", "ms_lfcr", "ms_mfcr", "ms_hfmr", "ms_lfmr")
