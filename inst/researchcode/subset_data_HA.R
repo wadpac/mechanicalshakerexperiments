@@ -7,8 +7,7 @@ graphics.off()
 shaker_experiments_folder = "/Users/annelindelettink/Documents/Work MacBook Pro Annelinde/Mechanical Shaker Machine"
 # shaker_experiments_folder = "~/data/VUMC/shaker_experiments"
 
-# Check which GENEActiv was removed towards end of one of the experiments (hfcr), and make sure data is not included
-# Check: this data is not included, only the data of this device (058029) for the ms_mfcr experiment is taken into account
+# Check: GENEActiv data (lfcr and hfcr) not included, only the data of this device (058029) for the ms_mfcr experiment is taken into account
 #====================================================================================
 # Specify file paths
 structured_data_dir = paste0(shaker_experiments_folder, "/structured_raw_data")

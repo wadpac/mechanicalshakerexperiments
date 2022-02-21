@@ -40,11 +40,9 @@ ylabel = "Spectral Density (g2/Hz)"
 XLIM = c(0, 5)
 for(observation in 1:Nobs){ 
   cat(paste0(observation, "/",  Nobs, " "))
-  HA <- ms_flat_HA$data[[observation]]$x
+  HA <- ms_flat_HA$data[[observation]]$HA
   normHA <- ms_flat_HA$data[[observation]]$normHA
   sampling_frequency <- as.numeric(ms_flat_HA$specifications$sampling_frequency[observation])
-  # spec.raw.HA <- deriveSpectrum(HA, sampling_frequency)
-  # spec.raw.normHA <- deriveSpectrum(normHA, sampling_frequency)
   freq_spec$periodigram_HA[[observation]] <- deriveSpectrum(HA, sampling_frequency)
   freq_spec$periodigram_normHA[[observation]] <- deriveSpectrum(normHA, sampling_frequency)  
   if (plot == TRUE) {
