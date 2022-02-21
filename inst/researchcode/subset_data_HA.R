@@ -40,8 +40,13 @@ for (brand in 1:length(brands_to_load)) {
             names(tmp) <- tolower(names(tmp))
           }
           tmp$time = as.POSIXct(tmp$time, origin = "1970-01-01", tz="Europe/Amsterdam")
-          tmp = tmp[, c("shaking_frequency", "time", "x")] # select data for the HA (x-axis), time and shaking_frequency
-          tmp$normHA <- (tmp$x - mean(tmp$x)) / sd(tmp$x) # normalize HA
+          # Check if the x-axis was the axis aligned with the shaker direction 
+          maxAxes <- c(sd(tmp$x), sd(tmp$y), sd(tmp$z)) # calculate the standard deviation of the axes
+          HA <- unlist(tmp[which.max(maxAxes) + 1]) # select the axis with the highest SD as this will be the shaking direction
+          
+          tmp = tmp[, c("shaking_frequency", "time")] # select data for the HA (x-axis), time and shaking_frequency
+          tmp$HA <- HA
+          tmp$normHA <- (tmp$HA - mean(tmp$HA)) / sd(tmp$HA) # normalize HA
           ms_flat_HA$data[[counter]] <- tmp
           counter = counter + 1
           specs <- c(extracteddata$specifications[file,"serial_number"], brands_to_load[brand], experiments_to_load[experiment], 
