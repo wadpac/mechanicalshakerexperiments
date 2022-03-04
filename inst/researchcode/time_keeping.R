@@ -77,30 +77,17 @@ for (ses_name in sessionames) { #
         turning_times = experiments$start_time[grep(pattern = brand, x = experiments$accelerometers_used, ignore.case = TRUE)]
         turning_times = as.POSIXlt(x = paste0("2020-11-26 ", turning_times), tz = "Europe/Amsterdam")
         for (j in 1:length(turning_times)) {
-          graphics.off()
-          print("turning")
-          print(turning_times[j])
+          # graphics.off()
           turning_point = which(tmp$HEADER_TIME_STAMP == turning_times[j])
-          nearby = which(tmp$HEADER_TIME_STAMP > (turning_times[j] - 300) &
-                           tmp$HEADER_TIME_STAMP < (turning_times[j] + 300))
+          nearby = which(tmp$HEADER_TIME_STAMP > (turning_times[j] - 60) &
+                           tmp$HEADER_TIME_STAMP < (turning_times[j] + 60))
           print(range(tmp$HEADER_TIME_STAMP[nearby]))
-          # print(dim(tmp[nearby,]))
-          x11()
-          plot(tmp$HEADER_TIME_STAMP[nearby], tmp$X[nearby], type="l")
-          lines(tmp$HEADER_TIME_STAMP[nearby], tmp$Y[nearby], type="l", col = "blue")
-          lines(tmp$HEADER_TIME_STAMP[nearby], tmp$Z[nearby], type="l", col = "red")
-        kkkkk
-        
+          # x11()
+          # plot(tmp$HEADER_TIME_STAMP[nearby], tmp$X[nearby], type="l")
+          # lines(tmp$HEADER_TIME_STAMP[nearby], tmp$Y[nearby], type="l", col = "blue")
+          # lines(tmp$HEADER_TIME_STAMP[nearby], tmp$Z[nearby], type="l", col = "red")
         }
-        # shakefreq = averageperws3(x= tmp$shaking_frequency, sf, epochsize=5)
-        # shakefreq[which(shakefreq < 0)] = -1
-        # tmp = tmp[,-which(colnames(tmp) == "shaking_frequency")]
-        # # apply autocalibration:
-        # C = autocalibration(data=tmp, sf, printsummary = FALSE, brand)
-        # store results
-        calib = list(scale=C$scale, offset=C$offset, sn=sn, C=C)
-        save(calib, file = paste0(calib_files, "/calib_",brand,"_sn_",sn,".RData"))
-        if (all(C$offset == c(0,0,0)) & all(C$scale == c(1,1,1))) {
+        if (length(nearby) == 0) {
           success_log = update_success_log(brand, success_log, success = FALSE)
         } else {
           success_log = update_success_log(brand, success_log, success = TRUE)
@@ -111,7 +98,7 @@ for (ses_name in sessionames) { #
     }
   }
 }
-for (brand in c("Actigraph", "GENEActiv", "Axivity", "Activpal", "MOX")) {
-  cat(paste0("\nSuccessful calibrations for ", brand,"\n"))
-  print(table(success_log[[brand]]))
-}
+# for (brand in c("Actigraph", "GENEActiv", "Axivity", "Activpal", "MOX")) {
+#   cat(paste0("\nSuccessful calibrations for ", brand,"\n"))
+#   print(table(success_log[[brand]]))
+# }
