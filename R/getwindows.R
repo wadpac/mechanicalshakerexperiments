@@ -95,6 +95,10 @@ getwindows <- function(brand, experiment, path, data, experimentfile = c()) {
           stime = as.POSIXct(start_time[w], tz = tz)
           etime = as.POSIXct(end_time[w], tz = tz)
         }
+        if (experiment == "timer_check") {
+          stime = stime - 900
+          etime = etime + 900
+        }
         segment = which(selected_data$time >= stime & selected_data$time < etime)
         if(length(segment) > 0) {
           selected_data$shaking_frequency[segment] = as.numeric(description$mechanical_shaker_setting[w])
