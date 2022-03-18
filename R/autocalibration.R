@@ -1,12 +1,24 @@
-autocalibration = function(data, sf) {
+#' autocalibration
+#'
+#' @description 'autocalibration' simplified version of auto-calibration from R package GGIR without temperature and without loading the data in blocks
+#'
+#' @param data data.frame with accelerometer time series
+#' @param sf Sample frequency in Hertz
+#' @param printsummary Boolean to indicate whether calibration summary should be printed
+#' @param brand Character of sensor brand: "Actigraph", "Activpal", "Acttrust", "Axivity", "GENEActiv", or "MOX".
+#' @return List of objects identical to g.calibrate function R package GGIR
+#' @importFrom stats sd lm.wfit
+#' @export
+
+autocalibration = function(data, sf, printsummary= TRUE, brand) {
   # simplified version of auto-calibration from R package GGIR
   # without temperature and without loading the data in blocks
-  
+
   spherecrit=0.3
-  minloadcrit=20
-  printsummary=TRUE
-  windowsizes=c(5,300,300)
-  
+  minloadcrit=72
+  # printsummary=TRUE
+  windowsizes=c(5,600,600)
+
   use.temp = FALSE
   # filename = unlist(strsplit(as.character(datafile),"/"))
   # filename = filename[length(filename)]
@@ -50,8 +62,8 @@ autocalibration = function(data, sf) {
       durexp = nrow(data) / (sf*ws)	#duration of experiment in hrs
       # Initialization of variables
       # if (dformat != 5) {
-      
-      # } 
+
+      # }
       data = as.data.frame(data)
       data$X = as.numeric(data$X)
       data$Y = as.numeric(data$Y)
@@ -76,7 +88,7 @@ autocalibration = function(data, sf) {
       if (count > (nrow(meta) - (2.5*(3600/ws4) *24))) {
         extension = matrix(99999,((3600/ws4) *24),ncol(meta))
         meta = rbind(meta,extension)
-        cat("\nvariabel meta extended\n")
+        # cat("\nVariable meta extended\n")
       }
       #storing in output matrix
       meta[count:(count-1+length(EN2)),1] = EN2
@@ -92,9 +104,6 @@ autocalibration = function(data, sf) {
     #--------------------------------------------
   }
   spherepopulated = 0
-  # if (switchoffLD == 1) {
-  #   LD = 0
-  # }
   meta_temp = data.frame(V = meta, stringsAsFactors = FALSE)
   cut = which(meta_temp[,1] == 99999)
   if (length(cut) > 0) {
@@ -104,7 +113,11 @@ autocalibration = function(data, sf) {
   if (nrow(meta_temp) > minloadcrit) {  # enough data for the sphere?
     meta_temp = meta_temp[-1,]
     #select parts with no movement
-    sdcriter = 0.013 # NO IDEA WHAT REST NOISE IS FOR MOVISENS....test needed
+    if (brand == "MOX") {
+      sdcriter = 0.03 # MOX seems to have too much variation in X-axis
+    } else {
+      sdcriter = 0.013
+    }
     nomovement = which(meta_temp[,5] < sdcriter & meta_temp[,6] < sdcriter & meta_temp[,7] < sdcriter &
                          abs(as.numeric(meta_temp[,2])) < 2 & abs(as.numeric(meta_temp[,3])) < 2 &
                          abs(as.numeric(meta_temp[,4])) < 2) #the latter three are to reduce chance of including clipping periods
@@ -248,10 +261,8 @@ autocalibration = function(data, sf) {
     cat("\n")
     # cat(paste0(rep('_',options()$width),collapse=''))
   }
-  meantempcal = c()
-  invisible(list(scale=scale,offset=offset,tempoffset=tempoffset,
-                 cal.error.start=cal.error.start,cal.error.end=cal.error.end,
-                 spheredata=spheredata,npoints=npoints,nhoursused=nhoursused,
-                 QCmessage=QCmessage,use.temp=use.temp,meantempcal=meantempcal,bsc_qc=bsc_qc))
+  invisible(list(scale=scale, offset=offset, tempoffset=tempoffset,
+                 cal.error.start=cal.error.start, cal.error.end=cal.error.end,
+                 spheredata=spheredata, npoints=npoints, nhoursused=nhoursused,
+                 QCmessage=QCmessage, use.temp=use.temp, bsc_qc=bsc_qc))
 }
-

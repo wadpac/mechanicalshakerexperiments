@@ -1,13 +1,35 @@
-# Read in data description and select relevant information based on protocol and session
-getwindows <- function(brand, protocol, session, path, data, protocolfile) {
-  library(gdata)
-  description <- read.xls(protocolfile, header = TRUE)
-  description <- description[which(description$protocol == protocol & description$session == session),]
+#' getwindows
+#'
+#' @description 'getwindows' Called from within loaddata to extract specific time windows
+#'
+#' @param brand Sensor brand: "Actigraph", "Activpal", "Acttrust", "Axivity", "GENEActiv", or "MOX".
+#' @param experiment Experiment to load: "timer_check", "ms_hfcr", "ms_lfcr", "ms_hfmr", "ms_lfmr", or "box".
+#' @param path Path to the root of the experimental data (rawdatadir)
+#' @param data Data object
+#' @param experimentfile xlsx file with protocol description, defaults to file stored inside the code
+#' @return List of data.frames with the accelerometer time series where each list item represents 1 recording
+#' @importFrom gdata read.xls
+#' @export
+
+
+# Read in data description and select relevant information based on experiment
+getwindows <- function(brand, experiment, path, data, experimentfile = c()) {
+  if (length(experimentfile) == 0) {
+    experimentfile = system.file("datadescription/data_description.xlsx", package = "mechanicalshakerexperiments")[1]
+  }
+  description <- gdata::read.xls(experimentfile, header = TRUE)
+  description <- description[which(description$experiment == experiment),]
   # Calculate indices for the windows to select
   start_time <- c()
   end_time <- c()
   tz = "Europe/Amsterdam"
-  if (protocol == 1) {
+  if (experiment == "box") {
+    start <- strftime(toString(paste(description$date[1], description$start_time[1]), sep = " "), format = "%Y-%m-%d %H:%M:%OS2", tz = tz)
+    start_time <- start
+    end <- strftime(toString(paste(description$date[1], description$end_time[1]), sep = " "), format = "%Y-%m-%d %H:%M:%OS2", tz = tz)
+    end_time <- end
+  }
+  if (experiment == "timer_check") {
     if (brand == "Actigraph" | brand == "Activpal") {
       selection <- description[description$accelerometers_used == "activpal_actigraph",]
     }
@@ -19,7 +41,7 @@ getwindows <- function(brand, protocol, session, path, data, protocolfile) {
     end <- strftime(paste0(selection$date[nrow(selection)], selection$start_time[nrow(selection)]), format = "%Y-%m-%d %H:%M:%OS2", tz = tz)
     end_time <- end
   }
-  if (protocol == 2 || protocol == 3) {
+  if (startsWith(experiment, "ms")) { #does not work yet for extracting data for door experiment
     for (r in 1:nrow(description)) {
       if(startsWith(description$accelerometers_used[r], "all") || (brand == "Axivity" & description$accelerometers_used[r] == "axivity")){
         start <- strftime(toString(paste(description$date[r], description$start_time[r]), sep = " "), format = "%Y-%m-%d %H:%M:%OS2", tz = tz)
@@ -28,6 +50,9 @@ getwindows <- function(brand, protocol, session, path, data, protocolfile) {
         end_time <- c(end_time, end)
       }
     }
+  }
+  if (experiment == "door") {
+    #code toevoegen
   }
   selected_data_list <- list()
   selected_data <- data.frame()
@@ -59,11 +84,14 @@ getwindows <- function(brand, protocol, session, path, data, protocolfile) {
           etime = as.POSIXlt(end_time[w], tz = tz)
         } else if (brand == "Acttrust") {
           stime = as.POSIXlt(start_time[w], tz = tz)
-          etime = as.POSIXct(end_time[w], tz = tz)
+          etime = as.POSIXlt(end_time[w], tz = tz)
         } else if(brand == "Axivity") {
           stime = as.POSIXct(start_time[w], tz = tz)
           etime = as.POSIXct(end_time[w], tz = tz)
         } else if(brand == "GENEActiv") {
+          stime = as.POSIXct(start_time[w], tz = tz)
+          etime = as.POSIXct(end_time[w], tz = tz)
+        } else if(brand == "MOX") {
           stime = as.POSIXct(start_time[w], tz = tz)
           etime = as.POSIXct(end_time[w], tz = tz)
         }
@@ -74,13 +102,17 @@ getwindows <- function(brand, protocol, session, path, data, protocolfile) {
         }
       }
       # DO NOT DELETE ALL TIME SEGMENTS WITHOUT SHAKING FREQUENCY
-      # BECAUS THIS WILL CAUSE ARTIFACT IN SIGNAL DURING TRANSITIONS
+      # BECAUSE THIS WILL CAUSE ARTIFACT IN SIGNAL DURING TRANSITIONS
       # ONLY DELETE IIME BEFORE FIRST AND AFTER LAST CONDITION
       # MissingFreqs = which(selected_data$shaking_frequency == -1)
       # if (length(MissingFreqs) > 0) {
       #   selected_data = selected_data[-MissingFreqs,]
       # }
-      validdata = which(selected_data$shaking_frequency != -1)
+      if(experiment == "timer_check" | experiment == "door" | experiment == "box") {
+        validdata = which(is.na(selected_data$shaking_frequency))
+      } else {
+        validdata = which(selected_data$shaking_frequency != -1) #Doesn't work for experiment timer_check, door as shaking frequency is NA
+      }      
       if (validdata[1] != 1 & validdata[length(validdata)] != nrow(selected_data)) {
         MissingFreqs = c(1:(validdata[1]-1),
                          (validdata[length(validdata)]+1):nrow(selected_data))
