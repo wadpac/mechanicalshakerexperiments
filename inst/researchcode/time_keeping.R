@@ -1,16 +1,23 @@
+#---------------------------------------------------------------------
+# This script performs a check of the time keeping ability of various sensor brands.
+# The following comparison are made:
+# - accelerometer_timestamp_error_seconds: Accelerometer time stamp when turning is visable in signal - Timestamp of turning according to reference clock
+# - Expected (sf) and observed sample rate (sf_observed) based on number of samples that were collected between the turning points visible in the signal
+# - accelerometer_sampling_error_seconds: Delta samples signal * expected sample frequency - Delta time of the turning point according to reference clock
 
-options(digits.secs = 7)
+options(digits.secs = 5)
 options(scipen = 999)
 
 # specify file and function paths
 shaker_experiments_folder = "~/data/VUMC/shaker_experiments"
+output_directory = "~/data/VUMC/shaker_experiments/analyses"
 my_functions_folder =   "/home/vincent/projects/mechanicalshakerexperiments/R"
 time_keeping_results_file = paste0(shaker_experiments_folder, "/analyses/time_keeping.RData")
 
 # load functions (used when developing the code)
 for (function_file in dir(my_functions_folder, full.names = T)) source(function_file) 
 
-do.rerun = TRUE
+do.rerun = FALSE
 if (do.rerun == TRUE) {
   
   # declare helper functions:
@@ -23,20 +30,18 @@ if (do.rerun == TRUE) {
     success_log[[brand]] = c(success_log[[brand]], success)
     return(success_log)
   }
-  
+  #-----------------------------------------------------------
   # main code:
   extracted_data_path = paste0(shaker_experiments_folder, "/structured_raw_data")
   fns = dir(extracted_data_path, full.names = TRUE)
-  
   
   if (!dir.exists(extracted_data_path)) {
     stop("\nLabelled data folder not recognised. Did you specify shaker_experiments_folder and did you run main.R?")
   }
   
   sessionames = c("timer_check") # only perform autocalibration based on session 3 because that is where non-movement was simulated
-  overwrite = TRUE
   epochsize = 5
- 
+  
   experimentfile = system.file("datadescription/data_description.xlsx", package = "mechanicalshakerexperiments")[1]
   experiments <- gdata::read.xls(experimentfile, header = TRUE, sheet = 1)
   experiments = experiments[which(experiments$event == "turn_box"), c("accelerometers_used", "start_time")]
@@ -46,8 +51,8 @@ if (do.rerun == TRUE) {
   
   results = data.frame(brand = character(500), sn = character(500), sf = numeric(500), turn = numeric(500), 
                        turn_clock_time = character(500), turn_signal = numeric(500), turn_signal_relative = numeric(500),
-                       elapsed_time_clock = numeric(500),
-                       timestampError = numeric(500), stringsAsFactors = FALSE)
+                       elapsed_time_atomclock_hours = numeric(500),
+                       accelerometer_timestamp_error_seconds = numeric(500), stringsAsFactors = FALSE)
   cnt = 1
   # loop over sessions and data files to perform auto-calibration procedure
   for (ses_name in sessionames) { #
@@ -99,14 +104,14 @@ if (do.rerun == TRUE) {
           
           results$turn[cnt:(cnt + Nturn - 1)] = 1:Nturn
           results$turn_clock_time[cnt:(cnt + Nturn - 1)] = as.character(turning_times)
-          results$elapsed_time_clock = as.numeric(turning_times - turning_times[1])
+          results$elapsed_time_atomclock_hours[cnt:(cnt + Nturn - 1)] = as.numeric(turning_times - turning_times[1])
           tmp$HEADER_TIME_STAMP_rounded = round(tmp$HEADER_TIME_STAMP)
           for (j in 1:Nturn) {
             # identify clock based turning times
             turning_point = which(tmp$HEADER_TIME_STAMP_rounded == turning_times[j])
             # defined 5 minute time window to search for turning points in signal
-            nearby = which(tmp$HEADER_TIME_STAMP > (turning_times[j] - 150) &
-                             tmp$HEADER_TIME_STAMP < (turning_times[j] + 150))
+            nearby = which(tmp$HEADER_TIME_STAMP > (turning_times[j] - 60) &
+                             tmp$HEADER_TIME_STAMP < (turning_times[j] + 60))
             # identify turning point
             dx = abs(diff(tmp$X[nearby]))
             dy = abs(diff(tmp$Y[nearby]))
@@ -120,14 +125,14 @@ if (do.rerun == TRUE) {
             results$turn_signal_relative[cnt] = turn_signal - turn_signal_first
             
             # timestamp based evaluation
-            timestampError = tmp$HEADER_TIME_STAMP[turning_point] - tmp$HEADER_TIME_STAMP[turn_signal]
-            timestampError = -timestampError[which.min(abs(timestampError))]
-            units(timestampError) = "secs"
-            results$timestampError[cnt] = as.numeric(timestampError)
+            accelerometer_timestamp_error_seconds = tmp$HEADER_TIME_STAMP[turning_point] - tmp$HEADER_TIME_STAMP[turn_signal]
+            accelerometer_timestamp_error_seconds = -accelerometer_timestamp_error_seconds[which.min(abs(accelerometer_timestamp_error_seconds))]
+            units(accelerometer_timestamp_error_seconds) = "secs"
+            results$accelerometer_timestamp_error_seconds[cnt] = as.numeric(accelerometer_timestamp_error_seconds)
             # sample rate based evaluation
-            results$sf_observed[cnt] = results$turn_signal_relative[cnt] / results$elapsed_time_clock[cnt]
+            results$sf_observed[cnt] = results$turn_signal_relative[cnt] / results$elapsed_time_atomclock_hours[cnt]
             turn_signal_relative2 = results$turn_signal_relative[cnt] / as.numeric(results$sf[cnt])
-            results$samplingError_seconds[cnt] = turn_signal_relative2 - results$elapsed_time_clock[cnt]
+            results$accelerometer_sampling_error_seconds[cnt] = turn_signal_relative2 - results$elapsed_time_atomclock_hours[cnt]
             cnt  = cnt + 1
           }
           if (length(nearby) == 0) {
@@ -151,21 +156,50 @@ if (do.rerun == TRUE) {
   load(file = time_keeping_results_file)
 }
 results$sf = as.numeric(results$sf)
-results$elapsed_time_clock = results$elapsed_time_clock / 3600
+results$elapsed_time_atomclock_hours = results$elapsed_time_atomclock_hours / 3600
 results = results[which(results$turn != 1), ]
 
+# Aggregate per brand
+out = c()
+cnt = 1
 for (brand in c("Actigraph", "GENEActiv", "Axivity", "MOX")) { #"Activpal", 
   sel = which(results$brand == brand)
-  results_agg = aggregate(x = results[sel,c("timestampError", "samplingError_seconds", "sf","sf_observed", "elapsed_time_clock")],
-                          by = list(results$brand[sel], results$sf[sel], results$turn[sel]), FUN = mean)
+  results_agg = aggregate(x = results[sel,c("elapsed_time_atomclock_hours", "accelerometer_timestamp_error_seconds", 
+                                            "accelerometer_sampling_error_seconds",
+                                            "sf", "sf_observed")],
+                          by = list(results$brand[sel], results$turn[sel]),
+                          FUN = function(x) c(mean = mean(x), sd = sd(x),
+                                              min = min(x),  max = max(x), n = length(x)))
+  names(results_agg)[1:2] = c("brand", "turn")
   
-  names(results_agg)[1:3] = c("brand", "sf", "turn")
-  
-  print(results_agg)
+  if (cnt == 1) {
+    out = results_agg
+  } else {
+    out = rbind(out, results_agg)
+  }
+  cnt = cnt + 1
 }
-#---------------------------------------------------------------------
-# Comparisons:
-# - timestampError: Time stamp turning point signal - Timestamp turning point clock
-# - Expected (sf) and observed sample rate (sf_observed)
-# - samplingError_seconds: Delta samples signal * sample frequency - Delta time turning turning point clock
 
+
+# Reformat output to ease creating table
+out[,3:7] = round(out[,3:7], digits = 2)
+
+out2 = out
+onm = names(out)
+for (i in 3:7) {
+  if (onm[i] %in% c("elapsed_time_atomclock_hours") == TRUE) {
+    out2[,i] = apply(X = out[,i], MAR = 1, FUN = function(x) x[1])
+  } else if (onm[i] %in% c("accelerometer_timestamp_error_seconds", 
+                           "accelerometer_sampling_error_seconds",
+                           "sf_observed") == TRUE) {
+    out2[,i] = apply(X = out[,i], MAR = 1, FUN = function(x) paste0(x[1], " \u00B1 ", x[2],
+                                                                    " (",x[3]," ; ",x[4], ")", collapse = " "))
+  } else if (onm[i] == "sf") {
+    out2[,i] = apply(X = out[,i], MAR = 1, FUN = function(x) paste0(x[1], " (N=",x[5],")", collapse = " "))
+  }
+}
+names(out2)[which(names(out2) == "sf")] = "sf_expected"
+out2 = out2[which(out2$elapsed_time_atomclock_hours > 2),]
+
+print(out2)
+write.csv(out2, file = paste0(output_directory, "/time_keep_check.csv"), row.names = FALSE)
