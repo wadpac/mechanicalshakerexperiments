@@ -102,7 +102,7 @@ deriveComparisonValues <- function(spectrum, intervals){
   
   index <- which(spectrum$specx >= upper)
   df[2+i, 1] <- spectrum$specx[index[which.max(spectrum$specy[index])]] #dominant frequency
-  df[2+i, 2] <- max(spectrum$specy[index]) #average power spectral density
+  df[2+i, 2] <- max(spectrum$specy[index]) #maximum power spectral density
   
   colnames(df) <- c("domFreq", "maxPSD")
   
@@ -111,56 +111,63 @@ deriveComparisonValues <- function(spectrum, intervals){
 
 
 # DERIVE RAW FREQUENCY SPECTRA
-raw.spectra_HA <- list()
-raw.spectra_normHA <- list()
-for (record in 1:length(ms_flat_HA$data)) {
-  HA <- ms_flat_HA$data[[record]]$HA
-  normHA <- ms_flat_HA$data[[record]]$normHA
-  sampling_frequency <- as.numeric(ms_flat_HA$specifications$sampling_frequency[record])  
+raw.spectra_HA <- list() 
+raw.spectra_normHA <- list() 
+
+for (file in 1:length(ms_flat_HA$data)) {# derive frequency spectra for all accelerometer files
+  sampling_frequency <- as.numeric(ms_flat_HA$specifications$sampling_frequency[file])  
+  #for horizontal axis
+  HA <- ms_flat_HA$data[[file]]$HA
   rawSpectrum_HA <- deriveSpectrum(HA, sampling_frequency, raw = TRUE)
+  raw.spectra_HA[[file]] <- rawSpectrum_HA
+  #for normalized horizontal axis
+  normHA <- ms_flat_HA$data[[file]]$normHA
   rawSpectrum_normHA <- deriveSpectrum(normHA, sampling_frequency, raw = TRUE)
-  raw.spectra_HA[[record]] <- rawSpectrum_HA
-  raw.spectra_normHA[[record]] <- rawSpectrum_normHA
+  raw.spectra_normHA[[file]] <- rawSpectrum_normHA
 }
-rm(HA, normHA, sampling_frequency, rawSpectrum_HA, rawSpectrum_normHA, record)
+# Indicate the accelerometer serial numbers
 names(raw.spectra_HA) <- ms_flat_HA$specifications$serial_number  
-names(raw.spectra_normHA) <- ms_flat_HA$specifications$serial_number  
+names(raw.spectra_normHA) <- ms_flat_HA$specifications$serial_number 
+# Save derived raw spectra
 raw_spectra <- list(HA = raw.spectra_HA, normHA = raw.spectra_normHA, specifications = ms_flat_HA$specifications)
-rm(raw.spectra_HA, raw.spectra_normHA)
 cat("\nSaving data...")
 save(raw_spectra, file = paste0(datadir, "raw_frequency_spectra.RData"))
+rm(raw.spectra_HA, raw.spectra_normHA, HA, normHA, sampling_frequency, rawSpectrum_HA, rawSpectrum_normHA, file)
 
-### DATA ANALYSIS (first for HA only)
+###DATA ANALYSIS (first for HA only)
 
-# For sampling frequency of 100; ####
+##SAMPLING FREQUENCY = 100
 sampling_frequency <- 100
+data <- ms_flat_HA$data[ms_flat_HA$specifications$sampling_frequency == sampling_frequency]
+
+# Plot parameters
 plot = TRUE
 xlabel = "Frequency (Hz)"
 ylabel = "Spectral Density (g2/Hz)"
 XLIM = c(0, 5)
-data <- ms_flat_HA$data[ms_flat_HA$specifications$sampling_frequency == sampling_frequency]
 
-#Find peaks and intervals for all recordings with sampling frequency of 100
+#Find peaks and peak intervals for all files with sampling frequency of 100
 intervals_HA100 <- list()
-for (record in 1:length(data)) {
-  cat(paste0(record, "/",  length(data), " "))
-  HA <- data[[record]]$HA
-  intervals <- derivePeakIntervals(HA, sampling_frequency) 
-  intervals_HA100[[record]] <- intervals
+for (file in 1:length(data)) {
+  cat(paste0(file, "/",  length(data), " "))
+  HA <- data[[file]]$HA 
+  intervals <- derivePeakIntervals(HA, sampling_frequency) #
+  intervals_HA100[[file]] <- intervals
 }
-rm(HA, intervals, record)
+rm(HA, intervals, file)
 names(intervals_HA100) <- names(data)
 # Plots of recording 35 and 36 seem deviant!
-lengte <- c()
+#See how many peaks were found for each accelerometer file
+nPeaks <- c()
 for (element in 1:length(intervals_HA100)){ 
-  lengte <- c(lengte, length(intervals_HA100[[element]]$start))
+  nPeaks <- c(nPeaks, length(intervals_HA100[[element]]$start))
 }
-lengte 
-lengte[35] #The number of peaks indeed show deviant patterns
-lengte[36]
-numberPeaksFound <- table(lengte) 
-lengte[max(numberPeaksFound)] # Set number of peaks to 13 as this is the most frequent number of peaks
-rm(element)
+nPeaks #The number of peaks indeed show deviant patterns
+nPeaks[35] #Axivity 6011406
+nPeaks[36] #Axivity 6011834
+numberPeaksFound <- table(nPeaks) 
+nPeaks[max(numberPeaksFound)] # Set number of peaks to 13 as this is the most frequent number of peaks
+rm(element, numberPeaksFound)
 
 # Derive all intervals for 13 peaks
 intervals13_HA100 <- list()
@@ -173,17 +180,17 @@ for (record in 1:length(data)) {
 rm(HA, intervals, record, plot, xlabel, ylabel, XLIM)
 names(intervals13_HA100) <- names(data)
 
-# Exclude recording 35 and 36 to define the frequency bands for analyses as these were deviant
+# Exclude recording 35 (Axivity 6011406) and 36 (Axivity 6011834) to define the frequency bands for analyses as these were deviant
 intervals13_HA100[[35]] <- NULL
 intervals13_HA100[[36]] <- NULL
 
 # Define general intervals that can be used to compare the signals
 finalintervals_HA100 <- defineFreqBands(intervals13_HA100)
 
-freqBandDefinitionsHA100 <- list(intervalsVaryingPeaks = intervals_HA100, peakLengths = lengte, 
+freqBandDefinitionsHA100 <- list(intervalsVaryingPeaks = intervals_HA100, npeaks = nPeaks, 
                                intervals13Peaks = intervals13_HA100, 
                                final = finalintervals_HA100)
-rm(intervals_HA100, intervals13_HA100, finalintervals_HA100, data, lengte, numberPeaksFound)
+rm(intervals_HA100, intervals13_HA100, finalintervals_HA100, data, nPeaks, numberPeaksFound)
 cat("\nSaving data...")
 save(freqBandDefinitionsHA100, file = paste0(datadir, "frequencyBandDefinitions_HAsf100.RData"))
 
@@ -206,5 +213,52 @@ cat("\nSaving data...")
 save(freqspecValues_sf100, file = paste0(datadir, "freqspecValues_HAsf100.RData"))
 
 
-# Statistical comparison: ANOVA repeated measures; domFreq and brand
+# STATISTICAL COMPARISON: ANOVA repeated measures (grouping variable = brand, repeated measure domFrequency)
+# Prepare dataset for 2-way repeated measures ANOVA: https://www.datanovia.com/en/lessons/repeated-measures-anova-in-r/#data-preparation-1
+
+# Wide format; make data frame with id, brand and columns for each measurement of dominant frequency
+df_wide <- data.frame()
+id <- names(freqspecValues_sf100$comparison_values)
+brand <- ms_flat_HA$specifications$brand[ms_flat_HA$specifications$sampling_frequency == 100]
+df_wide <- cbind(id, brand)
+domFrequency <- data.frame()
+for (accelerometer in 1:length(freqspecValues_sf100$comparison_values)) {
+  domFrequency <- rbind(domFrequency, freqspecValues_sf100$comparison_values[[accelerometer]]$domFreq)
+}
+df_wide <- cbind(df_wide, domFrequency)
+colnames(df_wide) <- c("id", "brand", "t0", "t1", "t2", "t3", "t4", "t5", "t6", 
+                       "t7", "t8", "t9", "t10", "t11", "t12", "t13", "t14")
+
+# Gather the columns for dominant frequency measures into long format
+library(tidyverse)
+# Convert id, brand, and time into factor variables
+df_long <- df_wide %>%
+  gather(key = "measurement", value = "domFreq", t0, t1, t2, t3, t4, t5, t6, t7, t8, 
+         t9, t10, t11, t12, t13, t14) %>%
+  rstatix::convert_as_factor(id, measurement, brand)
+
+#Summary statistics
+df_long %>%
+  group_by(brand, measurement) %>%
+  get_summary_stats(domFreq, type = "mean_sd")
+
+bxp <- ggpubr::ggboxplot(
+  df_long, x = "measurement", y = "domFreq",
+  color = "brand", palette = "jco"
+)
+bxp
+
+#identify outliers
+outliers <- df_long %>% group_by(measurement) %>% identify_outliers(domFreq)
+#which ouliers are extreme?
+sum(outliers$is.outlier == TRUE & outliers$is.extreme == TRUE)
+
+#CHECK ASSUMPTIONS
+#normality assumption
+ggqqplot(df_long, "domFreq", facet.by = "measurement")
+
+
+#ANOVA
+res.aov <- df_long %>% anova_test(domFreq ~ measurement*brand)
+get_anova_table(res.aov)
 
