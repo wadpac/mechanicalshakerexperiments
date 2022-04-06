@@ -35,29 +35,27 @@ deriveSpectrum <- function(x, sampling_frequency, raw = TRUE) {
   return(specd)
 }
 
-# Function to derive peak intervals of a signal (x, a vector) limited to frequency content of 10Hz; if npeaks = TRUE the number of peaks is specified
-derivePeakIntervals <- function(x, sampling_frequency, freqContentLim = c(0, 10), plot = TRUE, file_name, npeaks = FALSE, numberPeaks = 0) {
+# Function to derive peak intervals of a signal (x, a vector) limited to frequency content of 10Hz; if numberPeaks = TRUE the number of peaks is specified
+derivePeakIntervals <- function(x, sampling_frequency, freqContentLim, plot = TRUE, numberPeaks, npeaks, file_name = " ") {
   # Use smoothed spectrum to find peaks
   spec.smooth <- deriveSpectrum(x, sampling_frequency, raw = FALSE)
   # Find peaks in frequency spectrum -> limit frequency content to 10 Hz!!
-  if(npeaks == TRUE){ # with number specified peaks
+  if(numberPeaks == FALSE){ # without number specified peaks
     peaks <- pracma::findpeaks(spec.smooth$specy[spec.smooth$specx <= freqContentLim[2]], 
-                               minpeakheight = 2*mean(spec.smooth$specy)[spec.smooth$specx <= freqContentLim[2]], 
-                               minpeakdistance = 2*sampling_frequency, 
-                               npeaks = numberPeaks,
-                               sortstr = TRUE)
+                               minpeakheight = 2*mean(spec.smooth$specy), 
+                               minpeakdistance = 2*sampling_frequency)
   } else {
     peaks <- pracma::findpeaks(spec.smooth$specy[spec.smooth$specx <= freqContentLim[2]], 
-                               minpeakheight = 2*mean(spec.smooth$specy[spec.smooth$specx <= freqContentLim[2]]), 
+                               minpeakheight = 2*mean(spec.smooth$specy), 
                                minpeakdistance = 2*sampling_frequency, 
-                               sortstr = TRUE)
+                               npeaks = npeaks)
   }
   #Find start and end x-values
   start <- spec.smooth$specx[peaks[, 3]] 
   end <- spec.smooth$specx[peaks[, 4]]
   
   if (plot == TRUE){
-    jpeg(paste(datadir, paste(file_name, file, ".jpeg", sep = ""), sep = "/plots/"), width=600, height=500, res=120) # start export
+    jpeg(paste(datadir, paste0(paste(file_name, file, sep = "_"), ".jpeg"), sep = "/plots/derivePeakIntervals"), width=600, height=500, res=120) # start export
     plot(spec.smooth$specx, spec.smooth$specy,
          main = "HA", xlab = xlabel, ylab = ylabel, type = "l", xlim = freqContentLim, bty= "l") # zoom in on low-frequencies, as at most 5 is expected based on max rpm)
     for(i in 1:length(start)){
@@ -69,10 +67,18 @@ derivePeakIntervals <- function(x, sampling_frequency, freqContentLim = c(0, 10)
   return(list(start = start, end = end))
 }
 
-# Function to get the minimum start index and the max index from a list of intervals, to ensure peaks are within intervals
-defineFreqBands <- function(intervals) {
-  #start.indices <- sort(intervals[[1]]$start)
-  #end.indices <- sort(intervals[[1]]$end)  
+# Function to derive frequency bins that ensure peaks fall within frequency bin using derived peak interval list as input
+defineFreqBins <- function(intervals) {
+  start <- data.frame()
+  end <- data.frame()
+  for (indice in 1:length(intervals)){
+    start <- rbind(start,sort(intervals[[indice]]$start))
+    end <- rbind(end,sort(intervals[[indice]]$end))
+  }
+  
+  start.indices <- sort(intervals[[1]]$start)
+  end.indices <- sort(intervals[[1]]$end)  
+  # Get minimum start and maximum end intervals to ensure all peaks fall within the intervals 
   for (observation in 2:length(intervals)) {
     start <- sort(intervals[[observation]]$start)
     end <- sort(intervals[[observation]]$end) 
@@ -81,6 +87,7 @@ defineFreqBands <- function(intervals) {
       end.indices[i] <- max(end.indices[i], end[i])
     }
   }
+  # 
   return(list(start = start, end = end)) 
   #mean indices! om tussenliggende gaten te voorkomen
 }  
@@ -154,13 +161,14 @@ for (file in 1:length(data)) {
   cat(paste0(file, "/",  length(data), " "))
   HA <- data[[file]]$HA
   sampling_frequency <- as.numeric(specifications$sampling_frequency[[file]])
-  intervals <- derivePeakIntervals(HA, sampling_frequency, file_name = "initial_bands", XLIM) #
+  intervals <- derivePeakIntervals(HA, sampling_frequency, file_name = "_initial_intervals", XLIM, numberPeaks=FALSE) #
   intervals_HA[[file]] <- intervals
 }
 names(intervals_HA) <- names(data)
 rm(HA, intervals, file)
 
 #Frequency content plots of 42 (AP672490), 51 (AP473254), 55 (AP672490), 64 (AP473254), 78 (6011406), 93 (6011406) deviate a lot from the other signals
+specifications$serial_number[c(42,51,55,64,78,93)]
 
 #See how many peaks were found for each accelerometer file
 nPeaks <- c()
@@ -169,33 +177,34 @@ for (element in 1:length(intervals_HA)){
 }
 summary(nPeaks)
 numberPeaksFound <- table(nPeaks) 
-max(numberPeaksFound) # Set number of peaks to 14 as this is the most frequent number of peaks
+numberPeaksFound
+max(numberPeaksFound) # Set number of peaks to 15 as this is the most frequent number of peaks
 rm(element, numberPeaksFound)
 #also number of peaks found 
-nPeaks[c(42,51,55,64,78,93)] #also number of peaks found are deviant from median of 14
+nPeaks[c(42,51,55,64,78,93)] #also number of peaks found are deviant from 15
 
 # Derive all intervals for 14 peaks
-intervals14_HA <- list()
+intervals15_HA <- list()
 for (file in 1:length(data)) {
   cat(paste0(file, "/",  length(data), " "))
   HA <- data[[file]]$HA
   sampling_frequency <- as.numeric(specifications$sampling_frequency[[file]])
-  intervals <- derivePeakIntervals(HA, sampling_frequency, XLIM, plot = TRUE, file_name = "14peaks_", npeaks = FALSE, numberPeaks = 14) 
-  intervals14_HA[[file]] <- intervals
+  intervals <- derivePeakIntervals(HA, sampling_frequency, XLIM, plot = TRUE, numberPeaks = TRUE, npeaks = 15, file_name = "_15peaks") 
+  intervals15_HA[[file]] <- intervals
 }
-names(intervals14_HA) <- names(data)
+names(intervals15_HA) <- names(data)
 rm(HA, intervals, file)
 
-# Exclude deviant recordings to define the frequency bands for analyses
-intervals14_HA[[42]] <- NULL
-intervals14_HA[[51]] <- NULL
-intervals14_HA[[55]] <- NULL
-intervals14_HA[[64]] <- NULL
-intervals14_HA[[78]] <- NULL
-intervals14_HA[[93]] <- NULL
+# Exclude deviant recordings to define the frequency bins for analyses
+intervals15_HA[[42]] <- NULL
+intervals15_HA[[51]] <- NULL
+intervals15_HA[[55]] <- NULL
+intervals15_HA[[64]] <- NULL
+intervals15_HA[[78]] <- NULL
+intervals15_HA[[93]] <- NULL
 
 # Define general intervals that can be used to compare the signals
-finalintervals_HA100 <- defineFreqBands(intervals13_HA100)
+finalintervals_HA100 <- defineFreqBins(findPeakIntervals)
 
 freqBandDefinitionsHA100 <- list(intervalsVaryingPeaks = intervals_HA100, npeaks = nPeaks, 
                                intervals13Peaks = intervals13_HA100, 
