@@ -254,7 +254,7 @@ df_long_meanPSD <- df_wide_meanPSD %>%
 df_long <- join(df_long_domFreq, df_long_meanPSD)
 
 cat("\nSaving data...")
-save(df_long, file = paste0(datadir, "datasetComparison.RData"))
+save(df_long, file = paste0(datadir, "datasetComparison-high-low-brand.RData"))
 
 ###Find out which test to apply..
 #Summary statistics
