@@ -31,7 +31,6 @@ deriveSpectrum <- function(x, sampling_frequency, raw = TRUE) {
   delta <- 1/sampling_frequency
   specd$specx <- specd$freq/delta # spectrum calculates the frequency axis in terms of cycles per sampling interval -> convert to cycles per unit time (so divide by the sampling interval)
   specd$specy <- 2*specd$spec # spectrum needs to be multiplied by 2 to make it actually equal to variance
-  #dom.freq.raw <- specx.raw[which.max(specy.raw)] # extract the dominant frequency
   return(specd)
 }
 
@@ -55,67 +54,48 @@ derivePeakIntervals <- function(x, sampling_frequency, freqContentLim, plot = TR
   end <- spec.smooth$specx[peaks[, 4]]
   
   if (plot == TRUE){
-    jpeg(paste(datadir, paste0(paste(file_name, file, sep = "_"), ".jpeg"), sep = "/plots/derivePeakIntervals"), width=600, height=500, res=120) # start export
+    jpeg(paste(datadir, paste0(paste(file_name, file, sep = "_"), ".jpeg"), sep = "/plots/"), width=600, height=500, res=120) # start export
     plot(spec.smooth$specx, spec.smooth$specy,
          main = "HA", xlab = xlabel, ylab = ylabel, type = "l", xlim = freqContentLim, bty= "l") # zoom in on low-frequencies, as at most 5 is expected based on max rpm)
     for(i in 1:length(start)){
       abline(v=start[i], col = "red")
       abline(v=end[i], col = "red")
-    }
+    }  
+    abline(h=mean(spec.smooth$specy), col='red')
     dev.off()
   }
   return(list(start = start, end = end))
 }
 
-# Function to derive frequency bins that ensure peaks fall within frequency bin using derived peak interval list as input
-defineFreqBins <- function(intervals) {
+# Function to derive frequency bins that ensure peaks fall within frequency bin using derived peak lower interval as input
+defineFreqBins <- function(startIntervals, deviants, npeaks, freqContentLim) {
+  startIntervals <- startIntervals[-deviants] #disregard deviant signals
   start <- data.frame()
-  end <- data.frame()
-  for (indice in 1:length(intervals)){
-    start <- rbind(start,sort(intervals[[indice]]$start))
-    end <- rbind(end,sort(intervals[[indice]]$end))
-  }
-  
-  start.indices <- sort(intervals[[1]]$start)
-  end.indices <- sort(intervals[[1]]$end)  
-  # Get minimum start and maximum end intervals to ensure all peaks fall within the intervals 
-  for (observation in 2:length(intervals)) {
-    start <- sort(intervals[[observation]]$start)
-    end <- sort(intervals[[observation]]$end) 
-    for(i in 1:length(start)){
-      start.indices[i] <- min(start.indices[i], start[i])
-      end.indices[i] <- max(end.indices[i], end[i])
+  for (indice in 1:length(startIntervals)){
+    if(length(startIntervals[[indice]]) < npeaks){
+      next   #if less peaks than npeaks were found, diregard the intervals
     }
+    start <- rbind(start,sort(startIntervals[[indice]]))
   }
-  # 
-  return(list(start = start, end = end)) 
-  #mean indices! om tussenliggende gaten te voorkomen
+  min_start <- c()  # Get minimum start for peaks to fall within the intervals 
+  for (index in 1:ncol(start)) {
+    min_start <- c(min_start, min(start[,index]))
+  }
+  return(c(freqContentLim[1], min_start, freqContentLim[2])) 
 }  
 
-# Function to derive comparison values (dominant frequency, avg frequency) from a frequency spectrum using intervals
+# Function to derive comparison values (dominant frequency, mean power spectral density) from a frequency spectrum using vector of intervals
 deriveComparisonValues <- function(spectrum, intervals){
   df <- data.frame()
-  #start values
-  lower <- 0
-  upper <- intervals$start[1]
-  index <- which(spectrum$specx <= upper)
-  df[1, 1] <- spectrum$specx[which.max(spectrum$specy[index])] #dominant frequency
-  df[1, 2] <- max(spectrum$specy[index]) #max power spectral density --> gemiddelde density!!
-  
-  for(i in 1:length(intervals$start)){
-    lower <- intervals$start[i]
-    upper <- intervals$end[i]
+  for(i in 1:(length(intervals)-1)){
+    lower <- intervals[i]
+    upper <- intervals[i+1]
     index <- which(spectrum$specx >= lower & spectrum$specx <= upper)
-    df[1+i, 1] <- spectrum$specx[index[which.max(spectrum$specy[index])]]
-    df[1+i, 2] <- max(spectrum$specy[index])
+    df[i, 1] <- spectrum$specx[index[which.max(spectrum$specy[index])]] #dominant frequency
+    df[i, 2] <- mean(spectrum$specy[index]) #mean power spectral density
+    #add SD PSD?
   }
-  
-  index <- which(spectrum$specx >= upper)
-  df[2+i, 1] <- spectrum$specx[index[which.max(spectrum$specy[index])]] #dominant frequency
-  df[2+i, 2] <- max(spectrum$specy[index]) #maximum power spectral density
-  
-  colnames(df) <- c("domFreq", "maxPSD")
-  
+  colnames(df) <- c("domFreq", "meanPSD")
   return(df)
 }
 
@@ -155,16 +135,16 @@ xlabel = "Frequency (Hz)"
 ylabel = "Spectral Density (g2/Hz)"
 XLIM = c(0, 10) #Limit frequency content to 10 Hz
 
-#Find peaks and peak intervals for all files
-intervals_HA <- list()
+#Find peaks and start peak intervals for all files
+intervalStarts_HA <- list()
 for (file in 1:length(data)) {
   cat(paste0(file, "/",  length(data), " "))
   HA <- data[[file]]$HA
   sampling_frequency <- as.numeric(specifications$sampling_frequency[[file]])
-  intervals <- derivePeakIntervals(HA, sampling_frequency, file_name = "_initial_intervals", XLIM, numberPeaks=FALSE) #
-  intervals_HA[[file]] <- intervals
+  intervals <- derivePeakIntervals(HA, sampling_frequency, file_name = "initial_intervals", XLIM, numberPeaks=FALSE) #
+  intervalStarts_HA[[file]] <- intervals$start
 }
-names(intervals_HA) <- names(data)
+names(intervalStarts_HA) <- names(data)
 rm(HA, intervals, file)
 
 #Frequency content plots of 42 (AP672490), 51 (AP473254), 55 (AP672490), 64 (AP473254), 78 (6011406), 93 (6011406) deviate a lot from the other signals
@@ -172,64 +152,66 @@ specifications$serial_number[c(42,51,55,64,78,93)]
 
 #See how many peaks were found for each accelerometer file
 nPeaks <- c()
-for (element in 1:length(intervals_HA)){ 
-  nPeaks <- c(nPeaks, length(intervals_HA[[element]]$start))
+for (element in 1:length(intervalStarts_HA)){ 
+  nPeaks <- c(nPeaks, length(intervalStarts_HA[[element]]))
 }
 summary(nPeaks)
 numberPeaksFound <- table(nPeaks) 
 numberPeaksFound
-max(numberPeaksFound) # Set number of peaks to 15 as this is the most frequent number of peaks
+max(numberPeaksFound) # Set number of peaks to 15 as this is the most frequently occuring number of peaks
 rm(element, numberPeaksFound)
-#also number of peaks found 
-nPeaks[c(42,51,55,64,78,93)] #also number of peaks found are deviant from 15
+deviants <- c(42,51,55,64,78,93)
+nPeaks[deviants]
 
-# Derive all intervals for 14 peaks
-intervals15_HA <- list()
+# Derive start intervals for 15 peaks
+npeaks = 15
+startIntervals15_HA <- list()
 for (file in 1:length(data)) {
   cat(paste0(file, "/",  length(data), " "))
   HA <- data[[file]]$HA
   sampling_frequency <- as.numeric(specifications$sampling_frequency[[file]])
-  intervals <- derivePeakIntervals(HA, sampling_frequency, XLIM, plot = TRUE, numberPeaks = TRUE, npeaks = 15, file_name = "_15peaks") 
-  intervals15_HA[[file]] <- intervals
+  intervals <- derivePeakIntervals(HA, sampling_frequency, XLIM, plot = TRUE, numberPeaks = TRUE, npeaks, file_name = "15peaks") 
+  startIntervals15_HA[[file]] <- intervals$start
 }
-names(intervals15_HA) <- names(data)
+names(startIntervals15_HA) <- names(data)
 rm(HA, intervals, file)
 
-# Exclude deviant recordings to define the frequency bins for analyses
-intervals15_HA[[42]] <- NULL
-intervals15_HA[[51]] <- NULL
-intervals15_HA[[55]] <- NULL
-intervals15_HA[[64]] <- NULL
-intervals15_HA[[78]] <- NULL
-intervals15_HA[[93]] <- NULL
-
 # Define general intervals that can be used to compare the signals
-finalintervals_HA100 <- defineFreqBins(findPeakIntervals)
+finalintervals_HA <- defineFreqBins(startIntervals15_HA, deviants, npeaks, XLIM)
 
-freqBandDefinitionsHA100 <- list(intervalsVaryingPeaks = intervals_HA100, npeaks = nPeaks, 
-                               intervals13Peaks = intervals13_HA100, 
-                               final = finalintervals_HA100)
-rm(intervals_HA100, intervals13_HA100, finalintervals_HA100, data, nPeaks, numberPeaksFound)
+freqBandDefinitionsHA <- list(intervalsVaryingPeaks = intervalStarts_HA, npeaks = nPeaks, 
+                               intervalsPeaks = startIntervals15_HA, 
+                               final = finalintervals_HA)
+rm(intervalStarts_HA, startIntervals15_HA, finalintervals_HA, data, nPeaks)
 cat("\nSaving data...")
-save(freqBandDefinitionsHA100, file = paste0(datadir, "frequencyBandDefinitions_HAsf100.RData"))
+save(freqBandDefinitionsHA, file = paste0(datadir, "frequencyBandDefinitions_HA.RData"))
 
-# Derive values for comparison of spectra (sampling frequency = 100)
-spectra100HA <- raw_spectra$HA[ms_flat_HA$specifications$sampling_frequency == sampling_frequency]
-comparisonValues_HAsf100 <- list()
+# Derive values for comparison of spectra 
+spectra_HA <- raw_spectra$HA
+comparisonValues_HA <- list()
 
-for(spectrum in 1:length(spectra100HA)){ 
-  cat(paste0(spectrum, "/",  length(spectra100HA), " "))
-  spectrum.raw <- spectra100HA[[spectrum]]
-  values <- deriveComparisonValues(spectrum.raw, freqBandDefinitionsHA100$final)
-  comparisonValues_HAsf100[[spectrum]] <- values
+for(spectrum in 1:length(spectra_HA)){ 
+  cat(paste0(spectrum, "/",  length(spectra_HA), " "))
+  spectrum.raw <- spectra_HA[[spectrum]]
+  values <- deriveComparisonValues(spectrum.raw, freqBandDefinitionsHA$final)
+  comparisonValues_HA[[spectrum]] <- values
+  
+  jpeg(paste(datadir, paste0(paste("rawSpec_HA_bands", spectrum, sep = "_"), ".jpeg"), sep = "/plots/"), width=600, height=500, res=120) # start export
+  plot(spectrum.raw$specx, spectrum.raw$specy,
+       main = "HA", xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l") # zoom in on low-frequencies, as at most 5 is expected based on max rpm)
+  for(i in 1:length(freqBandDefinitionsHA$final)){
+    abline(v=freqBandDefinitionsHA$final[i], col = "red")
+  }
+  dev.off()
+  
 }
 rm(spectrum, values, spectrum.raw)
-names(comparisonValues_HAsf100) <- names(spectra100HA)
-freqspecValues_sf100 <- list(raw_spectra = spectra100HA, comparison_values = comparisonValues_HAsf100)
-rm(spectra100HA, comparisonValues_HAsf100)
+names(comparisonValues_HA) <- names(spectra_HA)
+freqspecValues <- list(raw_spectra = spectra_HA, comparison_values = comparisonValues_HA)
+rm(spectra_HA, comparisonValues_HA)
 
 cat("\nSaving data...")
-save(freqspecValues_sf100, file = paste0(datadir, "freqspecValues_HAsf100.RData"))
+save(freqspecValues, file = paste0(datadir, "freqspecValues_HA.RData"))
 
 
 # STATISTICAL COMPARISON: ANOVA repeated measures (grouping variable = brand, repeated measure domFrequency)
@@ -237,29 +219,52 @@ save(freqspecValues_sf100, file = paste0(datadir, "freqspecValues_HAsf100.RData"
 
 # Wide format; make data frame with id, brand and columns for each measurement of dominant frequency
 df_wide <- data.frame()
-id <- names(freqspecValues_sf100$comparison_values)
-brand <- ms_flat_HA$specifications$brand[ms_flat_HA$specifications$sampling_frequency == 100]
-df_wide <- cbind(id, brand)
+id <- names(freqspecValues$comparison_values)
+df_wide <- cbind(id, specifications$brand, specifications$experiment, specifications$sampling_frequency, specifications$dynamic_range)
+
 domFrequency <- data.frame()
-for (accelerometer in 1:length(freqspecValues_sf100$comparison_values)) {
-  domFrequency <- rbind(domFrequency, freqspecValues_sf100$comparison_values[[accelerometer]]$domFreq)
+meanPSD <- data.frame()
+
+for (accelerometer in 1:length(freqspecValues$comparison_values)) {
+  domFrequency <- rbind(domFrequency, freqspecValues$comparison_values[[accelerometer]]$domFreq)
+  meanPSD <- rbind(meanPSD, freqspecValues$comparison_values[[accelerometer]]$meanPSD)
 }
-df_wide <- cbind(df_wide, domFrequency)
-colnames(df_wide) <- c("id", "brand", "t0", "t1", "t2", "t3", "t4", "t5", "t6", 
-                       "t7", "t8", "t9", "t10", "t11", "t12", "t13", "t14")
+df_wide_domFreq <- cbind(df_wide, domFrequency)
+colnames(df_wide_domFreq) <- c("id", "brand", "experiment", "sampling_frequency", "dynamic_range", 
+                       "t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9", 
+                       "t10", "t11", "t12", "t13", "t14", "t15")
+df_wide_meanPSD <- cbind(df_wide, meanPSD)
+colnames(df_wide_meanPSD) <- c("id", "brand", "experiment", "sampling_frequency", "dynamic_range", 
+                               "t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9", 
+                               "t10", "t11", "t12", "t13", "t14", "t15")
 
 # Gather the columns for dominant frequency measures into long format
 library(tidyverse)
 # Convert id, brand, and time into factor variables
-df_long <- df_wide %>%
-  gather(key = "measurement", value = "domFreq", t0, t1, t2, t3, t4, t5, t6, t7, t8, 
-         t9, t10, t11, t12, t13, t14) %>%
-  rstatix::convert_as_factor(id, measurement, brand)
+df_long_domFreq <- df_wide_domFreq %>%
+  gather(key = "freqBin", value = "domFreq", t0, t1, t2, t3, t4, t5, t6, t7, t8, 
+         t9, t10, t11, t12, t13, t14, t15) %>%
+  rstatix::convert_as_factor(id, freqBin, brand, experiment, sampling_frequency, dynamic_range)
 
+df_long_meanPSD <- df_wide_meanPSD %>%
+  gather(key = "freqBin", value = "meanPSD", t0, t1, t2, t3, t4, t5, t6, t7, t8, 
+         t9, t10, t11, t12, t13, t14, t15) %>%
+  rstatix::convert_as_factor(id, freqBin, brand, experiment, sampling_frequency, dynamic_range)
+
+df_long <- join(df_long_domFreq, df_long_meanPSD)
+
+cat("\nSaving data...")
+save(df_long, file = paste0(datadir, "datasetComparison.RData"))
+
+###Find out which test to apply..
 #Summary statistics
 df_long %>%
-  group_by(brand, measurement) %>%
+  group_by(brand, freqBin) %>%
   get_summary_stats(domFreq, type = "mean_sd")
+df_long %>%
+  group_by(brand, freqBin) %>%
+  get_summary_stats(meanPSD, type = "mean_sd")
+
 
 bxp <- ggpubr::ggboxplot(
   df_long, x = "measurement", y = "domFreq",
@@ -274,10 +279,13 @@ sum(outliers$is.outlier == TRUE & outliers$is.extreme == TRUE)
 
 #CHECK ASSUMPTIONS
 #normality assumption
-ggqqplot(df_long, "domFreq", facet.by = "measurement")
+ggqqplot(df_long, "domFreq", facet.by = "freqBin")
+ggqqplot(df_long, "meanPSD", facet.by = "freqBin")
 
 
 #ANOVA
-res.aov <- df_long %>% anova_test(domFreq ~ measurement*brand)
+res.aov <- df_long %>% anova_test(domFreq ~ brand*freqBin + experiment*freqBin)
 get_anova_table(res.aov)
 
+res.aov <- df_long %>% anova_test(measPSD ~ brand*freqBin + experiment*freqBin)
+get_anova_table(res.aov)
