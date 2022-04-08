@@ -20,11 +20,12 @@ if (!file.exists(filename_flatHA)) {
 }
 load(filename_flatHA)
 
+#====================================================================================
 ###FUNCTIONS
 
 #' deriveSpectrum
 #'
-#' @description 'deriveSpectrum' derives the frequency spectrum of a signal (called from within derivePeakIntervals to derive the smoothed spectrum)
+#' @description 'deriveSpectrum' derives the frequency spectrum of a signal (called from within derivePeakIntervals to derive smoothed spectrum)
 #'
 #' @param x Vector that contains the values of the signal (i.e., acceleration)
 #' @param sampling_frequency Integer that indicates the sampling frequency of the signal (i.e., the average number of samples obtained in one second in Hz)
@@ -51,8 +52,6 @@ deriveSpectrum <- function(x, sampling_frequency, raw = TRUE) {
   return(specd)
 }
 
-# Function to derive peak intervals of a signal (x, a vector) ; if numberPeaks = TRUE the number of peaks is specified
-
 #' derivePeakIntervals
 #'
 #' @description 'derivePeakIntervals' To derive global peak intervals of a raw signal
@@ -64,14 +63,13 @@ deriveSpectrum <- function(x, sampling_frequency, raw = TRUE) {
 #' @param numberPeaks Boolean, if TRUE the number of peaks that will be found is restricted to a number of 'npeaks', FALSE: there will be no restriction to the number of peaks.
 #' @param npeaks Integer that indicates the maximum number of peaks that will be derived.
 #' @param file_name String to indicate the name of the plot (i.e., "initial_intervals" result in the following name for plot 1 "initial_intervals_1.jpeg").
-#' @return List of data.frames with the accelerometer time series where each list item represents 1 recording
-#' @importFrom gdata read.xls
+#' @return List of vectors indicating the interval of frequency values of the peaks, containing the following elements: \item{start}{Vector of the start values of the derived peaks} \item{end}{Vector of the end values of the derived peaks}
+#' @importFrom pracma findpeaks
 #' @export
-
 derivePeakIntervals <- function(x, sampling_frequency, freqContentLim, plot = TRUE, numberPeaks, npeaks, file_name = " ") {
   spec.smooth <- deriveSpectrum(x, sampling_frequency, raw = FALSE)   # Use smoothed spectrum to find peaks
   # Find peaks in frequency spectrum -> limit frequency content to 10 Hz!!
-  if(numberPeaks == FALSE){ # without number specified peaks
+  if(numberPeaks == FALSE){ # Without maximum number peaks
     peaks <- pracma::findpeaks(spec.smooth$specy[spec.smooth$specx <= freqContentLim[2]], 
                                minpeakheight = 2*mean(spec.smooth$specy), 
                                minpeakdistance = 2*sampling_frequency)
@@ -89,7 +87,7 @@ derivePeakIntervals <- function(x, sampling_frequency, freqContentLim, plot = TR
   if (plot == TRUE){
     jpeg(paste(datadir, paste0(paste(file_name, file, sep = "_"), ".jpeg"), sep = "/plots/"), width=600, height=500, res=120) # start export
     plot(spec.smooth$specx, spec.smooth$specy,
-         main = "HA", xlab = xlabel, ylab = ylabel, type = "l", xlim = freqContentLim, bty= "l") # zoom in on low-frequencies, as at most 5 is expected based on max rpm)
+         main = "HA", xlab = xlabel, ylab = ylabel, type = "l", xlim = freqContentLim, bty= "l") # Zoom in on low-frequencies (at most 5 is expected based on max rpm)
     for(i in 1:length(start)){
       abline(v=start[i], col = "red")
       abline(v=end[i], col = "red")
@@ -100,25 +98,41 @@ derivePeakIntervals <- function(x, sampling_frequency, freqContentLim, plot = TR
   return(list(start = start, end = end))
 }
 
-# Function to derive frequency bins that ensure peaks fall within frequency bin using derived peak lower interval as input
-defineFreqBins <- function(startIntervals, deviants, npeaks, freqContentLim) {
-  startIntervals <- startIntervals[-deviants] #disregard deviant signals
-  start <- data.frame()
+#' defineFreqBins
+#'
+#' @description 'defineFreqBins' frequency bins that ensure the derived peaks fall within this bin, using the lower intervals of the derived peaks as input
+#'
+#' @param startIntervals Vector that contains the start interval of frequency values of the derived peaks
+#' @param deviants Vector that contains a list of integers indicating the position of deviant signals. If this is a non-empty vector these intervals will not be considered for defining the bins.
+#' @param npeaks Integer that indicates the maximum number of peaks that will be derived.
+#' @param freqContentLim Vector of length 2 that limited the search for peaks in the frequency content (i.e., c(0, 10) limits the search for peaks to 10 Hz). These values will be considered the start and end values of the bins
+#' @return Vector containing frequency values that define the frequency bins
+#' @export
+defineFreqBins <- function(startIntervals, deviants = c(), npeaks, freqContentLim) {
+  startIntervals <- startIntervals[-deviants] #Disregard deviant signals
+    start <- data.frame() #Construct a data frame of all start frequency values of the derived peaks
   for (indice in 1:length(startIntervals)){
     if(length(startIntervals[[indice]]) < npeaks){
-      next   #if less peaks than npeaks were found, diregard the intervals
+      next   #If less peaks than npeaks were found, diregard the corresponding start values
     }
     start <- rbind(start,sort(startIntervals[[indice]]))
   }
-  min_start <- c()  # Get minimum start for peaks to fall within the intervals 
+  min_start <- c()  # Get minimum start to ensure peaks will fall within the intervals 
   for (index in 1:ncol(start)) {
     min_start <- c(min_start, min(start[,index]))
   }
   return(c(freqContentLim[1], min_start, freqContentLim[2])) 
 }  
 
-# Function to derive comparison values (dominant frequency, mean power spectral density) from a frequency spectrum using vector of intervals
-deriveComparisonValues <- function(spectrum, intervals){
+#' deriveComparisonValues
+#'
+#' @description 'deriveComparisonValues' derives the dominant frequency and the mean power spectral density from a frequency spectrum
+#'
+#' @param spectrum An object of class "spec"
+#' @param freqBins Vector containing frequency values that define the frequency bins (can be derived using the function 'defineFreqBins') 
+#' @return Data.frame consisting of two columns: \item{domFreq}{The dominant frequency of the signal in each frequency bin} \item{meanPSD}{The mean power spectral density of the signal in each frequency bin}
+#' @export
+deriveComparisonValues <- function(spectrum, freqBins){
   df <- data.frame()
   for(i in 1:(length(intervals)-1)){
     lower <- intervals[i]
@@ -132,18 +146,78 @@ deriveComparisonValues <- function(spectrum, intervals){
   return(df)
 }
 
-#SELECT DATA OF EXPERIMENT: HIGH and LOW
+#====================================================================================
+###DATA ANALYSES (first for HA only)
+
+# Select accelerometer data derived in the experiments with the sampling frequency settings: high (100Hz) and low (25Hz) 
 data <- ms_flat_HA$data[ms_flat_HA$specifications$experiment == "ms_hfcr" | ms_flat_HA$specifications$experiment == "ms_lfcr"]
 specifications <- ms_flat_HA$specifications[ms_flat_HA$specifications$experiment == "ms_hfcr" | ms_flat_HA$specifications$experiment == "ms_lfcr",]
 
-# DERIVE RAW FREQUENCY SPECTRA
+# Plot parameters
+plot = TRUE
+xlabel = "Frequency (Hz)"
+ylabel = "Spectral Density (g2/Hz)"
+XLIM = c(0, 10) #Limit frequency content to 10 Hz
+
+# Explore peaks and peak intervals for all accelerometer files
+intervalStarts_HA <- list()
+for (file in 1:length(data)) {
+  cat(paste0(file, "/",  length(data), " "))
+  HA <- data[[file]]$HA
+  sampling_frequency <- as.numeric(specifications$sampling_frequency[[file]])
+  intervals <- derivePeakIntervals(HA, sampling_frequency, file_name = "initial_intervals", XLIM, numberPeaks=FALSE) # Find initial intervals to decide on the number of peaks
+  intervalStarts_HA[[file]] <- intervals$start
+}
+names(intervalStarts_HA) <- names(data)
+rm(HA, intervals, file)
+
+# Frequency content plots of 42 (AP672490), 51 (AP473254), 55 (AP672490), 64 (AP473254), 78 (6011406), 93 (6011406) deviated a lot from the other signals
+deviants <- c(42,51,55,64,78,93)
+specifications$serial_number[deviants]
+
+# How many peaks were found for each accelerometer file
+nPeaks <- c()
+for (element in 1:length(intervalStarts_HA)){ 
+  nPeaks <- c(nPeaks, length(intervalStarts_HA[[element]]))
+}
+summary(nPeaks)
+numberPeaksFound <- table(nPeaks) 
+numberPeaksFound
+max(numberPeaksFound) 
+rm(element, numberPeaksFound)
+nPeaks[deviants]
+
+# Derive start intervals for maximum number of peaks
+npeaks = 15 # Set number of peaks to 15 as this is the most frequently occurring number of peaks
+startIntervals15_HA <- list()
+for (file in 1:length(data)) {
+  cat(paste0(file, "/",  length(data), " "))
+  HA <- data[[file]]$HA
+  sampling_frequency <- as.numeric(specifications$sampling_frequency[[file]])
+  intervals <- derivePeakIntervals(HA, sampling_frequency, XLIM, plot = TRUE, numberPeaks = TRUE, npeaks, file_name = "15peaks") 
+  startIntervals15_HA[[file]] <- intervals$start
+}
+names(startIntervals15_HA) <- names(data)
+rm(HA, intervals, file)
+
+# Define the global intervals that can be used as frequency bins for spectrum comparison
+finalintervals_HA <- defineFreqBins(startIntervals15_HA, deviants, npeaks, XLIM)
+
+freqBandDefinitionsHA <- list(intervalsVaryingPeaks = intervalStarts_HA, npeaks = nPeaks, 
+                               intervalsPeaks = startIntervals15_HA, 
+                               final = finalintervals_HA)
+rm(intervalStarts_HA, startIntervals15_HA, finalintervals_HA, data, nPeaks)
+cat("\nSaving data...")
+save(freqBandDefinitionsHA, file = paste0(datadir, "frequencyBandDefinitions_HA.RData"))
+
+# RAW FREQUENCY SPECTRA COMPARISON
 raw.spectra_HA <- list() 
 raw.spectra_normHA <- list() 
 
-for (file in 1:length(data)) {# derive frequency spectra for all accelerometer files
+# Derive the raw frequency spectra for all accelerometer files
+for (file in 1:length(data)) {
   sampling_frequency <- as.numeric(specifications$sampling_frequency[file])  
-  #for horizontal axis
-  HA <- data[[file]]$HA
+  HA <- data[[file]]$HA #   #for horizontal axis
   rawSpectrum_HA <- deriveSpectrum(HA, sampling_frequency, raw = TRUE)
   raw.spectra_HA[[file]] <- rawSpectrum_HA
   #for normalized horizontal axis
@@ -160,66 +234,7 @@ cat("\nSaving data...")
 save(raw_spectra, file = paste0(datadir, "raw_frequencySpectra_high-low.RData"))
 rm(raw.spectra_HA, raw.spectra_normHA, HA, normHA, sampling_frequency, rawSpectrum_HA, rawSpectrum_normHA, file)
 
-###DATA ANALYSIS (first for HA only)
-
-# Plot parameters
-plot = TRUE
-xlabel = "Frequency (Hz)"
-ylabel = "Spectral Density (g2/Hz)"
-XLIM = c(0, 10) #Limit frequency content to 10 Hz
-
-#Find peaks and start peak intervals for all files
-intervalStarts_HA <- list()
-for (file in 1:length(data)) {
-  cat(paste0(file, "/",  length(data), " "))
-  HA <- data[[file]]$HA
-  sampling_frequency <- as.numeric(specifications$sampling_frequency[[file]])
-  intervals <- derivePeakIntervals(HA, sampling_frequency, file_name = "initial_intervals", XLIM, numberPeaks=FALSE) #
-  intervalStarts_HA[[file]] <- intervals$start
-}
-names(intervalStarts_HA) <- names(data)
-rm(HA, intervals, file)
-
-#Frequency content plots of 42 (AP672490), 51 (AP473254), 55 (AP672490), 64 (AP473254), 78 (6011406), 93 (6011406) deviate a lot from the other signals
-specifications$serial_number[c(42,51,55,64,78,93)]
-
-#See how many peaks were found for each accelerometer file
-nPeaks <- c()
-for (element in 1:length(intervalStarts_HA)){ 
-  nPeaks <- c(nPeaks, length(intervalStarts_HA[[element]]))
-}
-summary(nPeaks)
-numberPeaksFound <- table(nPeaks) 
-numberPeaksFound
-max(numberPeaksFound) # Set number of peaks to 15 as this is the most frequently occuring number of peaks
-rm(element, numberPeaksFound)
-deviants <- c(42,51,55,64,78,93)
-nPeaks[deviants]
-
-# Derive start intervals for 15 peaks
-npeaks = 15
-startIntervals15_HA <- list()
-for (file in 1:length(data)) {
-  cat(paste0(file, "/",  length(data), " "))
-  HA <- data[[file]]$HA
-  sampling_frequency <- as.numeric(specifications$sampling_frequency[[file]])
-  intervals <- derivePeakIntervals(HA, sampling_frequency, XLIM, plot = TRUE, numberPeaks = TRUE, npeaks, file_name = "15peaks") 
-  startIntervals15_HA[[file]] <- intervals$start
-}
-names(startIntervals15_HA) <- names(data)
-rm(HA, intervals, file)
-
-# Define general intervals that can be used to compare the signals
-finalintervals_HA <- defineFreqBins(startIntervals15_HA, deviants, npeaks, XLIM)
-
-freqBandDefinitionsHA <- list(intervalsVaryingPeaks = intervalStarts_HA, npeaks = nPeaks, 
-                               intervalsPeaks = startIntervals15_HA, 
-                               final = finalintervals_HA)
-rm(intervalStarts_HA, startIntervals15_HA, finalintervals_HA, data, nPeaks)
-cat("\nSaving data...")
-save(freqBandDefinitionsHA, file = paste0(datadir, "frequencyBandDefinitions_HA.RData"))
-
-# Derive values for comparison of spectra 
+# Compute the dominant frequency and mean power spectral density for comparison of the raw spectra
 spectra_HA <- raw_spectra$HA
 comparisonValues_HA <- list()
 
@@ -228,7 +243,7 @@ for(spectrum in 1:length(spectra_HA)){
   spectrum.raw <- spectra_HA[[spectrum]]
   values <- deriveComparisonValues(spectrum.raw, freqBandDefinitionsHA$final)
   comparisonValues_HA[[spectrum]] <- values
-  
+  # Plot the raw spectra and indicate the frequency bins
   jpeg(paste(datadir, paste0(paste("rawSpec_HA_bands", spectrum, sep = "_"), ".jpeg"), sep = "/plots/"), width=600, height=500, res=120) # start export
   plot(spectrum.raw$specx, spectrum.raw$specy,
        main = "HA", xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l") # zoom in on low-frequencies, as at most 5 is expected based on max rpm)
@@ -236,7 +251,6 @@ for(spectrum in 1:length(spectra_HA)){
     abline(v=freqBandDefinitionsHA$final[i], col = "red")
   }
   dev.off()
-  
 }
 rm(spectrum, values, spectrum.raw)
 names(comparisonValues_HA) <- names(spectra_HA)
@@ -247,15 +261,17 @@ cat("\nSaving data...")
 save(freqspecValues, file = paste0(datadir, "freqspecValues_HA.RData"))
 
 
-# STATISTICAL COMPARISON: ANOVA repeated measures (grouping variable = brand, repeated measure domFrequency)
-# Prepare dataset for 2-way repeated measures ANOVA: https://www.datanovia.com/en/lessons/repeated-measures-anova-in-r/#data-preparation-1
+# STATISTICAL COMPARISON: repeated measures ANOVA (grouping variables are brand, sampling_frequency, and shaker machine position?)
 
-# Wide format; make data frame with id, brand and columns for each measurement of dominant frequency
+# Prepare dataset: https://www.datanovia.com/en/lessons/repeated-measures-anova-in-r/#data-preparation-1
+
+# Wide format; make data.frame with columns for id, brand, experiment, sampling_frequency, dynamic_range, and columns for each outcome measurement
 df_wide <- data.frame()
 id <- names(freqspecValues$comparison_values)
 df_wide <- cbind(id, specifications$brand, specifications$experiment, specifications$sampling_frequency, specifications$dynamic_range)
 
-domFrequency <- data.frame()
+# Make a data.frame object for both outcomes
+domFrequency <- data.frame() 
 meanPSD <- data.frame()
 
 for (accelerometer in 1:length(freqspecValues$comparison_values)) {
@@ -271,9 +287,9 @@ colnames(df_wide_meanPSD) <- c("id", "brand", "experiment", "sampling_frequency"
                                "t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9", 
                                "t10", "t11", "t12", "t13", "t14", "t15")
 
-# Gather the columns for dominant frequency measures into long format
+# Long format: Gather the columns for outcome values
 library(tidyverse)
-# Convert id, brand, and time into factor variables
+# Convert id, brand, experiment, sampling_frequency, dynamic_range and freqBin into factor variables
 df_long_domFreq <- df_wide_domFreq %>%
   gather(key = "freqBin", value = "domFreq", t0, t1, t2, t3, t4, t5, t6, t7, t8, 
          t9, t10, t11, t12, t13, t14, t15) %>%
@@ -284,12 +300,25 @@ df_long_meanPSD <- df_wide_meanPSD %>%
          t9, t10, t11, t12, t13, t14, t15) %>%
   rstatix::convert_as_factor(id, freqBin, brand, experiment, sampling_frequency, dynamic_range)
 
+# Join both data.frame objects to derive a single dataset
 df_long <- join(df_long_domFreq, df_long_meanPSD)
-
 cat("\nSaving data...")
 save(df_long, file = paste0(datadir, "datasetComparison-high-low-brand.RData"))
 
-###Find out which test to apply..
+# Repeated measures ANOVA
+# Assumption check: homogeneity of variances
+# Between experimental groups: if the variances are not equal, perform a separate ANOVA for the different experiments.
+library(car)
+homogeneity_domfreq <- leveneTest(domFreq ~ experiment*brand, data = df_long)
+homogeneity_domfreq # Levene's test is not significant, so the variances are equal
+
+homogeneity_meanpsd <- leveneTest(meanPSD ~ experiment*brand, data = df_long)
+homogeneity_meanpsd # Levene's test is significant, so the variances are not equal and we need to perform the ANOVA separately for the experiments to see if there is an effect of brand...
+
+
+
+
+
 #Summary statistics
 df_long %>%
   group_by(brand, freqBin) %>%
