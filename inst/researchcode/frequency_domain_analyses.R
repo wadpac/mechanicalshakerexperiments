@@ -113,7 +113,7 @@ defineFreqBins <- function(startIntervals, deviants = c(), npeaks, freqContentLi
     start <- data.frame() #Construct a data frame of all start frequency values of the derived peaks
   for (indice in 1:length(startIntervals)){
     if(length(startIntervals[[indice]]) < npeaks){
-      next   #If less peaks than npeaks were found, diregard the corresponding start values
+      next   #If less peaks than npeaks were found, disregard the corresponding start values
     }
     start <- rbind(start,sort(startIntervals[[indice]]))
   }
@@ -152,6 +152,7 @@ deriveComparisonValues <- function(spectrum, freqBins){
 # Select accelerometer data derived in the experiments with the sampling frequency settings: high (100Hz) and low (25Hz) 
 data <- ms_flat_HA$data[ms_flat_HA$specifications$experiment == "ms_hfcr" | ms_flat_HA$specifications$experiment == "ms_lfcr"]
 specifications <- ms_flat_HA$specifications[ms_flat_HA$specifications$experiment == "ms_hfcr" | ms_flat_HA$specifications$experiment == "ms_lfcr",]
+
 
 # Plot parameters
 plot = TRUE
@@ -210,6 +211,7 @@ rm(intervalStarts_HA, startIntervals15_HA, finalintervals_HA, data, nPeaks)
 cat("\nSaving data...")
 save(freqBandDefinitionsHA, file = paste0(datadir, "frequencyBandDefinitions_HA.RData"))
 
+#====================================================================================
 # RAW FREQUENCY SPECTRA COMPARISON
 raw.spectra_HA <- list() 
 raw.spectra_normHA <- list() 
@@ -260,11 +262,10 @@ rm(spectra_HA, comparisonValues_HA)
 cat("\nSaving data...")
 save(freqspecValues, file = paste0(datadir, "freqspecValues_HA.RData"))
 
-
+#====================================================================================
 # STATISTICAL COMPARISON: repeated measures ANOVA (grouping variables are brand, sampling_frequency, and shaker machine position?)
 
 # Prepare dataset: https://www.datanovia.com/en/lessons/repeated-measures-anova-in-r/#data-preparation-1
-
 # Wide format; make data.frame with columns for id, brand, experiment, sampling_frequency, dynamic_range, and columns for each outcome measurement
 df_wide <- data.frame()
 id <- names(freqspecValues$comparison_values)
@@ -306,14 +307,54 @@ cat("\nSaving data...")
 save(df_long, file = paste0(datadir, "datasetComparison-high-low-brand.RData"))
 
 # Repeated measures ANOVA
-# Assumption check: homogeneity of variances
-# Between experimental groups: if the variances are not equal, perform a separate ANOVA for the different experiments.
+library(dplyr)
+library(rstatix)
+library(ggpubr)
+#ASSUMPTIONS
+# Homoscedasticity: homogeneity of variances between experimental groups: if the variances are not equal, perform a separate ANOVA for the different experiments.
 library(car)
 homogeneity_domfreq <- leveneTest(domFreq ~ experiment*brand, data = df_long)
 homogeneity_domfreq # Levene's test is not significant, so the variances are equal
 
 homogeneity_meanpsd <- leveneTest(meanPSD ~ experiment*brand, data = df_long)
 homogeneity_meanpsd # Levene's test is significant, so the variances are not equal and we need to perform the ANOVA separately for the experiments to see if there is an effect of brand...
+df_long_high <- df_long[df_long$experiment == "ms_hfcr",] 
+#
+
+# Normality
+df_long %>%
+  group_by(freqBin) %>%
+  rstatix::shapiro_test(domFreq) # Saphiro-Wilk test, indicates non-normality of the data for each time-point
+# However, this test becomes very sensitive to minor deviations from normality if sample size is > 50
+# This is the case, so: normal QQ plots are preferred
+ggpubr::ggqqplot(df_long, "domFreq", facet.by = "freqBin") # there are some deviations from normality, at the start (t1) and end of the measurements (t15), which is not strange...
+
+df_long %>%
+  group_by(freqBin) %>%
+  rstatix::shapiro_test(meanPSD) # Saphiro-Wilk test, indicates non-normality of the data for each time-point
+# However, this thest becomes very sensityve to minor deivations from normality if sample size is > 50
+# This is the case, so: normal QQ plots are preffered
+ggpubr::ggqqplot(df_long, "meanPSD", facet.by = "freqBin")
+# there are some deviations from normality, at the start and end of the measurements, which is not strange...
+
+#identify outliers --> Do we want to remove the extreme outliers? --> maybe test with and without outliers?
+outliers <- df_long %>% group_by(freqBin) %>% rstatix::identify_outliers(domFreq)
+View(outliers) # These outliers are in t1 and t15 (corresponding to qqplot)
+sum(outliers$is.outlier == TRUE & outliers$is.extreme == TRUE) # More than half of the outliers are extreme outliers
+# Remove extreme outliers
+df_long_rm.outliers <- df_long
+for(extremeOutlier in 1:length(outliers)){
+  if(outliers[extremeOutlier, ]$is.outlier == TRUE && outliers[extremeOutlier, ]$is.extreme == TRUE) {
+    record <- which((df_long$domFreq == outliers[extremeOutlier, ]$domFreq) == TRUE)
+    if(length(record) == 1){
+      df_long_rm.outliers$domFreq[record] <- NA
+    }
+    else{
+      print(extremeOutlier)
+    }
+  }
+}
+ggpubr::ggqqplot(df_long_rm.outliers, "domFreq", facet.by = "freqBin", na.rm = TRUE) ## Doesn't seem to change a lot in the qqplots.. so I think leave them in
 
 
 
@@ -334,14 +375,11 @@ bxp <- ggpubr::ggboxplot(
 )
 bxp
 
-#identify outliers
-outliers <- df_long %>% group_by(measurement) %>% identify_outliers(domFreq)
-#which ouliers are extreme?
-sum(outliers$is.outlier == TRUE & outliers$is.extreme == TRUE)
+
 
 #CHECK ASSUMPTIONS
 #normality assumption
-ggqqplot(df_long, "domFreq", facet.by = "freqBin")
+ggpubr::ggqqplot(df_long, "domFreq", facet.by = "freqBin")
 ggqqplot(df_long, "meanPSD", facet.by = "freqBin")
 
 
