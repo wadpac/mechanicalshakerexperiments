@@ -21,23 +21,55 @@ if (!file.exists(filename_flatHA)) {
 load(filename_flatHA)
 
 ###FUNCTIONS
-# Function to derive frequency spectrum of a signal (x, a vector); if raw = TRUE the raw spectrum is derived
+
+#' deriveSpectrum
+#'
+#' @description 'deriveSpectrum' derives the frequency spectrum of a signal (called from within derivePeakIntervals to derive the smoothed spectrum)
+#'
+#' @param x Vector that contains the values of the signal (i.e., acceleration)
+#' @param sampling_frequency Integer that indicates the sampling frequency of the signal (i.e., the average number of samples obtained in one second in Hz)
+#' @param raw Boolean, if TRUE the raw frequency spectrum will be derived, FALSE: smoothed spectrum will be derived
+#' @return An object of class "spec", which is a list containing at least the following components: 
+#' \item{freq}{Vector of frequencies at which the spectral density is estimated.} 
+#' \item{spec}{Vector (for univariate series) or matrix (for multivariate series) of estimates of the spectral density at frequencies corresponding to freq.}
+#' \item{coh}{NULL for univariate series. For multivariate time series, a matrix containing the squared coherency between different series.}  
+#' \item{phase}{NULL for univariate series. For multivariate time series a matrix containing the cross-spectrum phase between different series.} 
+#' \item{series}{The name of the time series.}
+#' \item{snames}{For multivariate input, the names of the component series.}
+#' \item{method}{The method used to calculate the spectrum.} 
+#' @export
 deriveSpectrum <- function(x, sampling_frequency, raw = TRUE) {
   if(raw == TRUE){
-    specd <- spectrum(x, log = "no", plot = FALSE) # the default for spectrum is to calculate the spectrum on a log-scale, use the raw data
+    specd <- spectrum(x, log = "no", plot = FALSE) # Default is to calculate the spectrum on a log-scale, but we use the raw data
   } else {
-    specd <- spectrum(x, log = "no", span = 75, plot = FALSE)   #Use the smoothed spectrum
+    specd <- spectrum(x, log = "no", span = 75, plot = FALSE) # Smooth the raw signal
   }
+  # The frequency axis of the spectrum, specd, is calculated in terms of cycles per sampling interval
   delta <- 1/sampling_frequency
-  specd$specx <- specd$freq/delta # spectrum calculates the frequency axis in terms of cycles per sampling interval -> convert to cycles per unit time (so divide by the sampling interval)
-  specd$specy <- 2*specd$spec # spectrum needs to be multiplied by 2 to make it actually equal to variance
+  specd$specx <- specd$freq/delta # Convert to cycles per unit time (so divide by the sampling interval)
+  specd$specy <- 2*specd$spec # Multiply the spectrum by 2 to make it actually equal to variance
   return(specd)
 }
 
-# Function to derive peak intervals of a signal (x, a vector) limited to frequency content of 10Hz; if numberPeaks = TRUE the number of peaks is specified
+# Function to derive peak intervals of a signal (x, a vector) ; if numberPeaks = TRUE the number of peaks is specified
+
+#' derivePeakIntervals
+#'
+#' @description 'derivePeakIntervals' To derive global peak intervals of a raw signal
+#'
+#' @param x Vector that contains the values of the signal (i.e., acceleration)
+#' @param sampling_frequency Integer that indicates the sampling frequency of the signal (i.e., the average number of samples obtained in one second in Hz)
+#' @param freqContentLim Vector of length 2 that limits the search for peaks in the frequency content (i.e., c(0, 10) limits the search for peaks to 10 Hz)
+#' @param plot Boolean, if TRUE plots will be saved as .jpeg for the smoothed signal with peak intervals, FALSE: the data will not be plotted.
+#' @param numberPeaks Boolean, if TRUE the number of peaks that will be found is restricted to a number of 'npeaks', FALSE: there will be no restriction to the number of peaks.
+#' @param npeaks Integer that indicates the maximum number of peaks that will be derived.
+#' @param file_name String to indicate the name of the plot (i.e., "initial_intervals" result in the following name for plot 1 "initial_intervals_1.jpeg").
+#' @return List of data.frames with the accelerometer time series where each list item represents 1 recording
+#' @importFrom gdata read.xls
+#' @export
+
 derivePeakIntervals <- function(x, sampling_frequency, freqContentLim, plot = TRUE, numberPeaks, npeaks, file_name = " ") {
-  # Use smoothed spectrum to find peaks
-  spec.smooth <- deriveSpectrum(x, sampling_frequency, raw = FALSE)
+  spec.smooth <- deriveSpectrum(x, sampling_frequency, raw = FALSE)   # Use smoothed spectrum to find peaks
   # Find peaks in frequency spectrum -> limit frequency content to 10 Hz!!
   if(numberPeaks == FALSE){ # without number specified peaks
     peaks <- pracma::findpeaks(spec.smooth$specy[spec.smooth$specx <= freqContentLim[2]], 
@@ -53,6 +85,7 @@ derivePeakIntervals <- function(x, sampling_frequency, freqContentLim, plot = TR
   start <- spec.smooth$specx[peaks[, 3]] 
   end <- spec.smooth$specx[peaks[, 4]]
   
+  #Save the plots of the frequency spectra and indicate the start and end values 
   if (plot == TRUE){
     jpeg(paste(datadir, paste0(paste(file_name, file, sep = "_"), ".jpeg"), sep = "/plots/"), width=600, height=500, res=120) # start export
     plot(spec.smooth$specx, spec.smooth$specy,
@@ -61,7 +94,7 @@ derivePeakIntervals <- function(x, sampling_frequency, freqContentLim, plot = TR
       abline(v=start[i], col = "red")
       abline(v=end[i], col = "red")
     }  
-    abline(h=mean(spec.smooth$specy), col='red')
+    abline(h = 2* mean(spec.smooth$specy), col='red') #Indicate minimum peak height
     dev.off()
   }
   return(list(start = start, end = end))
