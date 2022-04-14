@@ -134,9 +134,9 @@ defineFreqBins <- function(startIntervals, deviants = c(), npeaks, freqContentLi
 #' @export
 deriveComparisonValues <- function(spectrum, freqBins){
   df <- data.frame()
-  for(i in 1:(length(intervals)-1)){
-    lower <- intervals[i]
-    upper <- intervals[i+1]
+  for(i in 1:(length(freqBins)-1)){
+    lower <- freqBins[i]
+    upper <- freqBins[i+1]
     index <- which(spectrum$specx >= lower & spectrum$specx <= upper)
     df[i, 1] <- spectrum$specx[index[which.max(spectrum$specy[index])]] #dominant frequency
     df[i, 2] <- mean(spectrum$specy[index]) #mean power spectral density
@@ -153,6 +153,12 @@ deriveComparisonValues <- function(spectrum, freqBins){
 data <- ms_flat_HA$data[ms_flat_HA$specifications$experiment == "ms_hfcr" | ms_flat_HA$specifications$experiment == "ms_lfcr"]
 specifications <- ms_flat_HA$specifications[ms_flat_HA$specifications$experiment == "ms_hfcr" | ms_flat_HA$specifications$experiment == "ms_lfcr",]
 
+##Remove activPAL from experimental group high sampling frequency, as the sampling_frequency was 20Hz!!!!!
+removeAP <- which(specifications$experiment == "ms_hfcr" & specifications$brand == "Activpal")
+specifications <- specifications[-removeAP,]
+data[removeAP] <- NULL
+
+#ANALYSE STAP VOOR STAP OPNIEUW DOORLOPEN!!!!!!!
 
 # Plot parameters
 plot = TRUE
@@ -172,8 +178,8 @@ for (file in 1:length(data)) {
 names(intervalStarts_HA) <- names(data)
 rm(HA, intervals, file)
 
-# Frequency content plots of 42 (AP672490), 51 (AP473254), 55 (AP672490), 64 (AP473254), 78 (6011406), 93 (6011406) deviated a lot from the other signals
-deviants <- c(42,51,55,64,78,93)
+# Frequency content plots of 42 (AP672490), 51 (AP473254), 65 (6011406), 80 (6011406) deviated a lot from the other signals
+deviants <- c(42,51,65,80)
 specifications$serial_number[deviants]
 
 # How many peaks were found for each accelerometer file
@@ -184,7 +190,7 @@ for (element in 1:length(intervalStarts_HA)){
 summary(nPeaks)
 numberPeaksFound <- table(nPeaks) 
 numberPeaksFound
-max(numberPeaksFound) 
+numberPeaksFound[which.max(numberPeaksFound)]
 rm(element, numberPeaksFound)
 nPeaks[deviants]
 
@@ -207,7 +213,7 @@ finalintervals_HA <- defineFreqBins(startIntervals15_HA, deviants, npeaks, XLIM)
 freqBandDefinitionsHA <- list(intervalsVaryingPeaks = intervalStarts_HA, npeaks = nPeaks, 
                                intervalsPeaks = startIntervals15_HA, 
                                final = finalintervals_HA)
-rm(intervalStarts_HA, startIntervals15_HA, finalintervals_HA, data, nPeaks)
+rm(intervalStarts_HA, startIntervals15_HA, finalintervals_HA, nPeaks, npeaks)
 cat("\nSaving data...")
 save(freqBandDefinitionsHA, file = paste0(datadir, "frequencyBandDefinitions_HA.RData"))
 
@@ -290,6 +296,7 @@ colnames(df_wide_meanPSD) <- c("id", "brand", "experiment", "sampling_frequency"
 
 # Long format: Gather the columns for outcome values
 library(tidyverse)
+library(dplyr)
 # Convert id, brand, experiment, sampling_frequency, dynamic_range and freqBin into factor variables
 df_long_domFreq <- df_wide_domFreq %>%
   gather(key = "freqBin", value = "domFreq", t0, t1, t2, t3, t4, t5, t6, t7, t8, 
@@ -302,9 +309,10 @@ df_long_meanPSD <- df_wide_meanPSD %>%
   rstatix::convert_as_factor(id, freqBin, brand, experiment, sampling_frequency, dynamic_range)
 
 # Join both data.frame objects to derive a single dataset
-df_long <- join(df_long_domFreq, df_long_meanPSD)
+df_long <- merge(df_long_domFreq, df_long_meanPSD)
 cat("\nSaving data...")
 save(df_long, file = paste0(datadir, "datasetComparison-high-low-brand.RData"))
+rm(df_long_domFreq, df_long_meanPSD, df_wide, df_wide_domFreq, df_wide_meanPSD, domFrequency, meanPSD)
 
 # Repeated measures ANOVA
 library(dplyr)
@@ -319,23 +327,16 @@ homogeneity_domfreq # Levene's test is not significant, so the variances are equ
 homogeneity_meanpsd <- leveneTest(meanPSD ~ experiment*brand, data = df_long)
 homogeneity_meanpsd # Levene's test is significant, so the variances are not equal and we need to perform the ANOVA separately for the experiments to see if there is an effect of brand...
 df_long_high <- df_long[df_long$experiment == "ms_hfcr",] 
-#
+df_long_low <- df_long[df_long$experiment == "ms_lfcr",] 
 
 # Normality
+# DOMINANT FREQUENCY
 df_long %>%
   group_by(freqBin) %>%
   rstatix::shapiro_test(domFreq) # Saphiro-Wilk test, indicates non-normality of the data for each time-point
 # However, this test becomes very sensitive to minor deviations from normality if sample size is > 50
 # This is the case, so: normal QQ plots are preferred
 ggpubr::ggqqplot(df_long, "domFreq", facet.by = "freqBin") # there are some deviations from normality, at the start (t1) and end of the measurements (t15), which is not strange...
-
-df_long %>%
-  group_by(freqBin) %>%
-  rstatix::shapiro_test(meanPSD) # Saphiro-Wilk test, indicates non-normality of the data for each time-point
-# However, this thest becomes very sensityve to minor deivations from normality if sample size is > 50
-# This is the case, so: normal QQ plots are preffered
-ggpubr::ggqqplot(df_long, "meanPSD", facet.by = "freqBin")
-# there are some deviations from normality, at the start and end of the measurements, which is not strange...
 
 #identify outliers --> Do we want to remove the extreme outliers? --> maybe test with and without outliers?
 outliers <- df_long %>% group_by(freqBin) %>% rstatix::identify_outliers(domFreq)
@@ -356,8 +357,54 @@ for(extremeOutlier in 1:length(outliers)){
 }
 ggpubr::ggqqplot(df_long_rm.outliers, "domFreq", facet.by = "freqBin", na.rm = TRUE) ## Doesn't seem to change a lot in the qqplots.. so I think leave them in
 
+# MEAN POWER SPECTRAL DENSITY
+df_long_high %>%
+  group_by(freqBin) %>%
+  rstatix::shapiro_test(meanPSD) # Saphiro-Wilk test, indicates non-normality of the data for each time-point
+df_long_low %>%
+  group_by(freqBin) %>%
+  rstatix::shapiro_test(meanPSD) # Saphiro-Wilk test, indicates non-normality of the data for each time-point
+# However, this thest becomes very sensityve to minor deivations from normality if sample size is > 50
+# This is the case, so: normal QQ plots are preffered
+ggpubr::ggqqplot(df_long_high, "meanPSD", facet.by = "freqBin")#mostly deviations from normality at t13 an t14
+ggpubr::ggqqplot(df_long_low, "meanPSD", facet.by = "freqBin") #mostly deviations from normality at t13 an t14
 
+#identify outliers --> Do we want to remove the extreme outliers? --> maybe test with and without outliers?
+outliers_high <- df_long_high %>% group_by(freqBin) %>% rstatix::identify_outliers(meanPSD)
+outliers_low <- df_long_low %>% group_by(freqBin) %>% rstatix::identify_outliers(meanPSD)
 
+sum(outliers_high$is.outlier == TRUE & outliers_high$is.extreme == TRUE) # More than half of the outliers are extreme outliers
+sum(outliers_low$is.outlier == TRUE & outliers_low$is.extreme == TRUE) # More than half of the outliers are extreme outliers
+
+# Remove extreme outliers
+df_long_high_rm.outliers <- df_long_high
+df_long_low_rm.outliers <- df_long_low
+
+for(extremeOutlier in 1:length(max(nrow(outliers_high), nrow(outliers_low)))){
+  if (extremeOutlier <= nrow(outliers_high)){
+    if(outliers_high[extremeOutlier, ]$is.outlier == TRUE && outliers_high[extremeOutlier, ]$is.extreme == TRUE) {
+      record_high <- which((df_long_high$meanPSD == outliers_high[extremeOutlier, ]$meanPSD) == TRUE)
+      if(length(record) == 1){
+        df_long_high_rm.outliers$meanPSD[record] <- NA
+      }
+      else{
+        print(extremeOutlier)
+      }
+    }
+  }
+  if (extremeOutlier <= nrow(outliers_low)){
+    if(outliers_low[extremeOutlier, ]$is.outlier == TRUE && outliers_low[extremeOutlier, ]$is.extreme == TRUE) {
+      record_high <- which((df_long_low$meanPSD == outliers_low[extremeOutlier, ]$meanPSD) == TRUE)
+      if(length(record) == 1){
+        df_long_low_rm.outliers$meanPSD[record] <- NA
+      }
+      else{
+        print(extremeOutlier)
+      }
+    }
+  }
+}
+ggpubr::ggqqplot(df_long_rm.outliers, "domFreq", facet.by = "freqBin", na.rm = TRUE) ## Doesn't seem to change a lot in the qqplots.. so I think leave them in
 
 
 #Summary statistics
