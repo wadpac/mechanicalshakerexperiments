@@ -7,8 +7,7 @@ graphics.off()
 shaker_experiments_folder = "/Users/annelindelettink/Documents/Work MacBook Pro Annelinde/Mechanical Shaker Machine"
 # shaker_experiments_folder = "~/data/VUMC/shaker_experiments"
 
-# TO DO: Check which GENEActiv was removed towards end of one of the experiments, and make sure data is not included
-
+# Check: GENEActiv data (lfcr and hfcr) not included, only the data of this device (058029) for the ms_mfcr experiment is taken into account
 #====================================================================================
 # Specify file paths
 structured_data_dir = paste0(shaker_experiments_folder, "/structured_raw_data")
@@ -16,7 +15,7 @@ outputdir = paste0(shaker_experiments_folder, "/analyses")
 if (!dir.exists(outputdir)) dir.create(outputdir)
 
 ## Subset data for the analyses into one data.frame for shaker experiment - flat
-# Required data: HA (horizontal axis; x-axis), and normalised HA = (HA - M) / SD
+# Required data: HA (horizontal axis; x-axis), and normalized HA = (HA - M) / SD
 
 brands_to_load = c("Actigraph", "Activpal", "Axivity", "GENEActiv")
 experiments_to_load = c("ms_hfcr", "ms_lfcr", "ms_mfcr", "ms_hfmr", "ms_lfmr")
@@ -40,8 +39,13 @@ for (brand in 1:length(brands_to_load)) {
             names(tmp) <- tolower(names(tmp))
           }
           tmp$time = as.POSIXct(tmp$time, origin = "1970-01-01", tz="Europe/Amsterdam")
-          tmp = tmp[, c("shaking_frequency", "time", "x")] # select data for the HA (x-axis), time and shaking_frequency
-          tmp$normHA <- (tmp$x - mean(tmp$x)) / sd(tmp$x) # normalize HA
+          # Check if the x-axis was the axis aligned with the shaker direction 
+          maxAxes <- c(sd(tmp$x), sd(tmp$y), sd(tmp$z)) # calculate the standard deviation of the axes
+          HA <- unlist(tmp[which.max(maxAxes) + 1]) # select the axis with the highest SD as this will be the shaking direction
+          
+          tmp = tmp[, c("shaking_frequency", "time")] # select data for the HA (x-axis), time and shaking_frequency
+          tmp$HA <- HA
+          tmp$normHA <- (tmp$HA - mean(tmp$HA)) / sd(tmp$HA) # normalize HA
           ms_flat_HA$data[[counter]] <- tmp
           counter = counter + 1
           specs <- c(extracteddata$specifications[file,"serial_number"], brands_to_load[brand], experiments_to_load[experiment], 
