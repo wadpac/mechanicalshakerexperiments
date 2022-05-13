@@ -4,20 +4,20 @@
 # - accelerometer_timestamp_error_seconds: Accelerometer time stamp when turning is visable in signal - Timestamp of turning according to reference clock
 # - Expected (sf) and observed sample rate (sf_observed) based on number of samples that were collected between the turning points visible in the signal
 # - accelerometer_sampling_error_seconds: Delta samples signal * expected sample frequency - Delta time of the turning point according to reference clock
-
+rm(list=ls())
 options(digits.secs = 5)
 options(scipen = 999)
 
 # specify file and function paths
-shaker_experiments_folder = "~/data/VUMC/shaker_experiments"
-output_directory = "~/data/VUMC/shaker_experiments/analyses"
-my_functions_folder =   "/home/vincent/projects/mechanicalshakerexperiments/R"
+shaker_experiments_folder = "/media/vincent/DATA/VUMC/shaker_experiments"
+output_directory = "/media/vincent/DATA/VUMC/shaker_experiments/analyses"
+my_functions_folder =   "~/projects/mechanicalshakerexperiments/R"
 time_keeping_results_file = paste0(shaker_experiments_folder, "/analyses/time_keeping.RData")
-
+tz = "Europe/Amsterdam"
 # load functions (used when developing the code)
 for (function_file in dir(my_functions_folder, full.names = T)) source(function_file) 
 
-do.rerun = FALSE
+do.rerun = TRUE
 if (do.rerun == TRUE) {
   
   # declare helper functions:
@@ -39,14 +39,13 @@ if (do.rerun == TRUE) {
     stop("\nLabelled data folder not recognised. Did you specify shaker_experiments_folder and did you run main.R?")
   }
   
-  sessionames = c("timer_check") # only perform autocalibration based on session 3 because that is where non-movement was simulated
+  sessionames = c("timer_check")
   epochsize = 5
   
   experimentfile = system.file("datadescription/data_description.xlsx", package = "mechanicalshakerexperiments")[1]
   experiments <- gdata::read.xls(experimentfile, header = TRUE, sheet = 1)
   experiments = experiments[which(experiments$event == "turn_box"), c("accelerometers_used", "start_time")]
   
-  # define object to keep track of calibration succesrate per brand
   success_log = list(Actigraph = c(), Axivity = c(), GENEActiv = c(), Activpal = c())
   
   results = data.frame(brand = character(500), sn = character(500), sf = numeric(500), turn = numeric(500), 
@@ -54,7 +53,7 @@ if (do.rerun == TRUE) {
                        elapsed_time_atomclock_hours = numeric(500),
                        accelerometer_timestamp_error_seconds = numeric(500), stringsAsFactors = FALSE)
   cnt = 1
-  # loop over sessions and data files to perform auto-calibration procedure
+  
   for (ses_name in sessionames) { #
     ses = grep(basename(fns), pattern = ses_name)
     ses2 = grep(fns[ses], pattern = "Acttrust|Activpal", invert = TRUE) # ignore Acttrust, because it does not have raw data
@@ -74,6 +73,8 @@ if (do.rerun == TRUE) {
         brand = "MOX"
       }
       for (i in 1:length(extracteddata$data)) {
+        options(digits.secs = 5)
+        options(scipen = 999)
         tmp = extracteddata$data[[i]]
         if (length(tmp) > 0) {
           # apply aggregation function
@@ -82,8 +83,12 @@ if (do.rerun == TRUE) {
           sn = as.character(extracteddata$specifications[i, "serial_number"])
           sf = extracteddata$specifications[i, "sampling_frequency"]
           if (brand == "MOX") sf = 25
-          tmp$time = as.POSIXct(tmp$time, origin = "1970-01-01", tz = "Europe/Amsterdam")
-          
+          if (brand == "Actigraph" | brand == "Activpal") {
+            # Actigraph timestamps are local but with the wrong timezone attached to them
+            tmp$time = as.POSIXlt(as.character(tmp$time), tz = tz, origin = "1970-01-01")
+          } else {
+            tmp$time = as.POSIXlt(tmp$time, origin = "1970-01-01", tz = "Europe/Amsterdam")
+          }
           if (brand == "Actigraph" | brand == "Activpal") {
             tmp = tmp[, c("time","X","Y","Z")]
           } else if (brand == "Axivity" | brand == "GENEActiv" ) {
@@ -101,7 +106,6 @@ if (do.rerun == TRUE) {
           results$brand[cnt:(cnt + Nturn - 1)] = rep(brand, Nturn)
           results$sn[cnt:(cnt + Nturn - 1)] = rep(sn, Nturn)
           results$sf[cnt:(cnt + Nturn - 1)] = rep(sf, Nturn)
-          
           results$turn[cnt:(cnt + Nturn - 1)] = 1:Nturn
           results$turn_clock_time[cnt:(cnt + Nturn - 1)] = as.character(turning_times)
           results$elapsed_time_atomclock_hours[cnt:(cnt + Nturn - 1)] = as.numeric(turning_times - turning_times[1])
