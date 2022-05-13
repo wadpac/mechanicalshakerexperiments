@@ -97,6 +97,7 @@ loaddata <- function(path, brand, experiment, windows = TRUE, experimentfile, ac
                          options(digits.secs = 5)
                          options(scipen = 999)
                          rawdata$time = as.POSIXct(rawdata$time, origin = "1970-01-01", tz = tz)
+                         rawdata$time = as.POSIXlt(as.character(rawdata$time), tz = tz, origin = "1970-01-01")
                        } else if (brand == "Activpal") {
                          rawdata <- read.activpal(paste(file_path, file_list[i], sep = "/"))
                          rawdata[,c("X","Y","Z")] = ((rawdata[,c("X","Y","Z")] / (2^8)) - 0.5) * 2 * 2

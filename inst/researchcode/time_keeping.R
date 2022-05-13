@@ -83,10 +83,7 @@ if (do.rerun == TRUE) {
           sn = as.character(extracteddata$specifications[i, "serial_number"])
           sf = extracteddata$specifications[i, "sampling_frequency"]
           if (brand == "MOX") sf = 25
-          if (brand == "Actigraph" | brand == "Activpal") {
-            # Actigraph timestamps are local but with the wrong timezone attached to them
-            tmp$time = as.POSIXlt(as.character(tmp$time), tz = tz, origin = "1970-01-01")
-          } else {
+          if (brand != "Actigraph" & brand != "Activpal") {
             tmp$time = as.POSIXlt(tmp$time, origin = "1970-01-01", tz = "Europe/Amsterdam")
           }
           if (brand == "Actigraph" | brand == "Activpal") {
