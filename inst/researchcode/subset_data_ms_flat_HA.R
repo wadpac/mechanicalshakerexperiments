@@ -27,7 +27,7 @@ serial_numbers <- c()
 counter = 1
 for (brand in 1:length(brands_to_load)) {
   for (experiment in 1:length(experiments_to_load)){
-    cat(paste0("\nBrand", brands_to_load[brand], ", experiment:", experiments_to_load[experiment]))
+    cat(paste0("\nBrand: ", brands_to_load[brand], ", experiment: ", experiments_to_load[experiment]))
     if (brands_to_load[brand] != "Axivity" & endsWith(experiments_to_load[experiment], "mr")) { #to avoid loading mixed dynamic range experiments for other devices
       cat(paste0("\nThis device was not included in experiment:"), experiments_to_load[experiment])
       next
@@ -38,6 +38,9 @@ for (brand in 1:length(brands_to_load)) {
         if(length(tmp > 0)) {
           if(brands_to_load[brand] %in% c("Actigraph", "Activpal")) {
             names(tmp) <- tolower(names(tmp))
+          }
+          if(brands_to_load[brand] == "MOX") {
+            names(tmp) <- c("time", "x", "y", "z", "shaking_frequency", "condition")
           }
           tmp$time = as.POSIXct(tmp$time, origin = "1970-01-01", tz="Europe/Amsterdam")
           # Check if the x-axis was the axis aligned with the shaker direction 
