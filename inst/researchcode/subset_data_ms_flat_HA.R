@@ -17,7 +17,7 @@ if (!dir.exists(outputdir)) dir.create(outputdir)
 ## Subset data for the analyses into one data.frame for shaker experiment - flat
 # Required data: HA (horizontal axis; x-axis), and normalized HA = (HA - M) / SD
 
-brands_to_load = c("Actigraph", "Activpal", "Axivity", "GENEActiv")
+brands_to_load = c("Actigraph", "Activpal", "Axivity", "GENEActiv", "MOX")
 experiments_to_load = c("ms_hfcr", "ms_lfcr", "ms_mfcr", "ms_hfmr", "ms_lfmr")
 
 ms_flat_HA <- list()
@@ -27,6 +27,7 @@ serial_numbers <- c()
 counter = 1
 for (brand in 1:length(brands_to_load)) {
   for (experiment in 1:length(experiments_to_load)){
+    cat(paste0("\nBrand", brands_to_load[brand], ", experiment:", experiments_to_load[experiment]))
     if (brands_to_load[brand] != "Axivity" & endsWith(experiments_to_load[experiment], "mr")) { #to avoid loading mixed dynamic range experiments for other devices
       cat(paste0("\nThis device was not included in experiment:"), experiments_to_load[experiment])
       next
