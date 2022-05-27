@@ -81,7 +81,7 @@ loaddata <- function(path, brand, experiment, windows = TRUE, experimentfile, ac
   closeAllConnections() # in case there is a still something running from last time, kill it.
   cores = parallel::detectCores()
   Ncores = cores[1]
-  Ncores = Ncores - ifelse(Ncores > 8, yes = 5, no = 2)
+  Ncores = Ncores - 2
   if (Ncores < 1) Ncores = 1
   cl <- parallel::makeCluster(Ncores) #not to overload your computer
   doParallel::registerDoParallel(cl)
