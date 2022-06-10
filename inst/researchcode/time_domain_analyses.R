@@ -14,7 +14,7 @@ if (!dir.exists(datadir)) {
   stop(paste0("Directory does not exist: ", datadir))
 }
 # Load mechanical shaker data for horizontal axis 
-filename_flatHA = paste0(datadir, "ms_flat_HA.RData") 
+filename_flatHA = paste0(datadir, "ms_flat_HA_VM.RData") 
 if (!file.exists(filename_flatHA)) {
   stop(paste0("File does not exist: ", filename_flatHA))
 }
