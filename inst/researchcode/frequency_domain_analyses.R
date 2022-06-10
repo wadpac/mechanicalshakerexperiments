@@ -357,7 +357,7 @@ save(df_low, file = paste0(datadir, "domfreq_meanPSD_HA_ms_dataset_long_lf.RData
 #====================================================================================
 # STATISTICAL COMPARISON
 
-### LOW FREQUENCY EXPERIMENT
+############# LOW FREQUENCY EXPERIMENT #############
 load(paste(shaker_experiments_folder, "analyses/domfreq_meanPSD_HA_ms_dataset_long_lf.RData", sep = "/"))
 
 ## Boxplots
@@ -406,126 +406,89 @@ ggpubr::ggqqplot(df_low, "meanPSD_normHA", facet.by = "freqBin")
 
 ## MIXED MODEL ANALYSIS
 df_low <- df_low[order(df_low$id),] # sort on id
+df_low$brand <- as.factor(df_low$brand)
+str(df_low$brand) # 1 = "Actigraph", 2 = "Activpal", 3 = "Axivity", 4 = "GENEActiv", 5 = "MOX"      
+df_low$brand <- plyr::revalue(df_low$brand, c("1"="0", "2"="1", "3" = "2", "4" = "3", "5" = "4")) # 0 = "Actigraph", 1 = "Activpal", 2 = "Axivity", 3 = "GENEActiv", 4 = "MOX"     
 
-## Step 1: Naive model (brand as grouping variable)
-# Dominant frequency - HA
-domFreq_naive_low_HA <- lm(domFreq_HA ~ brand, data = df_low)
-summary(domFreq_naive_low_HA)
-# Dominant frequency - norm HA
-domFreq_naive_low_normHA <- lm(domFreq_normHA ~ brand, data = df_low)
-summary(domFreq_naive_low_normHA)
-# Mean PSD - HA
-meanPSD_naive_low_HA <- lm(meanPSD_HA ~ brand, data = df_low)
-summary(meanPSD_naive_low_HA)
-# Mean PSD - norm HA
-meanPSD_naive_low_normHA <- lm(meanPSD_normHA ~ brand, data = df_low)
-summary(meanPSD_naive_low_normHA)
-
-## Step 2a: Add random intercept for accelerometer id, brand as grouping variable
-# Dominant frequency - HA
-domFreq_intercept_id_low_HA <- nlme::lme(domFreq_HA ~ brand, random = ~ 1|id, method="ML", data = df_low)
-summary(domFreq_intercept_id_low_HA)
-# Dominant frequency - norm HA
-domFreq_intercept_id_low_normHA <- nlme::lme(domFreq_normHA ~ brand, random = ~ 1|id, method="ML", data = df_low)
-summary(domFreq_intercept_id_low_normHA)
-# Mean PSD - HA
+## Starting model ## with random intercept for accelerometer id (to adjust for the repeated measurements of the accelerometer devices)
+## Mean PSD - HA
 meanPSD_intercept_id_low_HA <- nlme::lme(meanPSD_HA ~ brand, random = ~ 1|id, method="ML", data = df_low)
-summary(meanPSD_intercept_id_low_HA)
-# Mean PSD - norm HA
+## Mean PSD - norm HA 
 meanPSD_intercept_id_low_normHA <- nlme::lme(meanPSD_normHA ~ brand, random = ~ 1|id, method="ML", data = df_low)
-summary(meanPSD_intercept_id_low_normHA)
+## Dominant frequency - HA
+domFreq_intercept_id_low_HA <- nlme::lme(domFreq_HA ~ brand, random = ~ 1|id, method="ML", data = df_low)
+## Dominant frequency - norm HA
+domFreq_intercept_id_low_normHA <- nlme::lme(domFreq_normHA ~ brand, random = ~ 1|id, method="ML", data = df_low)
 
-#Evaluate if adding random intercept for accelerometer id is necessary
-# Dominant frequency - HA
-diff_ll_domFreq_id_low_HA <- (-2*(logLik(domFreq_naive_low_HA))) - (-2*logLik(domFreq_intercept_id_low_HA))
-(diff_ll_domFreq_id_low_HA > 3.84) #FALSE adding a random intercept to the model is not necessary
-# Dominant frequency - norm HA
-diff_ll_domFreq_id_low_normHA <- (-2*(logLik(domFreq_naive_low_normHA))) - (-2*logLik(domFreq_intercept_id_low_normHA))
-(diff_ll_domFreq_id_low_normHA > 3.84) #FALSE adding a random intercept to the model is not necessary
-# Mean PSD - HA
-diff_ll_meanPSD_id_low_HA <- (-2*(logLik(meanPSD_naive_low_HA))) - (-2*logLik(meanPSD_intercept_id_low_HA))
-(diff_ll_meanPSD_id_low_HA > 3.84) #FALSE adding a random intercept to the model is not necessary
-# Mean PSD - norm HA
-diff_ll_meanPSD_id_low_normHA <- (-2*(logLik(meanPSD_naive_low_normHA))) - (-2*logLik(meanPSD_intercept_id_low_normHA))
-(diff_ll_meanPSD_id_low_normHA > 3.84) #FALSE adding a random intercept to the model is not necessary
-
-## Step 2b: Add random intercept for frequency bin on top of id, brand as grouping variable
-# Dominant frequency - HA
-domFreq_intercept_freqbin_low_HA <- nlme::lme(domFreq_HA ~ brand, random = list(~ 1|id, ~ 1|freqBin), method="ML", data = df_low)
-summary(domFreq_intercept_freqbin_low_HA)
-# Dominant frequency - norm HA
-domFreq_intercept_freqbin_low_normHA <- nlme::lme(domFreq_normHA ~ brand, random = list(~ 1|id, ~ 1|freqBin), method="ML", data = df_low)
-summary(domFreq_intercept_freqbin_low_normHA)
-# Mean PSD - HA
+## Add random intercept ## for freqBin (to adjust for the frequencies)
+## Mean PSD - HA
 meanPSD_intercept_freqbin_low_HA <- nlme::lme(meanPSD_HA ~ brand, random = list(~ 1|id, ~ 1|freqBin), method="ML", data = df_low)
-summary(meanPSD_intercept_freqbin_low_HA)
-# Mean PSD - norm HA
+## Mean PSD - norm HA
 meanPSD_intercept_freqbin_low_normHA <- nlme::lme(meanPSD_normHA ~ brand, random = list(~ 1|id, ~ 1|freqBin), method="ML", data = df_low)
-summary(meanPSD_intercept_freqbin_low_normHA)
+## Dominant frequency - HA
+domFreq_intercept_freqbin_low_HA <- nlme::lme(domFreq_HA ~ brand, random = list(~ 1|id, ~ 1|freqBin), method="ML", data = df_low)
+## Dominant frequency - norm HA
+domFreq_intercept_freqbin_low_normHA <- nlme::lme(domFreq_normHA ~ brand, random = list(~ 1|id, ~ 1|freqBin), method="ML", data = df_low)
 
-#Evaluate if adding random intercept for frequency bin is necessary
-# Dominant frequency - HA
-diff_ll_domFreq_id_freqbin_low_HA <- (-2*(logLik(domFreq_intercept_id_low_HA))) - (-2*logLik(domFreq_intercept_freqbin_low_HA))
-(diff_ll_domFreq_id_freqbin_low_HA > 3.84) #FALSE adding a random intercept to the model is not necessary
-# Dominant frequency - norm HA
-diff_ll_domFreq_id_freqbin_low_normHA <- (-2*(logLik(domFreq_intercept_id_low_normHA))) - (-2*logLik(domFreq_intercept_freqbin_low_normHA))
-(diff_ll_domFreq_id_freqbin_low_normHA > 3.84) #FALSE adding a random intercept to the model is not necessary
-# Mean PSD - HA
-diff_ll_meanPSD_id_freqbin_low_HA <- (-2*(logLik(meanPSD_intercept_id_low_HA))) - (-2*logLik(meanPSD_intercept_freqbin_low_HA))
-(diff_ll_meanPSD_id_freqbin_low_HA > 3.84) #FALSE adding a random intercept to the model is not necessary
-# Mean PSD - norm HA
-diff_ll_meanPSD_id_freqbin_low_normHA <- (-2*(logLik(meanPSD_intercept_id_low_normHA))) - (-2*logLik(meanPSD_intercept_freqbin_low_normHA))
-(diff_ll_meanPSD_id_freqbin_low_normHA > 3.84) #FALSE adding a random intercept to the model is not necessary
+## Evaluate ## if adding a random intercept for freqBin is necessary
+## Mean PSD - HA
+diff_ll_meanPSD_low_HA_id_freqbin <- (-2*(logLik(meanPSD_intercept_id_low_HA))) - (-2*logLik(meanPSD_intercept_freqbin_low_HA))
+(diff_ll_meanPSD_low_HA_id_freqbin > 3.84) #FALSE adding a random intercept for frequency bin to the model is not necessary
+## Mean PSD - normHA
+diff_ll_meanPSD_low_normHA_id_freqbin <- (-2*(logLik(meanPSD_intercept_id_low_normHA))) - (-2*logLik(meanPSD_intercept_freqbin_low_normHA))
+(diff_ll_meanPSD_low_normHA_id_freqbin > 3.84) #FALSE adding a random intercept for frequency bin to the model is not necessary
+## Dominant frequency - HA
+diff_ll_domFreq_low_HA_id_freqbin <- (-2*(logLik(domFreq_intercept_id_low_HA))) - (-2*logLik(domFreq_intercept_freqbin_low_HA))
+(diff_ll_domFreq_low_HA_id_freqbin > 3.84) #FALSE adding a random intercept for frequency bin to the model is not necessary
+## Dominant frequency - norm HA
+diff_ll_domFreq_low_normHA_id_freqbin <- (-2*(logLik(domFreq_intercept_id_low_normHA))) - (-2*logLik(domFreq_intercept_freqbin_low_normHA))
+(diff_ll_domFreq_low_normHA_id_freqbin > 3.84) #FALSE adding a random intercept for frequency bin to the model is not necessary
+#Adding of a random intercept for freqBin is not necessary for the low frequency experiment
+rm(meanPSD_intercept_freqbin_low_HA, meanPSD_intercept_freqbin_low_normHA, domFreq_intercept_freqbin_low_HA, domFreq_intercept_freqbin_low_normHA)
 
-#ADDING A RANDOM INTERCEPT TO THE MODEL IS NOT NECESSARY
-# Report the crude model by re-leveling brand and rerunning the naive model
-for(b in 2:length(unique(df_low$brand))){
-  print("brand releveled")
-  df_low$brand <- relevel(df_low$brand, ref = b) 
-  
-  print("Dominant frequency - HA")
-  domFreq_naive_low_HA <- lm(domFreq_HA ~ brand, data = df_low)
-  print(summary(domFreq_naive_low_HA))
-  
-  print("Dominant frequency - norm HA")
-  domFreq_naive_low_normHA <- lm(domFreq_normHA ~ brand, data = df_low)
-  print(summary(domFreq_naive_low_normHA))
-  
-  print("mean PSD - HA")
-  meanPSD_naive_low_HA <- lm(meanPSD_HA ~ brand, data = df_low)
-  print(summary(meanPSD_naive_low_HA))
+## Report ## model with the random intercept for id and rerun re-leveled model
+df_low$brand <- relevel(df_low$brand, ref = 5) 
+levels(df_low$brand) #check brand levels
+## Mean PSD - HA
+meanPSD_intercept_id_low_HA <- nlme::lme(meanPSD_HA ~ brand, random = ~ 1|id, method="ML", data = df_low)
+summary(meanPSD_intercept_id_low_HA) #fixed effect estimates
+lme4::VarCorr(meanPSD_intercept_id_low_HA) #random effect estimates
+## Mean PSD - norm HA
+meanPSD_intercept_id_low_normHA <- nlme::lme(meanPSD_normHA ~ brand, random = ~ 1|id, method="ML", data = df_low)
+summary(meanPSD_intercept_id_low_normHA) #fixed effect estimates
+lme4::VarCorr(meanPSD_intercept_id_low_normHA) #random effect estimates
+## Dominant frequency - HA
+domFreq_intercept_id_low_HA <- nlme::lme(domFreq_HA ~ brand, random = ~ 1|id, method="ML", data = df_low)
+summary(domFreq_intercept_id_low_HA) #fixed effect estimates
+lme4::VarCorr(domFreq_intercept_id_low_HA) #random effect estimates
+## Dominant frequency - norm HA
+domFreq_intercept_id_low_normHA <- nlme::lme(domFreq_normHA ~ brand, random = ~ 1|id, method="ML", data = df_low)
+summary(domFreq_intercept_id_low_normHA) #fixed effect estimates
+lme4::VarCorr(domFreq_intercept_id_low_normHA) #random effect estimates
 
-  print("mean PSD - norm HA")
-  meanPSD_naive_low_normHA <- lm(meanPSD_normHA ~ brand, data = df_low)
-  print(summary(meanPSD_naive_low_normHA))
-}
-
-
-##########
-
-### HIGH FREQUENCY EXPERIMENT
+############# HIGH FREQUENCY EXPERIMENT #############
 load(paste(shaker_experiments_folder, "analyses/domfreq_meanPSD_ms_HA_dataset_long_hf.RData", sep = "/"))
 
 ## Boxplots
 # Dominant frequency - HA
 df_high$freqBin <- factor(df_high$freqBin, levels=c("t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9", "t10"))
 bxp_HA_domfreq_high <- ggpubr::ggboxplot(df_high, x = "freqBin", y = "domFreq_HA",
-                                    color = "brand", palette = c("gray", "blue", "red", "green", "orange")) 
+                                         color = "brand", palette = c("gray", "blue", "red", "green", "orange")) 
 bxp_HA_domfreq_high
 # Dominant frequency - norm HA
 df_high$freqBin <- factor(df_high$freqBin, levels=c("t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9", "t10"))
 bxp_normHA_domfreq_high <- ggpubr::ggboxplot(df_high, x = "freqBin", y = "domFreq_normHA",
-                                        color = "brand", palette = c("gray", "blue", "red", "green", "orange")) 
+                                             color = "brand", palette = c("gray", "blue", "red", "green", "orange")) 
 bxp_normHA_domfreq_high
 # Mean PSD - HA
 df_high$freqBin <- factor(df_high$freqBin, levels=c("t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9", "t10"))
 bxp_HA_psd_high <- ggpubr::ggboxplot(df_high, x = "freqBin", y = "meanPSD_HA",
-                                color = "brand", palette = c("gray", "blue", "red", "green", "orange")) 
+                                     color = "brand", palette = c("gray", "blue", "red", "green", "orange")) 
 bxp_HA_psd_high
 # Mean PSD - norm HA
 df_high$freqBin <- factor(df_high$freqBin, levels=c("t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9", "t10"))
 bxp_normHA_psd_high <- ggpubr::ggboxplot(df_high, x = "freqBin", y = "meanPSD_normHA",
-                                    color = "brand", palette = c("gray", "blue", "red", "green", "orange")) 
+                                         color = "brand", palette = c("gray", "blue", "red", "green", "orange")) 
 bxp_normHA_psd_high
 
 ## ASSUMPTIONS
@@ -550,102 +513,69 @@ ggpubr::ggqqplot(df_high, "meanPSD_HA", facet.by = "freqBin")
 # Mean PSD - norm HA
 ggpubr::ggqqplot(df_high, "meanPSD_normHA", facet.by = "freqBin")
 
-
-## MIXED MODEL ANALYSIS: level 1 accelerometer id, level 2 freqBin; brand as grouping variable
+## MIXED MODEL ANALYSIS
 df_high <- df_high[order(df_high$id),] # sort on id
+df_high$brand <- as.factor(df_high$brand)
+str(df_high$brand) # 1 = "Actigraph", 2 = "Activpal", 3 = "Axivity", 4 = "GENEActiv", 5 = "MOX"      
+df_high$brand <- plyr::revalue(df_high$brand, c("1"="0", "2"="1", "3" = "2", "4" = "3", "5" = "4")) # 0 = "Actigraph", 1 = "Activpal", 2 = "Axivity", 3 = "GENEActiv", 4 = "MOX"     
 
-## Step 1: Naive model (brand as grouping variable)
-# Dominant frequency - HA
-domFreq_naive_high_HA <- lm(domFreq_HA ~ brand, data = df_high)
-summary(domFreq_naive_high_HA)
-# Dominant frequency - norm HA
-domFreq_naive_high_normHA <- lm(domFreq_normHA ~ brand, data = df_high)
-summary(domFreq_naive_high_normHA)
-# Mean PSD - HA
-meanPSD_naive_high_HA <- lm(meanPSD_HA ~ brand, data = df_high)
-summary(meanPSD_naive_high_HA)
-# Mean PSD - norm HA
-meanPSD_naive_high_normHA <- lm(meanPSD_normHA ~ brand, data = df_high)
-summary(meanPSD_naive_high_normHA)
-
-## Step 2a: Add random intercept for accelerometer id, brand as grouping variable
-# Dominant frequency - HA
-domFreq_intercept_id_high_HA <- nlme::lme(domFreq_HA ~ brand, random = ~ 1|id, method="ML", data = df_high)
-summary(domFreq_intercept_id_high_HA)
-# Dominant frequency - norm HA
-domFreq_intercept_id_high_normHA <- nlme::lme(domFreq_normHA ~ brand, random = ~ 1|id, method="ML", data = df_high)
-summary(domFreq_intercept_id_high_normHA)
-# Mean PSD - HA
+## Starting model ## with random intercept for accelerometer id (to adjust for the repeated measurements of the accelerometer devices)
+## Mean PSD - HA
 meanPSD_intercept_id_high_HA <- nlme::lme(meanPSD_HA ~ brand, random = ~ 1|id, method="ML", data = df_high)
-summary(meanPSD_intercept_id_high_HA)
-# Mean PSD - norm HA
+## Mean PSD - norm HA 
 meanPSD_intercept_id_high_normHA <- nlme::lme(meanPSD_normHA ~ brand, random = ~ 1|id, method="ML", data = df_high)
-summary(meanPSD_intercept_id_high_normHA)
+## Dominant frequency - HA
+domFreq_intercept_id_high_HA <- nlme::lme(domFreq_HA ~ brand, random = ~ 1|id, method="ML", data = df_high)
+## Dominant frequency - norm HA
+domFreq_intercept_id_high_normHA <- nlme::lme(domFreq_normHA ~ brand, random = ~ 1|id, method="ML", data = df_high)
 
-#Evaluate if adding random intercept for accelerometer id is necessary
-# Dominant frequency - HA
-diff_ll_domFreq_id_high_HA <- (-2*(logLik(domFreq_naive_high_HA))) - (-2*logLik(domFreq_intercept_id_high_HA))
-(diff_ll_domFreq_id_high_HA > 3.84) #FALSE adding a random intercept to the model is not necessary
-# Dominant frequency - norm HA
-diff_ll_domFreq_id_high_normHA <- (-2*(logLik(domFreq_naive_high_normHA))) - (-2*logLik(domFreq_intercept_id_high_normHA))
-(diff_ll_domFreq_id_high_normHA > 3.84) #FALSE adding a random intercept to the model is not necessary
-# Mean PSD - HA
-diff_ll_meanPSD_id_high_HA <- (-2*(logLik(meanPSD_naive_high_HA))) - (-2*logLik(meanPSD_intercept_id_high_HA))
-(diff_ll_meanPSD_id_high_HA > 3.84) #FALSE adding a random intercept to the model is not necessary
-# Mean PSD - norm HA
-diff_ll_meanPSD_id_high_normHA <- (-2*(logLik(meanPSD_naive_high_normHA))) - (-2*logLik(meanPSD_intercept_id_high_normHA))
-(diff_ll_meanPSD_id_high_normHA > 3.84) #FALSE adding a random intercept to the model is not necessary
-
-## Step 2b: Add random intercept for frequency bin on top of id, brand as grouping variable
-# Dominant frequency - HA
-domFreq_intercept_freqbin_high_HA <- nlme::lme(domFreq_HA ~ brand, random = list(~ 1|id, ~ 1|freqBin), method="ML", data = df_high)
-summary(domFreq_intercept_freqbin_high_HA)
-# Dominant frequency - norm HA
-domFreq_intercept_freqbin_high_normHA <- nlme::lme(domFreq_normHA ~ brand, random = list(~ 1|id, ~ 1|freqBin), method="ML", data = df_high)
-summary(domFreq_intercept_freqbin_high_normHA)
-# Mean PSD - HA
+## Add random intercept ## for freqBin (to adjust for the frequencies)
+## Mean PSD - HA
 meanPSD_intercept_freqbin_high_HA <- nlme::lme(meanPSD_HA ~ brand, random = list(~ 1|id, ~ 1|freqBin), method="ML", data = df_high)
-summary(meanPSD_intercept_freqbin_high_HA)
-# Mean PSD - norm HA
+## Mean PSD - norm HA
 meanPSD_intercept_freqbin_high_normHA <- nlme::lme(meanPSD_normHA ~ brand, random = list(~ 1|id, ~ 1|freqBin), method="ML", data = df_high)
-summary(meanPSD_intercept_freqbin_high_normHA)
+## Dominant frequency - HA
+domFreq_intercept_freqbin_high_HA <- nlme::lme(domFreq_HA ~ brand, random = list(~ 1|id, ~ 1|freqBin), method="ML", data = df_high)
+## Dominant frequency - norm HA
+domFreq_intercept_freqbin_high_normHA <- nlme::lme(domFreq_normHA ~ brand, random = list(~ 1|id, ~ 1|freqBin), method="ML", data = df_high)
 
-#Evaluate if adding random intercept for frequency bin is necessary
-# Dominant frequency - HA
-diff_ll_domFreq_id_freqbin_high_HA <- (-2*(logLik(domFreq_intercept_id_high_HA))) - (-2*logLik(domFreq_intercept_freqbin_high_HA))
-(diff_ll_domFreq_id_freqbin_high_HA > 3.84) #FALSE adding a random intercept to the model is not necessary
-# Dominant frequency - norm HA
-diff_ll_domFreq_id_freqbin_high_normHA <- (-2*(logLik(domFreq_intercept_id_high_normHA))) - (-2*logLik(domFreq_intercept_freqbin_high_normHA))
-(diff_ll_domFreq_id_freqbin_high_normHA > 3.84) #FALSE adding a random intercept to the model is not necessary
-# Mean PSD - HA
-diff_ll_meanPSD_id_freqbin_high_HA <- (-2*(logLik(meanPSD_intercept_id_high_HA))) - (-2*logLik(meanPSD_intercept_freqbin_high_HA))
-(diff_ll_meanPSD_id_freqbin_high_HA > 3.84) #FALSE adding a random intercept to the model is not necessary
-# Mean PSD - norm HA
-diff_ll_meanPSD_id_freqbin_high_normHA <- (-2*(logLik(meanPSD_intercept_id_high_normHA))) - (-2*logLik(meanPSD_intercept_freqbin_high_normHA))
-(diff_ll_meanPSD_id_freqbin_high_normHA > 3.84) #FALSE adding a random intercept to the model is not necessary
+## Evaluate ## if adding a random intercept for freqBin is necessary
+## Mean PSD - HA
+diff_ll_meanPSD_high_HA_id_freqbin <- (-2*(logLik(meanPSD_intercept_id_high_HA))) - (-2*logLik(meanPSD_intercept_freqbin_high_HA))
+(diff_ll_meanPSD_high_HA_id_freqbin > 3.84) #TRUE adding a random intercept for frequency bin to the model is necessary
+## Mean PSD - normHA
+diff_ll_meanPSD_high_normHA_id_freqbin <- (-2*(logLik(meanPSD_intercept_id_high_normHA))) - (-2*logLik(meanPSD_intercept_freqbin_high_normHA))
+(diff_ll_meanPSD_high_normHA_id_freqbin > 3.84) #FALSE adding a random intercept for frequency bin to the model is not necessary
+## Dominant frequency - HA
+diff_ll_domFreq_high_HA_id_freqbin <- (-2*(logLik(domFreq_intercept_id_high_HA))) - (-2*logLik(domFreq_intercept_freqbin_high_HA))
+(diff_ll_domFreq_high_HA_id_freqbin > 3.84) #FALSE adding a random intercept for frequency bin to the model is not necessary
+## Dominant frequency - norm HA
+diff_ll_domFreq_high_normHA_id_freqbin <- (-2*(logLik(domFreq_intercept_id_high_normHA))) - (-2*logLik(domFreq_intercept_freqbin_high_normHA))
+(diff_ll_domFreq_high_normHA_id_freqbin > 3.84) #FALSE adding a random intercept for frequency bin to the model is not necessary
+#Adding of a random intercept for freqBin is not necessary for the low frequency experiment
+rm(meanPSD_intercept_freqbin_high_HA, meanPSD_intercept_freqbin_high_normHA, domFreq_intercept_freqbin_high_HA, domFreq_intercept_freqbin_high_normHA)
 
-#ADDING A RANDOM INTERCEPT TO THE MODEL IS NOT NECESSARY
-# Report the crude model by re-leveling brand and rerunning the naive model
-for(b in 2:length(unique(df_high$brand))){
-  print("brand releveled")
-  df_high$brand <- relevel(df_high$brand, ref = b) 
-  
-  print("Dominant frequency - HA")
-  domFreq_naive_high_HA <- lm(domFreq_HA ~ brand, data = df_high)
-  print(summary(domFreq_naive_high_HA))
-  
-  print("Dominant frequency - norm HA")
-  domFreq_naive_high_normHA <- lm(domFreq_normHA ~ brand, data = df_high)
-  print(summary(domFreq_naive_high_normHA))
-  
-  print("mean PSD - HA")
-  meanPSD_naive_high_HA <- lm(meanPSD_HA ~ brand, data = df_high)
-  print(summary(meanPSD_naive_high_HA))
-  
-  print("mean PSD - norm HA")
-  meanPSD_naive_high_normHA <- lm(meanPSD_normHA ~ brand, data = df_high)
-  print(summary(meanPSD_naive_high_normHA))
-}
+## Report ## model with the random intercept for id and rerun re-leveled model
+df_high$brand <- relevel(df_high$brand, ref = 5) 
+levels(df_high$brand) #check brand levels
+## Mean PSD - HA
+meanPSD_intercept_id_high_HA <- nlme::lme(meanPSD_HA ~ brand, random = ~ 1|id, method="ML", data = df_high)
+summary(meanPSD_intercept_id_high_HA) #fixed effect estimates
+lme4::VarCorr(meanPSD_intercept_id_high_HA) #random effect estimates
+## Mean PSD - norm HA
+meanPSD_intercept_id_high_normHA <- nlme::lme(meanPSD_normHA ~ brand, random = ~ 1|id, method="ML", data = df_high)
+summary(meanPSD_intercept_id_high_normHA) #fixed effect estimates
+lme4::VarCorr(meanPSD_intercept_id_high_normHA) #random effect estimates
+## Dominant frequency - HA
+domFreq_intercept_id_high_HA <- nlme::lme(domFreq_HA ~ brand, random = ~ 1|id, method="ML", data = df_high)
+summary(domFreq_intercept_id_high_HA) #fixed effect estimates
+lme4::VarCorr(domFreq_intercept_id_high_HA) #random effect estimates
+## Dominant frequency - norm HA
+domFreq_intercept_id_high_normHA <- nlme::lme(domFreq_normHA ~ brand, random = ~ 1|id, method="ML", data = df_high)
+summary(domFreq_intercept_id_high_normHA) #fixed effect estimates
+lme4::VarCorr(domFreq_intercept_id_high_normHA) #random effect estimates
+
+
 
 # ## EXPLORE: peaks and intervals for all accelerometer files
 # intervalStarts_HA <- list()
