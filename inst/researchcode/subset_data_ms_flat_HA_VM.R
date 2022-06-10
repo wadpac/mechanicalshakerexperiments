@@ -50,7 +50,7 @@ for (brand in 1:length(brands_to_load)) {
           tmp = tmp[, c("shaking_frequency", "time")] # select data for the HA (x-axis), time and shaking_frequency
           tmp$HA <- HA
           tmp$normHA <- (tmp$HA - mean(tmp$HA)) # normalize HA
-          tmp$VM <- sqrt(sum(tmp$x^2, tmp$y^2, tmp$z^2)) # calculate vector magnitude (VM)
+          tmp$VM <- sqrt(tmp$x^2 + tmp$y^2 + tmp$z^2) # calculate vector magnitude (VM)
           ms_flat_HA$data[[counter]] <- tmp
           counter = counter + 1
           specs <- c(extracteddata$specifications[file,"serial_number"], brands_to_load[brand], experiments_to_load[experiment], 
