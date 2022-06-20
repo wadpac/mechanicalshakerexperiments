@@ -139,8 +139,12 @@ plotHeatmapBetween <- function(df_correlations) {
   heatmap_between <- ggplot(data = df_correlations, aes(x=brand1, y=brand2, fill=correlations)) + 
     geom_tile(color = "black") +
     coord_fixed() +
-    guides(fill = guide_colourbar(barwidth = 0.5,
-                                  barheight = 10)) 
+    
+    scale_fill_continuous(
+      limits = c(0,1), breaks = c(0, .1, .2, .3, .4, .5, .6, .7, .8, .9, 1),
+      guide = guide_colourbar(nbin = 100, draw.ulim = FALSE, draw.llim = FALSE)
+    )
+  
   return(heatmap_between)
 }
 
@@ -160,8 +164,10 @@ plotHeatmapWithin <- function(df_correlations) {
   heatmap_within <- ggplot(data = df_correlations, aes(x=device1, y=device2, fill=correlations)) + 
     geom_tile(color = "black") +
     coord_fixed() +
-    guides(fill = guide_colourbar(barwidth = 0.5,
-                                  barheight = 10)) +
+    scale_fill_continuous(
+      limits = c(0,1), breaks = c(0, .1, .2, .3, .4, .5, .6, .7, .8, .9, 1),
+      guide = guide_colourbar(nbin = 100, draw.ulim = FALSE, draw.llim = FALSE)
+    )
    theme(legend.title = element_blank(),
         axis.text.x = element_text(angle=30,hjust=1,vjust=1.0))
   return(heatmap_within)
@@ -188,11 +194,17 @@ df_correlations_high_HA <- dataframeShapeComparisonBeweenWithin(correlations_hig
 # High frequency experiments - VM
 df_correlations_high_VM <- dataframeShapeComparisonBeweenWithin(correlations_high_VM, specifications_high) 
 
-##STATISTICAL COMPARISON
+## COMPARISON
 ## LOW FREQUENCY EXPERIMENT - HA
+#All devices
+heatmap_low_HA <- corrplot::corrplot(correlations_low_HA$correlationMatrix, type = 'lower', method = 'color', 
+                                     col.lim = c(0,1), addCoef.col = 'grey', tl.srt=45, diag = FALSE, 
+                                     number.cex = 0.5, tl.cex = 0.5, tl.col = "black")
+heatmap_low_HA
+
+#Between brands
 df_correlations_low_HA_between <- df_correlations_low_HA[df_correlations_low_HA$same_brand =="0", ]
 df_correlations_low_HA_between$correlations <- as.numeric(df_correlations_low_HA_between$correlations)
-#Between brands
 heatmap_low_HA_between <- plotHeatmapBetween(df_correlations_low_HA_between)
 heatmap_low_HA_between
 table_low_HA_between <- df_correlations_low_HA_between %>% group_by(brands)
@@ -227,10 +239,15 @@ summary(df_correlations_low_HA_within_MOX$correlations)
 sd(df_correlations_low_HA_within_MOX$correlations)
 
 ## LOW FREQUENCY EXPERIMENT - VM
-df_correlations_low_VM_between <- df_correlations_low_VM[df_correlations_low_VM$same_brand =="0", ]
-df_correlations_low_VM_between$correlations <- as.numeric(df_correlations_low_VM_between$correlations)
+#All devices
+heatmap_low_VM <- corrplot::corrplot(correlations_low_VM$correlationMatrix, type = 'lower', method = 'color', 
+                                     col.lim = c(0,1), addCoef.col = 'grey', tl.srt=45, diag = FALSE, 
+                                     number.cex = 0.5, tl.cex = 0.5, tl.col = "black")
+heatmap_low_VM
 
 #Between brands
+df_correlations_low_VM_between <- df_correlations_low_VM[df_correlations_low_VM$same_brand =="0", ]
+df_correlations_low_VM_between$correlations <- as.numeric(df_correlations_low_VM_between$correlations)
 heatmap_low_VM_between <- plotHeatmapBetween(df_correlations_low_VM_between)
 heatmap_low_VM_between
 table_low_HA_between <- df_correlations_low_VM_between %>% group_by(brands)
@@ -265,10 +282,15 @@ summary(df_correlations_low_VM_within_MOX$correlations)
 sd(df_correlations_low_VM_within_MOX$correlations)
 
 ## HIGH FREQUENCY EXPERIMENT - HA
-df_correlations_high_HA_between <- df_correlations_high_HA[df_correlations_high_HA$same_brand =="0", ]
-df_correlations_high_HA_between$correlations <- as.numeric(df_correlations_high_HA_between$correlations)
+#All devices
+heatmap_high_HA <- corrplot::corrplot(correlations_high_HA$correlationMatrix, type = 'lower', method = 'color', 
+                                     col.lim = c(0,1), addCoef.col = 'grey', tl.srt=45, diag = FALSE, 
+                                     number.cex = 0.25, tl.cex = 0.5, tl.col = "black")
+heatmap_high_HA
 
 #Between brands
+df_correlations_high_HA_between <- df_correlations_high_HA[df_correlations_high_HA$same_brand =="0", ]
+df_correlations_high_HA_between$correlations <- as.numeric(df_correlations_high_HA_between$correlations)
 heatmap_high_HA_between <- plotHeatmapBetween(df_correlations_high_HA_between)
 heatmap_high_HA_between
 table_high_HA_between <- df_correlations_high_HA_between %>% group_by(brands)
@@ -312,10 +334,15 @@ summary(df_correlations_high_HA_within_MOX$correlations)
 sd(df_correlations_high_HA_within_MOX$correlations)
 
 ## HIGH FREQUENCY EXPERIMENT - VM
-df_correlations_high_VM_between <- df_correlations_high_VM[df_correlations_high_VM$same_brand =="0", ]
-df_correlations_high_VM_between$correlations <- as.numeric(df_correlations_high_VM_between$correlations)
+#All devices
+heatmap_high_VM <- corrplot::corrplot(correlations_high_VM$correlationMatrix, type = 'lower', method = 'color', 
+                                     col.lim = c(0,1), addCoef.col = 'grey', tl.srt=45, diag = FALSE, 
+                                     number.cex = 0.25, tl.cex = 0.5, tl.col = "black")
+heatmap_high_VM
 
 #Between brands
+df_correlations_high_VM_between <- df_correlations_high_VM[df_correlations_high_VM$same_brand =="0", ]
+df_correlations_high_VM_between$correlations <- as.numeric(df_correlations_high_VM_between$correlations)
 heatmap_high_VM_between <- plotHeatmapBetween(df_correlations_high_VM_between)
 heatmap_high_VM_between
 table_high_VM_between <- df_correlations_high_VM_between %>% group_by(brands)
@@ -357,8 +384,3 @@ heatmap_high_VM_MOX
 summarize(df_correlations_high_VM_within_MOX)
 summary(df_correlations_high_VM_within_MOX$correlations)
 sd(df_correlations_high_VM_within_MOX$correlations)
-
-
-
-
-
