@@ -158,6 +158,37 @@ deriveComparisonValues <- function(spectrum, freqBins){
   return(df)
 }
 
+#' createBoxplot
+#'
+#' @description 'createBoxplot' creates a boxplot between or within devices for the dominant frequency or the mean power spectral density per frequency bin
+#'
+#' @param data A data set containing the comparison values for the experiment
+#' @param outcome String containing the type of the comparison value. One of c("domFreq", "meanPSD") 
+#' @param axis String containing the axis the outcome value is derived from. One of c("HA", "normHA") 
+#' @param type String containing the axis the outcome value is derived from. One of c("within", "between") 
+#' @return Boxplot between or within devices for the outcome (y-axis) per frequency bin (x-axis)
+#' @export
+createBoxplot <- function(data, axis = c("HA", "normHA"), outcome = c("domFreq", "meanPSD"), type = c("within", "between")){
+  if(type == "between"){
+    per = "brand"
+  } else {
+    per = "id"
+  }
+  if (outcome == "domFreq"){
+    label = "Dominant frequency (Hz)"
+  } else{
+    label = "Mean PSD"
+  }
+  y = paste(outcome, axis, sep = "_")
+  
+  boxplot <- ggpubr::ggboxplot(data, x = "freqBin", y = y, color = per,
+                               xlab = "Mean frequency bin (Hz)", ylab = label) +
+    scale_x_discrete(breaks=c("t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9", "t10"),
+                     labels= c("0.25",  "0.67", "1.04", "1.46", "1.88", "2.29", "2.71", "3.13", "3.54", "3.96", "4.59")) 
+  return(boxplot)
+}
+
+
 #' removeOutliersIQR
 #'
 #' @description 'removeOutliersIQR' returns a subset of the data excluding the outliers
@@ -363,32 +394,16 @@ df_low$freqBin <- factor(df_low$freqBin, levels=c("t0", "t1", "t2", "t3", "t4", 
 
 ## Boxplots
 # Dominant frequency - HA
-bxp_HA_domfreq_low <- ggpubr::ggboxplot(df_low, x = "freqBin", y = "domFreq_HA",
-                                        color = "brand", palette = c("gray", "blue", "red", "green", "orange"),
-                                        xlab = "Mean frequency bin (Hz)", ylab = "Dominant frequency (Hz)") +
-  scale_x_discrete(breaks=c("t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9", "t10"),
-                   labels= c("0.25",  "0.67", "1.04", "1.46", "1.88", "2.29", "2.71", "3.13", "3.54", "3.96", "4.59")) 
+bxp_HA_domfreq_low <- createBoxplot(df_low, axis = "HA", outcome = "domFreq", type = "between")
 bxp_HA_domfreq_low
 # Dominant frequency - norm HA
-bxp_normHA_domfreq_low <- ggpubr::ggboxplot(df_low, x = "freqBin", y = "domFreq_normHA",
-                                        color = "brand", palette = c("gray", "blue", "red", "green", "orange"), 
-                                        xlab = "Mean frequency bin (Hz)", ylab = "Dominant frequency (Hz)") +
-  scale_x_discrete(breaks=c("t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9", "t10"),
-                   labels= c("0.25",  "0.67", "1.04", "1.46", "1.88", "2.29", "2.71", "3.13", "3.54", "3.96", "4.59")) 
+bxp_normHA_domfreq_low <- createBoxplot(df_low, axis = "normHA", outcome = "domFreq", type = "between")
 bxp_normHA_domfreq_low
 # Mean PSD - HA
-bxp_HA_psd_low <- ggpubr::ggboxplot(df_low, x = "freqBin", y = "meanPSD_HA",
-                                    color = "brand", palette = c("gray", "blue", "red", "green", "orange"), 
-                                    xlab = "Mean frequency bin (Hz)", ylab = "Dominant frequency (Hz)") +
-  scale_x_discrete(breaks=c("t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9", "t10"),
-                   labels= c("0.25",  "0.67", "1.04", "1.46", "1.88", "2.29", "2.71", "3.13", "3.54", "3.96", "4.59"))  
+bxp_HA_psd_low <- createBoxplot(df_low, axis = "HA", outcome = "meanPSD", type = "between")
 bxp_HA_psd_low
 # Mean PSD - norm HA
-bxp_normHA_psd_low <- ggpubr::ggboxplot(df_low, x = "freqBin", y = "meanPSD_normHA",
-                                        color = "brand", palette = c("gray", "blue", "red", "green", "orange"), 
-                                        xlab = "Mean frequency bin (Hz)", ylab = "Dominant frequency (Hz)") +
-  scale_x_discrete(breaks=c("t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9", "t10"),
-                   labels= c("0.25",  "0.67", "1.04", "1.46", "1.88", "2.29", "2.71", "3.13", "3.54", "3.96", "4.59"))   
+bxp_normHA_psd_low <- createBoxplot(df_low, axis = "normHA", outcome = "meanPSD", type = "between")
 bxp_normHA_psd_low
 
 ## ASSUMPTIONS
@@ -481,34 +496,16 @@ df_high$freqBin <- factor(df_high$freqBin, levels=c("t0", "t1", "t2", "t3", "t4"
 
 ## Boxplots
 # Dominant frequency - HA
-bxp_HA_domfreq_high <- ggpubr::ggboxplot(df_high, x = "freqBin", y = "domFreq_HA",
-                                         color = "brand", palette = c("gray", "blue", "red", "green", "orange"), 
-                                         xlab = "Mean frequency bin (Hz)", ylab = "Dominant frequency (Hz)") +
-  scale_x_discrete(breaks=c("t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9", "t10"),
-                   labels= c("0.25",  "0.67", "1.04", "1.46", "1.88", "2.29", "2.71", "3.13", "3.54", "3.96", "4.59")) 
+bxp_HA_domfreq_high <- createBoxplot(df_high, axis = "HA", outcome = "domFreq", type = "between")
 bxp_HA_domfreq_high
 # Dominant frequency - norm HA
-bxp_normHA_domfreq_high <- ggpubr::ggboxplot(df_high, x = "freqBin", y = "domFreq_normHA",
-                                             color = "brand", palette = c("gray", "blue", "red", "green", "orange"), 
-                                             xlab = "Mean frequency bin (Hz)", ylab = "Dominant frequency (Hz)") +
-  scale_x_discrete(breaks=c("t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9", "t10"),
-                   labels= c("0.25",  "0.67", "1.04", "1.46", "1.88", "2.29", "2.71", "3.13", "3.54", "3.96", "4.59")) 
+bxp_normHA_domfreq_high <- createBoxplot(df_high, axis = "normHA", outcome = "domFreq", type = "between")
 bxp_normHA_domfreq_high
 # Mean PSD - HA
-df_high$freqBin <- factor(df_high$freqBin, levels=c("t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9", "t10"))
-bxp_HA_psd_high <- ggpubr::ggboxplot(df_high, x = "freqBin", y = "meanPSD_HA",
-                                     color = "brand", palette = c("gray", "blue", "red", "green", "orange"), 
-                                     xlab = "Mean frequency bin (Hz)", ylab = "Dominant frequency (Hz)") +
-  scale_x_discrete(breaks=c("t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9", "t10"),
-                   labels= c("0.25",  "0.67", "1.04", "1.46", "1.88", "2.29", "2.71", "3.13", "3.54", "3.96", "4.59")) 
+bxp_HA_psd_high <- createBoxplot(df_high, axis = "HA", outcome = "meanPSD", type = "between")
 bxp_HA_psd_high
 # Mean PSD - norm HA
-df_high$freqBin <- factor(df_high$freqBin, levels=c("t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9", "t10"))
-bxp_normHA_psd_high <- ggpubr::ggboxplot(df_high, x = "freqBin", y = "meanPSD_normHA",
-                                         color = "brand", palette = c("gray", "blue", "red", "green", "orange"), 
-                                         xlab = "Mean frequency bin (Hz)", ylab = "Dominant frequency (Hz)") +
-  scale_x_discrete(breaks=c("t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9", "t10"),
-                   labels= c("0.25",  "0.67", "1.04", "1.46", "1.88", "2.29", "2.71", "3.13", "3.54", "3.96", "4.59")) 
+bxp_normHA_psd_high <- createBoxplot(df_high, axis = "normHA", outcome = "meanPSD", type = "between")
 bxp_normHA_psd_high
 
 ## ASSUMPTIONS
