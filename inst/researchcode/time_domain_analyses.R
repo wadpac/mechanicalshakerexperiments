@@ -46,7 +46,7 @@ specifications_low <- ms_flat_HA$specifications[ms_flat_HA$specifications$experi
 #' @description 'computeCrossCorrelations' computes the maximum cross-correlations between two signals and the corresponding lag
 #'
 #' @param data An object of class "spec"
-#' @param axis String that represents the axis of the signal, one of: c("HA", "normHA")
+#' @param axis String that represents the axis of the signal, one of: c("HA", "VM")
 #' @return List object consisting of two elements: \item{correlationMatrix}{A correlation matrix representing the maximum cross-correlations between the signals} \item{lags}{A matrix that presents the lags corresponding to the lag in which the maximum cross-correlation occurred}
 #' @export
 computeCrossCorrelations <- function(data, axis) {
@@ -62,8 +62,8 @@ computeCrossCorrelations <- function(data, axis) {
       else {
         if (axis == "HA") {
           crossCorr <- ccf(data[[x]]$HA, data[[y]]$HA, type = "correlation", plot = FALSE)
-        } else if (axis == "normHA"){
-          crossCorr <- ccf(data[[x]]$normHA, data[[y]]$normHA, type = "correlation", plot = FALSE)
+        } else if (axis == "VM"){
+          crossCorr <- ccf(data[[x]]$VM, data[[y]]$VM, type = "correlation", plot = FALSE)
         }
         correlationMatrix[x,y] <- max(crossCorr$acf)
         lagMatrix[x,y] <- crossCorr$lag[crossCorr$acf==max(crossCorr$acf)]
@@ -167,27 +167,26 @@ plotHeatmapWithin <- function(df_correlations) {
   return(heatmap_within)
 }
 
-
-###DATA ANALYSES
+###DATA ANALYSES: for HA (norm HA has the same shape) and VM
 ## COMPUTE: cross-correlation matrices
 # Low frequency experiments - HA
 correlations_low_HA <- computeCrossCorrelations(data_low_25, "HA") 
-# Low frequency experiments - norm HA
-correlations_low_normHA <- computeCrossCorrelations(data_low_25, "normHA")
+# Low frequency experiments - VM
+correlations_low_VM <- computeCrossCorrelations(data_low_25, "VM")
 # High frequency experiments - HA
 correlations_high_HA <- computeCrossCorrelations(data_high_100, "HA")
-# High frequency experiments - norm HA
-correlations_high_normHA <- computeCrossCorrelations(data_high_100, "normHA")
+# High frequency experiments - VM
+correlations_high_VM <- computeCrossCorrelations(data_high_100, "VM")
 
 ## DERIVE: data.frames required for comparison of the signal shape between and within brands
 # Low frequency experiments - HA
 df_correlations_low_HA <- dataframeShapeComparisonBeweenWithin(correlations_low_HA, specifications_low) 
-# Low frequency experiments - norm HA
-df_correlations_low_normHA <- dataframeShapeComparisonBeweenWithin(correlations_low_normHA, specifications_low) 
+# Low frequency experiments - VM
+df_correlations_low_VM <- dataframeShapeComparisonBeweenWithin(correlations_low_VM, specifications_low) 
 # High frequency experiments - HA
 df_correlations_high_HA <- dataframeShapeComparisonBeweenWithin(correlations_high_HA, specifications_high) 
-# High frequency experiments - norm HA
-df_correlations_high_normHA <- dataframeShapeComparisonBeweenWithin(correlations_high_normHA, specifications_high) 
+# High frequency experiments - VM
+df_correlations_high_VM <- dataframeShapeComparisonBeweenWithin(correlations_high_VM, specifications_high) 
 
 ##STATISTICAL COMPARISON
 ## LOW FREQUENCY EXPERIMENT - HA
@@ -227,43 +226,43 @@ summarize(df_correlations_low_HA_within_MOX)
 summary(df_correlations_low_HA_within_MOX$correlations)
 sd(df_correlations_low_HA_within_MOX$correlations)
 
-## LOW FREQUENCY EXPERIMENT - norm HA
-df_correlations_low_normHA_between <- df_correlations_low_normHA[df_correlations_low_normHA$same_brand =="0", ]
-df_correlations_low_normHA_between$correlations <- as.numeric(df_correlations_low_normHA_between$correlations)
+## LOW FREQUENCY EXPERIMENT - VM
+df_correlations_low_VM_between <- df_correlations_low_VM[df_correlations_low_VM$same_brand =="0", ]
+df_correlations_low_VM_between$correlations <- as.numeric(df_correlations_low_VM_between$correlations)
 
 #Between brands
-heatmap_low_normHA_between <- plotHeatmapBetween(df_correlations_low_normHA_between)
-heatmap_low_normHA_between
-table_low_HA_between <- df_correlations_low_normHA_between %>% group_by(brands)
-tapply(df_correlations_low_normHA_between$correlations, df_correlations_low_normHA_between$brands, summary)
-tapply(df_correlations_low_normHA_between$correlations, df_correlations_low_normHA_between$brands, sd)
+heatmap_low_VM_between <- plotHeatmapBetween(df_correlations_low_VM_between)
+heatmap_low_VM_between
+table_low_HA_between <- df_correlations_low_VM_between %>% group_by(brands)
+tapply(df_correlations_low_VM_between$correlations, df_correlations_low_VM_between$brands, summary)
+tapply(df_correlations_low_VM_between$correlations, df_correlations_low_VM_between$brands, sd)
 
 #Within Axivity
-df_correlations_low_normHA_within_Ax <- df_correlations_low_normHA[df_correlations_low_normHA$same_brand =="1" & df_correlations_low_HA$brand1 == "Axivity", ]
-df_correlations_low_normHA_within_Ax$correlations <- as.numeric(df_correlations_low_normHA_within_Ax$correlations)
-heatmap_low_normHA_Ax <- plotHeatmapWithin(df_correlations_low_normHA_within_Ax)
-heatmap_low_normHA_Ax
-summarize(df_correlations_low_normHA_within_Ax)
-summary(df_correlations_low_normHA_within_Ax$correlations)
-sd(df_correlations_low_normHA_within_Ax$correlations)
+df_correlations_low_VM_within_Ax <- df_correlations_low_VM[df_correlations_low_VM$same_brand =="1" & df_correlations_low_VM$brand1 == "Axivity", ]
+df_correlations_low_VM_within_Ax$correlations <- as.numeric(df_correlations_low_VM_within_Ax$correlations)
+heatmap_low_VM_Ax <- plotHeatmapWithin(df_correlations_low_VM_within_Ax)
+heatmap_low_VM_Ax
+summarize(df_correlations_low_VM_within_Ax)
+summary(df_correlations_low_VM_within_Ax$correlations)
+sd(df_correlations_low_VM_within_Ax$correlations)
 
 #Within GENEActiv
-df_correlations_low_normHA_within_GA <- df_correlations_low_normHA[df_correlations_low_normHA$same_brand =="1" & df_correlations_low_HA$brand1 == "GENEActiv", ]
-df_correlations_low_normHA_within_GA$correlations <- as.numeric(df_correlations_low_normHA_within_GA$correlations)
-heatmap_low_normHA_GA <- plotHeatmapWithin(df_correlations_low_normHA_within_GA)
-heatmap_low_normHA_GA
-summarize(df_correlations_low_normHA_within_GA)
-summary(df_correlations_low_normHA_within_GA$correlations)
-sd(df_correlations_low_normHA_within_GA$correlations)
+df_correlations_low_VM_within_GA <- df_correlations_low_VM[df_correlations_low_VM$same_brand =="1" & df_correlations_low_VM$brand1 == "GENEActiv", ]
+df_correlations_low_VM_within_GA$correlations <- as.numeric(df_correlations_low_VM_within_GA$correlations)
+heatmap_low_VM_GA <- plotHeatmapWithin(df_correlations_low_VM_within_GA)
+heatmap_low_VM_GA
+summarize(df_correlations_low_VM_within_GA)
+summary(df_correlations_low_VM_within_GA$correlations)
+sd(df_correlations_low_VM_within_GA$correlations)
 
 #Within MOX
-df_correlations_low_normHA_within_MOX <- df_correlations_low_normHA[df_correlations_low_normHA$same_brand =="1" & df_correlations_low_HA$brand1 == "MOX", ]
-df_correlations_low_normHA_within_MOX$correlations <- as.numeric(df_correlations_low_normHA_within_MOX$correlations)
-heatmap_low_normHA_MOX <- plotHeatmapWithin(df_correlations_low_normHA_within_MOX)
-heatmap_low_normHA_MOX
-summarize(df_correlations_low_normHA_within_MOX)
-summary(df_correlations_low_normHA_within_MOX$correlations)
-sd(df_correlations_low_normHA_within_MOX$correlations)
+df_correlations_low_VM_within_MOX <- df_correlations_low_VM[df_correlations_low_VM$same_brand =="1" & df_correlations_low_VM$brand1 == "MOX", ]
+df_correlations_low_VM_within_MOX$correlations <- as.numeric(df_correlations_low_VM_within_MOX$correlations)
+heatmap_low_VM_MOX <- plotHeatmapWithin(df_correlations_low_VM_within_MOX)
+heatmap_low_VM_MOX
+summarize(df_correlations_low_VM_within_MOX)
+summary(df_correlations_low_VM_within_MOX$correlations)
+sd(df_correlations_low_VM_within_MOX$correlations)
 
 ## HIGH FREQUENCY EXPERIMENT - HA
 df_correlations_high_HA_between <- df_correlations_high_HA[df_correlations_high_HA$same_brand =="0", ]
@@ -312,52 +311,52 @@ summarize(df_correlations_high_HA_within_MOX)
 summary(df_correlations_high_HA_within_MOX$correlations)
 sd(df_correlations_high_HA_within_MOX$correlations)
 
-## HIGH FREQUENCY EXPERIMENT - norm HA
-df_correlations_high_normHA_between <- df_correlations_high_normHA[df_correlations_high_normHA$same_brand =="0", ]
-df_correlations_high_normHA_between$correlations <- as.numeric(df_correlations_high_normHA_between$correlations)
+## HIGH FREQUENCY EXPERIMENT - VM
+df_correlations_high_VM_between <- df_correlations_high_VM[df_correlations_high_VM$same_brand =="0", ]
+df_correlations_high_VM_between$correlations <- as.numeric(df_correlations_high_VM_between$correlations)
 
 #Between brands
-heatmap_high_normHA_between <- plotHeatmapBetween(df_correlations_high_normHA_between)
-heatmap_high_normHA_between
-table_high_normHA_between <- df_correlations_high_normHA_between %>% group_by(brands)
-tapply(df_correlations_high_normHA_between$correlations, df_correlations_high_normHA_between$brands, summary)
-tapply(df_correlations_high_normHA_between$correlations, df_correlations_high_normHA_between$brands, sd)
+heatmap_high_VM_between <- plotHeatmapBetween(df_correlations_high_VM_between)
+heatmap_high_VM_between
+table_high_VM_between <- df_correlations_high_VM_between %>% group_by(brands)
+tapply(df_correlations_high_VM_between$correlations, df_correlations_high_VM_between$brands, summary)
+tapply(df_correlations_high_VM_between$correlations, df_correlations_high_VM_between$brands, sd)
 
 #Within Axivity
-df_correlations_high_normHA_within_Ax <- df_correlations_high_normHA[df_correlations_high_normHA$same_brand =="1" & df_correlations_high_normHA$brand1 == "Axivity", ]
-df_correlations_high_normHA_within_Ax$correlations <- as.numeric(df_correlations_high_normHA_within_Ax$correlations)
-heatmap_high_normHA_Ax <- plotHeatmapWithin(df_correlations_high_normHA_within_Ax)
-heatmap_high_normHA_Ax
-summarize(df_correlations_high_normHA_within_Ax)
-summary(df_correlations_high_normHA_within_Ax$correlations)
-sd(df_correlations_high_normHA_within_Ax$correlations)
+df_correlations_high_VM_within_Ax <- df_correlations_high_VM[df_correlations_high_VM$same_brand =="1" & df_correlations_high_VM$brand1 == "Axivity", ]
+df_correlations_high_VM_within_Ax$correlations <- as.numeric(df_correlations_high_VM_within_Ax$correlations)
+heatmap_high_VM_Ax <- plotHeatmapWithin(df_correlations_high_VM_within_Ax)
+heatmap_high_VM_Ax
+summarize(df_correlations_high_VM_within_Ax)
+summary(df_correlations_high_VM_within_Ax$correlations)
+sd(df_correlations_high_VM_within_Ax$correlations)
 
 #Within Actigraph
-df_correlations_high_normHA_within_AG <- df_correlations_high_normHA[df_correlations_high_normHA$same_brand =="1" & df_correlations_high_normHA$brand1 == "Actigraph", ]
-df_correlations_high_normHA_within_AG$correlations <- as.numeric(df_correlations_high_normHA_within_AG$correlations)
-heatmap_high_normHA_AG <- plotHeatmapWithin(df_correlations_high_normHA_within_AG)
-heatmap_high_normHA_AG
-summarize(df_correlations_high_normHA_within_AG)
-summary(df_correlations_high_normHA_within_AG$correlations)
-sd(df_correlations_high_normHA_within_AG$correlations)
+df_correlations_high_VM_within_AG <- df_correlations_high_VM[df_correlations_high_VM$same_brand =="1" & df_correlations_high_VM$brand1 == "Actigraph", ]
+df_correlations_high_VM_within_AG$correlations <- as.numeric(df_correlations_high_VM_within_AG$correlations)
+heatmap_high_VM_AG <- plotHeatmapWithin(df_correlations_high_VM_within_AG)
+heatmap_high_VM_AG
+summarize(df_correlations_high_VM_within_AG)
+summary(df_correlations_high_VM_within_AG$correlations)
+sd(df_correlations_high_VM_within_AG$correlations)
 
 #Within GENEActiv
-df_correlations_high_normHA_within_GA <- df_correlations_high_normHA[df_correlations_high_normHA$same_brand =="1" & df_correlations_high_normHA$brand1 == "GENEActiv", ]
-df_correlations_high_normHA_within_GA$correlations <- as.numeric(df_correlations_high_normHA_within_GA$correlations)
-heatmap_high_normHA_GA <- plotHeatmapWithin(df_correlations_high_normHA_within_GA)
-heatmap_high_normHA_GA
-summarize(df_correlations_high_normHA_within_GA)
-summary(df_correlations_high_normHA_within_GA$correlations)
-sd(df_correlations_high_normHA_within_GA$correlations)
+df_correlations_high_VM_within_GA <- df_correlations_high_VM[df_correlations_high_VM$same_brand =="1" & df_correlations_high_VM$brand1 == "GENEActiv", ]
+df_correlations_high_VM_within_GA$correlations <- as.numeric(df_correlations_high_VM_within_GA$correlations)
+heatmap_high_VM_GA <- plotHeatmapWithin(df_correlations_high_VM_within_GA)
+heatmap_high_VM_GA
+summarize(df_correlations_high_VM_within_GA)
+summary(df_correlations_high_VM_within_GA$correlations)
+sd(df_correlations_high_VM_within_GA$correlations)
 
 #Within MOX
-df_correlations_high_normHA_within_MOX <- df_correlations_high_normHA[df_correlations_high_normHA$same_brand =="1" & df_correlations_high_normHA$brand1 == "MOX", ]
-df_correlations_high_normHA_within_MOX$correlations <- as.numeric(df_correlations_high_normHA_within_MOX$correlations)
-heatmap_high_normHA_MOX <- plotHeatmapWithin(df_correlations_high_normHA_within_MOX)
-heatmap_high_normHA_MOX
-summarize(df_correlations_high_normHA_within_MOX)
-summary(df_correlations_high_normHA_within_MOX$correlations)
-sd(df_correlations_high_normHA_within_MOX$correlations)
+df_correlations_high_VM_within_MOX <- df_correlations_high_VM[df_correlations_high_VM$same_brand =="1" & df_correlations_high_VM$brand1 == "MOX", ]
+df_correlations_high_VM_within_MOX$correlations <- as.numeric(df_correlations_high_VM_within_MOX$correlations)
+heatmap_high_VM_MOX <- plotHeatmapWithin(df_correlations_high_VM_within_MOX)
+heatmap_high_VM_MOX
+summarize(df_correlations_high_VM_within_MOX)
+summary(df_correlations_high_VM_within_MOX$correlations)
+sd(df_correlations_high_VM_within_MOX$correlations)
 
 
 
