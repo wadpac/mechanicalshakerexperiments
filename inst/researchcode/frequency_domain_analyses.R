@@ -490,6 +490,53 @@ domFreq_intercept_id_low_normHA <- nlme::lme(domFreq_normHA ~ brand, random = ~ 
 summary(domFreq_intercept_id_low_normHA) #fixed effect estimates
 lme4::VarCorr(domFreq_intercept_id_low_normHA) #random effect estimates
 
+################## Within brands ################## 
+#### activPAL
+df_low_aP <- df_low[df_low$brand == "Activpal",] 
+df_low_aP <- df_low_aP[order(df_low_aP$id),] # sort on id
+
+bxp_HA_domfreq_low_HA_ap <- createBoxplot(df_low_aP, axis = "HA", outcome = "domFreq", type = "within")
+bxp_HA_domfreq_low_normHA_ap <- createBoxplot(df_low_aP, axis = "normHA", outcome = "domFreq", type = "within")
+bxp_HA_meanPSD_low_HA_ap <- createBoxplot(df_low_aP, axis = "HA", outcome = "meanPSD", type = "within")
+bxp_HA_meanPSD_low_normHA_ap <- createBoxplot(df_low_aP, axis = "normHA", outcome = "meanPSD", type = "within")
+
+#### Axivity
+df_low_ax <- df_low[df_low$brand == "Axivity",] 
+df_low_ax <- df_low_ax[order(df_low_ax$id),] # sort on id
+
+bxp_HA_domfreq_low_HA_ax <- createBoxplot(df_low_ax, axis = "HA", outcome = "domFreq", type = "within")
+bxp_HA_domfreq_low_normHA_ax <- createBoxplot(df_low_ax, axis = "normHA", outcome = "domFreq", type = "within")
+bxp_HA_meanPSD_low_HA_ax <- createBoxplot(df_low_ax, axis = "HA", outcome = "meanPSD", type = "within")
+bxp_HA_meanPSD_low_normHA_ax <- createBoxplot(df_low_ax, axis = "normHA", outcome = "meanPSD", type = "within")
+
+#### ActiGraph
+df_low_ag <- df_low[df_low$brand == "Actigraph",] 
+df_low_ag <- df_low_ag[order(df_low_ag$id),] # sort on id
+
+bxp_HA_domfreq_low_HA_ag <- createBoxplot(df_low_ag, axis = "HA", outcome = "domFreq", type = "within")
+bxp_HA_domfreq_low_normHA_ag <- createBoxplot(df_low_ag, axis = "normHA", outcome = "domFreq", type = "within")
+bxp_HA_meanPSD_low_HA_ag <- createBoxplot(df_low_ag, axis = "HA", outcome = "meanPSD", type = "within")
+bxp_HA_meanPSD_low_normHA_ag <- createBoxplot(df_low_ag, axis = "normHA", outcome = "meanPSD", type = "within")
+
+#### GENEActiv
+df_low_ga <- df_low[df_low$brand == "GENEActiv",] 
+df_low_ga <- df_low_ga[order(df_low_ga$id),] # sort on id
+
+bxp_HA_domfreq_low_HA_ga <- createBoxplot(df_low_ga, axis = "HA", outcome = "domFreq", type = "within")
+bxp_HA_domfreq_low_normHA_ga <- createBoxplot(df_low_ga, axis = "normHA", outcome = "domFreq", type = "within")
+bxp_HA_meanPSD_low_HA_ga <- createBoxplot(df_low_ga, axis = "HA", outcome = "meanPSD", type = "within")
+bxp_HA_meanPSD_low_normHA_ga <- createBoxplot(df_low_ga, axis = "normHA", outcome = "meanPSD", type = "within")
+
+#### MOX
+df_low_mox <- df_low[df_low$brand == "MOX",] 
+df_low_mox <- df_low_mox[order(df_low_mox$id),] # sort on id
+
+bxp_HA_domfreq_low_HA_mox <- createBoxplot(df_low_mox, axis = "HA", outcome = "domFreq", type = "within")
+bxp_HA_domfreq_low_normHA_mox <- createBoxplot(df_low_mox, axis = "normHA", outcome = "domFreq", type = "within")
+bxp_HA_meanPSD_low_HA_mox <- createBoxplot(df_low_mox, axis = "HA", outcome = "meanPSD", type = "within")
+bxp_HA_meanPSD_low_normHA_mox <- createBoxplot(df_low_mox, axis = "normHA", outcome = "meanPSD", type = "within")
+
+
 ############# HIGH FREQUENCY EXPERIMENT #############
 load(paste(shaker_experiments_folder, "analyses/domfreq_meanPSD_ms_HA_dataset_long_hf.RData", sep = "/"))
 df_high$freqBin <- factor(df_high$freqBin, levels=c("t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9", "t10"))
@@ -592,6 +639,51 @@ domFreq_intercept_id_high_normHA <- nlme::lme(domFreq_normHA ~ brand, random = ~
 summary(domFreq_intercept_id_high_normHA) #fixed effect estimates
 lme4::VarCorr(domFreq_intercept_id_high_normHA) #random effect estimates
 
+################## Within brands ################## 
+#### activPAL
+df_high_aP <- df_high[df_high$brand == "Activpal",] 
+df_high_aP <- df_high_aP[order(df_high_aP$id),] # sort on id
+
+bxp_HA_domfreq_high_HA_ap <- createBoxplot(df_high_aP, axis = "HA", outcome = "domFreq", type = "within")
+bxp_HA_domfreq_high_normHA_ap <- createBoxplot(df_high_aP, axis = "normHA", outcome = "domFreq", type = "within")
+bxp_HA_meanPSD_high_HA_ap <- createBoxplot(df_high_aP, axis = "HA", outcome = "meanPSD", type = "within")
+bxp_HA_meanPSD_high_normHA_ap <- createBoxplot(df_high_aP, axis = "normHA", outcome = "meanPSD", type = "within")
+
+#### Axivity
+df_high_ax <- df_high[df_high$brand == "Axivity",] 
+df_high_ax <- df_high_ax[order(df_high_ax$id),] # sort on id
+
+bxp_HA_domfreq_high_HA_ax <- createBoxplot(df_high_ax, axis = "HA", outcome = "domFreq", type = "within")
+bxp_HA_domfreq_high_normHA_ax <- createBoxplot(df_high_ax, axis = "normHA", outcome = "domFreq", type = "within")
+bxp_HA_meanPSD_high_HA_ax <- createBoxplot(df_high_ax, axis = "HA", outcome = "meanPSD", type = "within")
+bxp_HA_meanPSD_high_normHA_ax <- createBoxplot(df_high_ax, axis = "normHA", outcome = "meanPSD", type = "within")
+
+#### ActiGraph
+df_high_ag <- df_high[df_high$brand == "Actigraph",] 
+df_high_ag <- df_high_ag[order(df_high_ag$id),] # sort on id
+
+bxp_HA_domfreq_high_HA_ag <- createBoxplot(df_high_ag, axis = "HA", outcome = "domFreq", type = "within")
+bxp_HA_domfreq_high_normHA_ag <- createBoxplot(df_high_ag, axis = "normHA", outcome = "domFreq", type = "within")
+bxp_HA_meanPSD_high_HA_ag <- createBoxplot(df_high_ag, axis = "HA", outcome = "meanPSD", type = "within")
+bxp_HA_meanPSD_high_normHA_ag <- createBoxplot(df_high_ag, axis = "normHA", outcome = "meanPSD", type = "within")
+
+#### GENEActiv
+df_high_ga <- df_high[df_high$brand == "GENEActiv",] 
+df_high_ga <- df_high_ga[order(df_high_ga$id),] # sort on id
+
+bxp_HA_domfreq_high_HA_ga <- createBoxplot(df_high_ga, axis = "HA", outcome = "domFreq", type = "within")
+bxp_HA_domfreq_high_normHA_ga <- createBoxplot(df_high_ga, axis = "normHA", outcome = "domFreq", type = "within")
+bxp_HA_meanPSD_high_HA_ga <- createBoxplot(df_high_ga, axis = "HA", outcome = "meanPSD", type = "within")
+bxp_HA_meanPSD_high_normHA_ga <- createBoxplot(df_high_ga, axis = "normHA", outcome = "meanPSD", type = "within")
+
+#### MOX
+df_high_mox <- df_high[df_high$brand == "MOX",] 
+df_high_mox <- df_high_mox[order(df_high_mox$id),] # sort on id
+
+bxp_HA_domfreq_high_HA_mox <- createBoxplot(df_high_mox, axis = "HA", outcome = "domFreq", type = "within")
+bxp_HA_domfreq_high_normHA_mox <- createBoxplot(df_high_mox, axis = "normHA", outcome = "domFreq", type = "within")
+bxp_HA_meanPSD_high_HA_mox <- createBoxplot(df_high_mox, axis = "HA", outcome = "meanPSD", type = "within")
+bxp_HA_meanPSD_high_normHA_mox <- createBoxplot(df_high_mox, axis = "normHA", outcome = "meanPSD", type = "within")
 
 
 # ## EXPLORE: peaks and intervals for all accelerometer files
