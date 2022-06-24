@@ -101,6 +101,7 @@ loaddata <- function(path, brand, experiment, windows = TRUE, experimentfile, ac
                          options(digits = 20)
                          rawdata$time = as.POSIXct(rawdata$time, origin = "1970-01-01", tz = tz)
                          rawdata$time = as.POSIXlt(as.character(rawdata$time), tz = tz, origin = "1970-01-01")
+                         rawdata_backup = rawdata
                          #======================================
                          # resampling
                          # extract sample rate to aid resampling:
@@ -121,7 +122,6 @@ loaddata <- function(path, brand, experiment, windows = TRUE, experimentfile, ac
                          rawdata2$time = as.POSIXct(rawdata2$time, origin = "1970-01-01", tz = tz)
                          rawdata2$time = as.POSIXlt(as.character(rawdata2$time), tz = tz, origin = "1970-01-01")
                          # try to preserve rawdata object attributes copy them to new object
-                         rawdata_backup = rawdata
                          rawdata = rawdata2
                          attributes(rawdata) = attributes(rawdata_backup)
                          rm(rawdata_backup, rawdata2)
