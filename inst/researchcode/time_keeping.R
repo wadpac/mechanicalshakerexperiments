@@ -7,6 +7,7 @@
 rm(list=ls())
 options(digits.secs = 5)
 options(scipen = 999)
+options(digits = 20)
 
 # specify file and function paths
 shaker_experiments_folder = "/media/vincent/DATA/VUMC/shaker_experiments"

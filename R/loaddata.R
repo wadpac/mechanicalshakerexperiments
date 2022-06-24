@@ -81,15 +81,17 @@ loaddata <- function(path, brand, experiment, windows = TRUE, experimentfile, ac
   closeAllConnections() # in case there is a still something running from last time, kill it.
   cores = parallel::detectCores()
   Ncores = cores[1]
-  Ncores = Ncores - ifelse(Ncores > 8, yes = 5, no = 2)
+  Ncores = Ncores - 2
   if (Ncores < 1) Ncores = 1
   cl <- parallel::makeCluster(Ncores) #not to overload your computer
   doParallel::registerDoParallel(cl)
   i = NULL
+  
   `%myinfix%` = foreach::`%dopar%`
   parallelLoad <- function(file_path, file_list, brand, experiment, windows, path) {
     foreach::foreach(i = 1:length(file_list), .packages = c("read.gt3x", "GGIR", "GENEAread"),
                      .export = "read.activpal") %myinfix% {
+                       # for (i in 1:length(file_list)) {
                        # Load in the data
                        tz = "Europe/Amsterdam"
                        if (brand == "Actigraph") {
@@ -117,12 +119,19 @@ loaddata <- function(path, brand, experiment, windows = TRUE, experimentfile, ac
                          # We may have configured device relative to UTC, which is 1 hour earlier, therefore subtract 3600
                          rawdata$data.out$time = as.POSIXlt(rawdata$data.out$time - 3600, desiredtz = tz, origin = "1970-01-01")
                        } else if (brand == "MOX") {
+                         options(digits = 20)
+                         options(digits.secs = 5)
+                         options(scipen = 999)
                          rawdata <- read.csv(paste(file_path, file_list[i], sep = "/"))
                          # We may have configured device relative to UTC, which is 1 hour earlier, therefore subtract 3600; 86400 = number of s in 1 day to convert Time Number
                          timestamps <- format(as.POSIXct((rawdata$DateTimeNumber * 86400) - 3600, origin = "1970-01-01", tz = tz), "%H:%M:%OS")
                          # Date cannot be converted correctly, but this can be derived from the filenames
                          date <- lubridate::ymd(strsplit(strsplit(file_list[i], "_")[[1]][2], ".csv")[[1]])
-                         rawdata$time <- as.POSIXct(paste(rep(date, length(timestamps)), timestamps), format = "%Y-%m-%d %H:%M:%OS")
+                         timestamps2 = paste(rep(date, length(timestamps)), timestamps)
+                         timestamps3 = as.POSIXct(timestamps2, format = "%Y-%m-%d %H:%M:%OS")
+                         # following lines needed to preserve decimal places in POSIXct
+                         rawdata$time = as.character(timestamps3) 
+                         rawdata$time = as.POSIXct(rawdata$time, format = "%Y-%m-%d %H:%M:%OS")
                          rawdata <- rawdata[, c("time", "AccX", "AccY", "AccZ")]
                        }# brand = Fitbit
                        
@@ -183,6 +192,7 @@ loaddata <- function(path, brand, experiment, windows = TRUE, experimentfile, ac
                        return(rawdata)
                      }
   }
+  # } # for loop
   data <- tryCatch(parallelLoad(file_path, file_list, brand, experiment, windows, path), error = function(e) print(e))
   parallel::stopCluster(cl)
   #Get data specifications
