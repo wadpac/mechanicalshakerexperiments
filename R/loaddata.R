@@ -98,8 +98,29 @@ loaddata <- function(path, brand, experiment, windows = TRUE, experimentfile, ac
                          rawdata <- as.data.frame(GGIR::read.gt3x_ggir(paste(file_path, file_list[i], sep = "/"), asDataFrame = TRUE))
                          options(digits.secs = 5)
                          options(scipen = 999)
+                         options(digits = 20)
                          rawdata$time = as.POSIXct(rawdata$time, origin = "1970-01-01", tz = tz)
                          rawdata$time = as.POSIXlt(as.character(rawdata$time), tz = tz, origin = "1970-01-01")
+                         #======================================
+                         # resampling
+                         # extract sample rate to aid resampling:
+                         head <- attributes(rawdata)[setdiff(names(attributes(rawdata)), c("dim", "dimnames", "time_index"))]
+                         sampling_frequency <- head$header$`Sample Rate`
+                         # prepare data for resampling
+                         raw = as.matrix(rawdata[, c("X", "Y", "Z")])
+                         rawTime = as.numeric(rawdata$time)
+                         time = seq(min(rawTime), max(rawTime), by = 1/sampling_frequency)
+                         # resample
+                         rawdata2 = as.data.frame(GGIR::resample(raw = raw, rawTime = rawTime, time = time, nrow(raw), 1))
+                         # put data back into expected format
+                         rawdata2$time = NA
+                         colnames(rawdata2) = c("X", "Y", "Z", "time")
+                         rawdata2 = rawdata2[,c("time", "X", "Y", "Z")]
+                         rawdata2$time = time
+                         rawdata2$time = as.POSIXct(rawdata2$time, origin = "1970-01-01", tz = tz)
+                         rawdata2$time = as.POSIXlt(as.character(rawdata2$time), tz = tz, origin = "1970-01-01")
+                         rawdata = rawdata2
+                         #======================================
                        } else if (brand == "Activpal") {
                          rawdata <- read.activpal(paste(file_path, file_list[i], sep = "/"))
                          rawdata[,c("X","Y","Z")] = ((rawdata[,c("X","Y","Z")] / (2^8)) - 0.5) * 2 * 2
@@ -186,9 +207,9 @@ loaddata <- function(path, brand, experiment, windows = TRUE, experimentfile, ac
                            rawdata$data = rawdata$data[which(rawdata$data$time >= start & rawdata$data$time <= end),]
                          }
                        }
-                       #if(actigraph_preprocessing = TRUE) {
-                       #data <- fill_sleepmode(rawdata, start, end)
-                       #}
+                       # if(actigraph_preprocessing = TRUE) {
+                       #   data <- fill_sleepmode(rawdata, start, end)
+                       # }
                        return(rawdata)
                      }
   }
