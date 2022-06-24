@@ -109,7 +109,7 @@ loaddata <- function(path, brand, experiment, windows = TRUE, experimentfile, ac
                          # prepare data for resampling
                          raw = as.matrix(rawdata[, c("X", "Y", "Z")])
                          rawTime = as.numeric(rawdata$time)
-                         time = seq(min(rawTime), max(rawTime), by = 1/sampling_frequency)
+                         time = seq(ceiling(min(rawTime)), floor(max(rawTime)), by = 1/sampling_frequency)
                          # resample
                          rawdata2 = as.data.frame(GGIR::resample(raw = raw, rawTime = rawTime, time = time, nrow(raw), 1))
                          # put data back into expected format
