@@ -4,7 +4,7 @@
 # - accelerometer_timestamp_error_seconds: Accelerometer time stamp when turning is visable in signal - Timestamp of turning according to reference clock
 # - Expected (sf) and observed sample rate (sf_observed) based on number of samples that were collected between the turning points visible in the signal
 # - accelerometer_sampling_error_seconds: Delta samples signal * expected sample frequency - Delta time of the turning point according to reference clock
-rm(list=ls())
+rm(list = ls())
 options(digits.secs = 5)
 options(scipen = 999)
 options(digits = 20)
@@ -54,10 +54,11 @@ if (do.rerun == TRUE) {
                        elapsed_time_atomclock_hours = numeric(500),
                        accelerometer_timestamp_error_seconds = numeric(500), stringsAsFactors = FALSE)
   cnt = 1
-  
   for (ses_name in sessionames) { #
     ses = grep(basename(fns), pattern = ses_name)
-    ses2 = grep(fns[ses], pattern = "Acttrust|Activpal", invert = TRUE) # ignore Acttrust, because it does not have raw data
+    ses2 = grep(fns[ses], pattern = "Acttrust", invert = TRUE) # ignore Acttrust, because it does not have raw data
+    # ses2 = grep(fns[ses], pattern = "Acttrust|Activpal", invert = TRUE) # ignore Acttrust, because it does not have raw data
+    # ses2 = grep(fns[ses], pattern = "Axivity|GENEActiv|MOX|Acttrust|Activpal", invert = TRUE) # ignore Acttrust, because it does not have raw data
     for (fn in fns[ses[ses2]]) {
       if ((nrow(results) - cnt) < 500) { # add rows
         results[nrow(results) + 500,] = NA
@@ -72,6 +73,8 @@ if (do.rerun == TRUE) {
         brand = "GENEActiv"
       } else if (length(grep(fn, pattern = "MOX")) > 0) {
         brand = "MOX"
+      } else if (length(grep(fn, pattern = "Activpal")) > 0) {
+        brand = "Activpal"
       }
       for (i in 1:length(extracteddata$data)) {
         options(digits.secs = 5)
@@ -82,7 +85,7 @@ if (do.rerun == TRUE) {
           # check that this goes well for Axivity AX6
           DR = as.numeric(extracteddata$specifications[i, "dynamic_range"])
           sn = as.character(extracteddata$specifications[i, "serial_number"])
-          sf = extracteddata$specifications[i, "sampling_frequency"]
+          sf = as.numeric(extracteddata$specifications[i, "sampling_frequency"])
           if (brand == "MOX") sf = 25
           if (brand != "Actigraph" & brand != "Activpal") {
             tmp$time = as.POSIXlt(tmp$time, origin = "1970-01-01", tz = "Europe/Amsterdam")
@@ -96,12 +99,19 @@ if (do.rerun == TRUE) {
             tmp = tmp[, c("time","AccX","AccY","AccZ")]
             colnames(tmp)[2:4] = c("X", "Y", "Z")
           }
+          
           row.names(tmp) = 1:nrow(tmp)
           colnames(tmp)[1] = "HEADER_TIME_STAMP"
           turning_times = experiments$start_time[grep(pattern = brand, x = experiments$accelerometers_used, ignore.case = TRUE)]
           turning_times = as.POSIXlt(x = paste0("2020-11-26 ", turning_times), tz = "Europe/Amsterdam")
           Nturn = length(turning_times)
           results$brand[cnt:(cnt + Nturn - 1)] = rep(brand, Nturn)
+          if (brand == "Actigraph") {
+            brand_sn = paste0(brand, "_", substr(x = sn,start = 1, stop = 3))
+            results$brand_subtype[cnt:(cnt + Nturn - 1)] = rep(brand_sn, Nturn)
+          } else {
+            results$brand_subtype[cnt:(cnt + Nturn - 1)] = rep(brand, Nturn)
+          }
           results$sn[cnt:(cnt + Nturn - 1)] = rep(sn, Nturn)
           results$sf[cnt:(cnt + Nturn - 1)] = rep(sf, Nturn)
           results$turn[cnt:(cnt + Nturn - 1)] = 1:Nturn
@@ -111,30 +121,44 @@ if (do.rerun == TRUE) {
           for (j in 1:Nturn) {
             # identify clock based turning times
             turning_point = which(tmp$HEADER_TIME_STAMP_rounded == turning_times[j])
-            # defined 5 minute time window to search for turning points in signal
-            nearby = which(tmp$HEADER_TIME_STAMP > (turning_times[j] - 60) &
-                             tmp$HEADER_TIME_STAMP < (turning_times[j] + 60))
-            # identify turning point
-            dx = abs(diff(tmp$X[nearby]))
-            dy = abs(diff(tmp$Y[nearby]))
-            dz = abs(diff(tmp$Z[nearby]))
-            dtotal = dx + dy + dz
-            turn_signal = nearby[which.max(dtotal)[1]]
-            results$turn_signal[cnt] = turn_signal
-            if (j == 1) {
-              turn_signal_first = turn_signal
+            if (length(turning_point) > 0) {
+              # for Activpal we may not be able to find the turning point, because it falls a sleep easily
+              # we could extract the turning point by looking at nearest timestamp, like in the line below
+              # turning_point = which.min(abs(tmp$HEADER_TIME_STAMP_rounded - turning_times[j]))
+              # however, then it would not be a good evaluation of time keeping anymore, because all error will
+              # come from the device being turned off during the moment of turning around.
+              
+              # define 3 minute time window to search for turning points in signal
+              nearby = which(tmp$HEADER_TIME_STAMP > (turning_times[j] - 90) &
+                               tmp$HEADER_TIME_STAMP < (turning_times[j] + 90))
+              # identify turning point
+              dx = abs(diff(tmp$X[nearby]))
+              dy = abs(diff(tmp$Y[nearby]))
+              dz = abs(diff(tmp$Z[nearby]))
+              dtotal = dx + dy + dz
+              turn_signal = nearby[which.max(dtotal)[1]]
+              results$turn_signal[cnt] = turn_signal
+              if (j == 1) {
+                turn_signal_first = turn_signal
+              }
+              results$turn_signal_relative[cnt] = turn_signal - turn_signal_first
+              # timestamp based evaluation
+              accelerometer_timestamp_error_seconds = tmp$HEADER_TIME_STAMP[turning_point] - tmp$HEADER_TIME_STAMP[turn_signal]
+              accelerometer_timestamp_error_seconds = -accelerometer_timestamp_error_seconds[which.min(abs(accelerometer_timestamp_error_seconds))]
+              units(accelerometer_timestamp_error_seconds) = "secs"
+              results$accelerometer_timestamp_error_seconds[cnt] = as.numeric(accelerometer_timestamp_error_seconds)
+              # sample rate based evaluation
+              if (brand != "Activpal") {
+                results$sf_observed[cnt] = results$turn_signal_relative[cnt] / results$elapsed_time_atomclock_hours[cnt]
+                turn_signal_relative2 = results$turn_signal_relative[cnt] / as.numeric(results$sf[cnt])
+                results$accelerometer_sampling_error_seconds[cnt] = turn_signal_relative2 - results$elapsed_time_atomclock_hours[cnt]
+              } else {
+                is.na(results$sf_observed[cnt]) = TRUE
+                is.na(results$accelerometer_sampling_error_seconds[cnt]) = TRUE
+              }
+            } else {
+              nearby = NULL
             }
-            results$turn_signal_relative[cnt] = turn_signal - turn_signal_first
-            
-            # timestamp based evaluation
-            accelerometer_timestamp_error_seconds = tmp$HEADER_TIME_STAMP[turning_point] - tmp$HEADER_TIME_STAMP[turn_signal]
-            accelerometer_timestamp_error_seconds = -accelerometer_timestamp_error_seconds[which.min(abs(accelerometer_timestamp_error_seconds))]
-            units(accelerometer_timestamp_error_seconds) = "secs"
-            results$accelerometer_timestamp_error_seconds[cnt] = as.numeric(accelerometer_timestamp_error_seconds)
-            # sample rate based evaluation
-            results$sf_observed[cnt] = results$turn_signal_relative[cnt] / results$elapsed_time_atomclock_hours[cnt]
-            turn_signal_relative2 = results$turn_signal_relative[cnt] / as.numeric(results$sf[cnt])
-            results$accelerometer_sampling_error_seconds[cnt] = turn_signal_relative2 - results$elapsed_time_atomclock_hours[cnt]
             cnt  = cnt + 1
           }
           if (length(nearby) == 0) {
@@ -149,7 +173,7 @@ if (do.rerun == TRUE) {
     }
   }
   results = results[which(results$brand != ""),]
-  for (brand in c("Actigraph", "GENEActiv", "Axivity", "MOX")) { #"Activpal", 
+  for (brand in c("Actigraph", "GENEActiv", "Axivity", "MOX", "Activpal")) { #, 
     cat(paste0("\nSuccessful turning point extraction for ", brand,"\n"))
     print(table(success_log[[brand]]))
   }
@@ -159,27 +183,29 @@ if (do.rerun == TRUE) {
 }
 results$sf = as.numeric(results$sf)
 results$elapsed_time_atomclock_hours = results$elapsed_time_atomclock_hours / 3600
-results = results[which(results$turn != 1), ]
+results = results[which(results$turn != 1 & results$turn_signal != 0), ]
 
 # Aggregate per brand
 out = c()
 cnt = 1
-for (brand in c("Actigraph", "GENEActiv", "Axivity", "MOX")) { #"Activpal", 
-  sel = which(results$brand == brand)
-  results_agg = aggregate(x = results[sel,c("elapsed_time_atomclock_hours", "accelerometer_timestamp_error_seconds", 
-                                            "accelerometer_sampling_error_seconds",
-                                            "sf", "sf_observed")],
-                          by = list(results$brand[sel], results$turn[sel]),
-                          FUN = function(x) c(mean = mean(x), sd = sd(x),
-                                              min = min(x),  max = max(x), n = length(x)))
-  names(results_agg)[1:2] = c("brand", "turn")
-  
-  if (cnt == 1) {
-    out = results_agg
-  } else {
-    out = rbind(out, results_agg)
+for (brand in c("Actigraph_CLE", "Actigraph_MOS", "GENEActiv", "Axivity", "MOX", "Activpal")) {
+  sel = which(results$brand_subtype == brand)
+  if (length(sel) != 0) {
+    results_agg = aggregate(x = results[sel,c("elapsed_time_atomclock_hours", "accelerometer_timestamp_error_seconds", 
+                                              "accelerometer_sampling_error_seconds",
+                                              "sf", "sf_observed")],
+                            by = list(results$brand_subtype[sel], results$turn[sel]),
+                            FUN = function(x) c(mean = mean(x), sd = sd(x),
+                                                min = min(x),  max = max(x), n = length(x)))
+    names(results_agg)[1:2] = c("brand_subtype", "turn")
+    
+    if (cnt == 1) {
+      out = results_agg
+    } else {
+      out = rbind(out, results_agg)
+    }
+    cnt = cnt + 1
   }
-  cnt = cnt + 1
 }
 
 
