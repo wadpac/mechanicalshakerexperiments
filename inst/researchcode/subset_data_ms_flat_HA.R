@@ -1,4 +1,4 @@
-# Script to subset ms_flat_HA_VM from structured data (required for freq. spec and cross-correlation analyses with the experimental data)
+# Script to subset ms_flat_HA from structured data (required for freq. spec and cross-correlation analyses with the experimental data)
 
 rm(list=ls())
 graphics.off()
@@ -46,11 +46,11 @@ for (brand in 1:length(brands_to_load)) {
           # Check if the x-axis was the axis aligned with the shaker direction 
           maxAxes <- c(sd(tmp$x), sd(tmp$y), sd(tmp$z)) # calculate the standard deviation of the axes
           HA <- unlist(tmp[which.max(maxAxes) + 1]) # select the axis with the highest SD as this will be the shaking direction
-          VM <- sqrt((tmp$x^2 + tmp$y^2 + tmp$z^2)) # calculate vector magnitude (VM)
+          #VM <- sqrt((tmp$x^2 + tmp$y^2 + tmp$z^2)) # calculate vector magnitude (VM)
           tmp = tmp[, c("shaking_frequency", "time")] # select data for the HA (x-axis), time and shaking_frequency
           tmp$HA <- HA
           tmp$normHA <- (tmp$HA - mean(tmp$HA)) # normalize HA
-          tmp$VM <- VM 
+          #tmp$VM <- VM 
           ms_flat_HA$data[[counter]] <- tmp
           counter = counter + 1
           specs <- c(extracteddata$specifications[file,"serial_number"], brands_to_load[brand], experiments_to_load[experiment], 
@@ -67,4 +67,4 @@ ms_flat_HA$specifications <- specifications
 as.factor(ms_flat_HA$specifications$brand)
 as.factor(ms_flat_HA$specifications$experiment)
 
-save(ms_flat_HA, file = paste0(outputdir, "/ms_flat_HA_VM.RData"))
+save(ms_flat_HA, file = paste0(outputdir, "/ms_flat_HA.RData"))
