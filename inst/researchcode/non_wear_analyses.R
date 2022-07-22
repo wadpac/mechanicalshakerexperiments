@@ -5,7 +5,7 @@ graphics.off()
 shaker_experiments_folder = "/media/vincent/DATA/VUMC/shaker_experiments"
 
 # TO DO: Check which GENEActiv was removed towards end of one of the experiments, and make sure data is not included
-epochsize = 15
+epochsize = 5
 
 #====================================================================================
 # Specify file paths
@@ -260,6 +260,8 @@ compdf = data.frame(median_sd_x = numeric(NN),
                     sf = numeric(NN),
                     dynrange = numeric(NN),
                     brand = character(NN))
+
+D = D[which(D$SDX != 0 & D$SDY != 0 & D$SDZ != 0), ]
 cnt = 1
 for (brand in c("GENEActiv","Axivity","ActigraphCLE","ActigraphMOS", "Activpal", "MOX")) {
   for (dynrange in unique(D$DR)) {
@@ -267,18 +269,18 @@ for (brand in c("GENEActiv","Axivity","ActigraphCLE","ActigraphMOS", "Activpal",
       selection = which(D$brand == brand & D$shakefreq == 0 & D$sf == samfre & D$DR == dynrange)
       mx = median(D$SDX[selection], na.rm = T)
       if (!is.na(mx)) {
-        compdf$median_sd_x[cnt] = round(median(D$SDX[selection], na.rm = T), digits = 2)
-        compdf$median_sd_y[cnt] = round(median(D$SDY[selection], na.rm = T), digits = 2)
-        compdf$median_sd_z[cnt] = round(median(D$SDZ[selection], na.rm = T), digits = 2)
-        compdf$mean_sd_x[cnt] = round(mean(D$SDX[selection], na.rm = T), digits = 2)
-        compdf$mean_sd_y[cnt] = round(mean(D$SDY[selection], na.rm = T), digits = 2)
-        compdf$mean_sd_z[cnt] = round(mean(D$SDZ[selection], na.rm = T), digits = 2)
-        compdf$p95_sd_x[cnt] = round(quantile(D$SDX[selection], probs = 0.95, na.rm = T), digits = 2)
-        compdf$p95_sd_y[cnt] = round(quantile(D$SDY[selection], probs = 0.95, na.rm = T), digits = 2)
-        compdf$p95_sd_z[cnt] = round(quantile(D$SDZ[selection], probs = 0.95, na.rm = T), digits = 2)
-        compdf$sd_sdx[cnt] = round(sd(D$SDX[selection], na.rm = T), digits = 2)
-        compdf$sd_sdy[cnt] = round(sd(D$SDY[selection], na.rm = T), digits = 2)
-        compdf$sd_sdz[cnt] = round(sd(D$SDZ[selection], na.rm = T), digits = 2)
+        compdf$median_sd_x[cnt] = round(median(D$SDX[selection], na.rm = T), digits = 1)
+        compdf$median_sd_y[cnt] = round(median(D$SDY[selection], na.rm = T), digits = 1)
+        compdf$median_sd_z[cnt] = round(median(D$SDZ[selection], na.rm = T), digits = 1)
+        compdf$mean_sd_x[cnt] = round(mean(D$SDX[selection], na.rm = T), digits = 1)
+        compdf$mean_sd_y[cnt] = round(mean(D$SDY[selection], na.rm = T), digits = 1)
+        compdf$mean_sd_z[cnt] = round(mean(D$SDZ[selection], na.rm = T), digits = 1)
+        compdf$p95_sd_x[cnt] = round(quantile(D$SDX[selection], probs = 0.95, na.rm = T), digits = 1)
+        compdf$p95_sd_y[cnt] = round(quantile(D$SDY[selection], probs = 0.95, na.rm = T), digits = 1)
+        compdf$p95_sd_z[cnt] = round(quantile(D$SDZ[selection], probs = 0.95, na.rm = T), digits = 1)
+        compdf$sd_sdx[cnt] = round(sd(D$SDX[selection], na.rm = T), digits = 1)
+        compdf$sd_sdy[cnt] = round(sd(D$SDY[selection], na.rm = T), digits = 1)
+        compdf$sd_sdz[cnt] = round(sd(D$SDZ[selection], na.rm = T), digits = 1)
         compdf$dynrange[cnt] = dynrange
         compdf$sf[cnt] = samfre
         compdf$brand[cnt] = brand
