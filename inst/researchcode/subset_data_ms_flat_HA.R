@@ -1,4 +1,5 @@
-# Script to subset ms_flat_HA from structured data (required for freq. spec and cross-correlation analyses with the experimental data)
+## Script to subset the required HA data (horizontal axis; x-axis) for the analyses into one data.frame (ms_flat_HA) 
+## from structured data for the shaker experiments (required for freq. spec and cross-correlation analyses with the experimental data)
 
 rm(list=ls())
 graphics.off()
@@ -7,15 +8,11 @@ graphics.off()
 shaker_experiments_folder = "/Users/annelindelettink/Documents/Work MacBook Pro Annelinde/Mechanical Shaker Machine"
 # shaker_experiments_folder = "~/data/VUMC/shaker_experiments"
 
-# Check: GENEActiv data (lfcr and hfcr) not included, only the data of this device (058029) for the ms_mfcr experiment is taken into account
 #====================================================================================
 # Specify file paths
 structured_data_dir = paste0(shaker_experiments_folder, "/structured_raw_data")
 outputdir = paste0(shaker_experiments_folder, "/analyses")
 if (!dir.exists(outputdir)) dir.create(outputdir)
-
-## Subset data for the analyses into one data.frame for shaker experiment - flat
-# Required data: HA (horizontal axis; x-axis), normalized HA = (HA - M), and vector magnitude (VM = sqrt(x^2 + y^2 + z^2))
 
 brands_to_load = c("Actigraph", "Activpal", "Axivity", "GENEActiv", "MOX")
 experiments_to_load = c("ms_hfcr", "ms_lfcr", "ms_mfcr", "ms_hfmr", "ms_lfmr")
@@ -28,7 +25,7 @@ counter = 1
 for (brand in 1:length(brands_to_load)) {
   for (experiment in 1:length(experiments_to_load)){
     cat(paste0("\nBrand: ", brands_to_load[brand], ", experiment: ", experiments_to_load[experiment]))
-    if (brands_to_load[brand] != "Axivity" & endsWith(experiments_to_load[experiment], "mr")) { #to avoid loading mixed dynamic range experiments for other devices
+    if (brands_to_load[brand] != "Axivity" & endsWith(experiments_to_load[experiment], "mr")) { # to avoid loading mixed dynamic range experiments for other devices
       cat(paste0("\nThis device was not included in experiment:"), experiments_to_load[experiment])
       next
     } else{
@@ -40,11 +37,8 @@ for (brand in 1:length(brands_to_load)) {
           # Check if the x-axis was the axis aligned with the shaker direction 
           maxAxes <- c(sd(tmp$x), sd(tmp$y), sd(tmp$z)) # calculate the standard deviation of the axes
           HA <- unlist(tmp[which.max(maxAxes) + 1]) # select the axis with the highest SD as this will be the shaking direction
-          #VM <- sqrt((tmp$x^2 + tmp$y^2 + tmp$z^2)) # calculate vector magnitude (VM)
-          tmp = tmp[, c("shaking_frequency", "time")] # select data for the HA (x-axis), time and shaking_frequency
+          tmp = tmp[, c("shaking_frequency", "time")] # select data for the HA (x-axis), time, and shaking_frequency
           tmp$HA <- HA
-          tmp$normHA <- (tmp$HA - mean(tmp$HA)) # normalize HA
-          #tmp$VM <- VM 
           ms_flat_HA$data[[counter]] <- tmp
           counter = counter + 1
           specs <- c(extracteddata$specifications[file,"label"], extracteddata$specifications[file,"serial_number"], brands_to_load[brand], experiments_to_load[experiment], 
