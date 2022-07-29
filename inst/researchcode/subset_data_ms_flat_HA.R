@@ -53,7 +53,7 @@ for (brand in 1:length(brands_to_load)) {
           #tmp$VM <- VM 
           ms_flat_HA$data[[counter]] <- tmp
           counter = counter + 1
-          specs <- c(extracteddata$specifications[file,"serial_number"], brands_to_load[brand], experiments_to_load[experiment], 
+          specs <- c(extracteddata$specifications[file,"label"], extracteddata$specifications[file,"serial_number"], brands_to_load[brand], experiments_to_load[experiment], 
                      extracteddata$specifications[file,"sampling_frequency"], extracteddata$specifications[file,"dynamic_range"])
           specifications <- rbind(specifications, unname(specs))
         }
@@ -61,8 +61,8 @@ for (brand in 1:length(brands_to_load)) {
     }
   }
 }
-colnames(specifications) <- c("serial_number", "brand", "experiment", "sampling_frequency", "dynamic_range")
-names(ms_flat_HA$data) <- specifications$serial_number
+colnames(specifications) <- c("label", "serial_number", "brand", "experiment", "sampling_frequency", "dynamic_range")
+names(ms_flat_HA$data) <- specifications$label
 ms_flat_HA$specifications <- specifications
 as.factor(ms_flat_HA$specifications$brand)
 as.factor(ms_flat_HA$specifications$experiment)
