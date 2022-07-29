@@ -36,12 +36,6 @@ for (brand in 1:length(brands_to_load)) {
       for (file in 1:length(extracteddata$data)) {
         tmp <- extracteddata$data[[file]] #tmp is the structured data now
         if(length(tmp > 0)) {
-          if(brands_to_load[brand] %in% c("Actigraph", "Activpal")) {
-            names(tmp) <- tolower(names(tmp))
-          }
-          if(brands_to_load[brand] == "MOX") {
-            names(tmp) <- c("time", "x", "y", "z", "shaking_frequency", "condition")
-          }
           tmp$time = as.POSIXct(tmp$time, origin = "1970-01-01", tz="Europe/Amsterdam")
           # Check if the x-axis was the axis aligned with the shaker direction 
           maxAxes <- c(sd(tmp$x), sd(tmp$y), sd(tmp$z)) # calculate the standard deviation of the axes

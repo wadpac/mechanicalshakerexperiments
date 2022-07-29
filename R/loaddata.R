@@ -161,6 +161,14 @@ loaddata <- function(path, brand, experiment, windows = TRUE, experimentfile, ac
                          rawdata <- rawdata[, c("time", "AccX", "AccY", "AccZ")]
                        }# brand = Fitbit
                        
+                       # rename the acceleration data column names for consistency
+                       if(brand %in% c("Actigraph", "Activpal")) {
+                         names(rawdata) <- tolower(names(rawdata))
+                       }
+                       if(brand == "MOX") {
+                         names(rawdata) <- c("time", "x", "y", "z")
+                       }
+                       
                        # make selection of the data with 2 minutes before and after each experiment
                        # this to reduce amount data in memory
                        if (experiment == "timer_check") {
