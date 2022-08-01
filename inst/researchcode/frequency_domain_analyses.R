@@ -190,6 +190,10 @@ specifications <- specifications[-deviations,]
 raw_spectra$HA[deviations] <- NULL
 rm(deviations)
 
+ms_flat_HA_new <- list(data = data, specifications = specifications)
+cat("\nSaving data...")
+save(ms_flat_HA_new, file = paste0(datadir, "ms_flat_HA_deviates_removed.RData"))
+
 # EXPLORE CUTOFFS: Mechanical shaker machine
 rpm <- c(30, 50, 75, 100, 125, 150, 175, 200, 225, 250)
 shaking_frequencies <- rpm / 60
