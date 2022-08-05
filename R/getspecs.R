@@ -40,7 +40,7 @@ getspecs <- function(brand, data, experimentfile = c(), experiment) {
     if(brand == "Acttrust") {#no information available in the data 
       sn <- strsplit(strsplit(names(data[data_file]), "_")[[1]][2], ".txt")[[1]][1]
       sf <- 30
-      dr <- NA #What is the dynamic range?
+      dr <- NA #Does not have a dynamic range
       lab <- paste0("Ac_", substr(sn, nchar(sn)-2, nchar(sn)))
     }
     if(brand == "Axivity"){
@@ -66,7 +66,7 @@ getspecs <- function(brand, data, experimentfile = c(), experiment) {
         sn <- configurations$serial_number[which(configurations$experiment == experiment & configurations$number == data_file)]
         sf <- configurations$sample_rate[which(configurations$experiment == experiment & configurations$number == data_file)]
       }
-      dr <- NA #What is the dynamic range?
+      dr <- 8 #as specified on the manufacturers website
       lab <- paste0("MOX_", substr(sn, (nchar(sn)-2), nchar(sn)))
     }
     serial_number <- c(serial_number, sn)
