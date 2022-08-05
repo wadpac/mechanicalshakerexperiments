@@ -15,6 +15,7 @@ getspecs <- function(brand, data, experimentfile = c(), experiment) {
   serial_number <- c()
   sampling_frequency <- c()
   dynamic_range <- c()
+  label <- c()
   
   if (length(experimentfile) == 0) {
     experimentfile = system.file("datadescription/data_description.xlsx", package = "mechanicalshakerexperiments")[1]
@@ -22,49 +23,58 @@ getspecs <- function(brand, data, experimentfile = c(), experiment) {
   for (data_file in 1:length(data)) {
     if(brand == "Actigraph") {
       head <- attributes(data[[data_file]])[setdiff(names(attributes(data[[data_file]])), c("dim", "dimnames", "time_index"))]
-      serial_number <- c(serial_number, head$header$`Serial Number`)
-      sampling_frequency <- c(sampling_frequency, head$header$`Sample Rate`)
-      dynamic_range <- c(dynamic_range, head$header$`Acceleration Max`)
+      sn <- head$header$`Serial Number`
+      sf <- head$header$`Sample Rate`
+      dr <- head$header$`Acceleration Max`
+      lab <- paste(paste0("AG_", substr(sn,1, 3)), substr(sn,nchar(sn)-2, nchar(sn)), sep = "_")
     }
     if(brand == "Activpal") {
       number <- strsplit(strsplit(names(data)[data_file], " ")[[1]][1], "-")[[1]]
       for(s in 1:length(number)) {
         if (startsWith(number[[s]], "AP")) {sn <- number[[s]]}
       }
-      serial_number <- c(serial_number, sn)
-      sampling_frequency <- c(sampling_frequency, 20)
-      dynamic_range <- c(dynamic_range, 2)
+      sf <- 20
+      dr <- 2
+      lab <- paste0("aP_", substr(sn, nchar(sn)-2, nchar(sn)))
     }
     if(brand == "Acttrust") {#no information available in the data 
-      serial_number <- c(serial_number, strsplit(strsplit(names(data[data_file]), "_")[[1]][2], ".txt")[[1]][1])
-      sampling_frequency <- c(sampling_frequency, 30)
-      dynamic_range <- c(dynamic_range, NA) #What is the dynamic range?
+      sn <- strsplit(strsplit(names(data[data_file]), "_")[[1]][2], ".txt")[[1]][1]
+      sf <- 30
+      dr <- NA #What is the dynamic range?
+      lab <- paste0("Ac_", substr(sn, nchar(sn)-2, nchar(sn)))
     }
     if(brand == "Axivity"){
       head <- data[[data_file]]$header
-      serial_number <- c(serial_number, data[[data_file]]$header$uniqueSerialCode)
-      sampling_frequency <- c(sampling_frequency, data[[data_file]]$header$frequency)
-      dynamic_range <- c(dynamic_range, data[[data_file]]$header$accrange)
+      sn <- data[[data_file]]$header$uniqueSerialCode
+      sf <- data[[data_file]]$header$frequency
+      dr <- data[[data_file]]$header$accrange
+      lab <- paste0("Ax_", substr(sn, nchar(sn)-2, nchar(sn)))
     }
     if(brand == "GENEActiv"){
       head <- data[[data_file]]$header
-      serial_number <- c(serial_number, head[which(rownames(head) == "Device_Unique_Serial_Code"),])
-      sampling_frequency <- c(sampling_frequency, head[which(rownames(head) == "Measurement_Frequency"),])
-      dynamic_range <- c(dynamic_range, 8)
+      sn <- head[which(rownames(head) == "Device_Unique_Serial_Code"),]
+      sf <- head[which(rownames(head) == "Measurement_Frequency"),]
+      dr <- 8
+      lab <- paste0("GA_", substr(sn, nchar(sn)-2, nchar(sn)))
     }
     if(brand == "MOX") {#No information available in the data itself, but in the configuration sheet of data description file
       configurations <- gdata::read.xls(experimentfile, header = TRUE, sheet = 2)
       if(experiment == "box") {
-        serial_number <- c(serial_number, configurations$serial_number[which(configurations$experiment == "ms_mfcr" & configurations$number == data_file)])
-        sampling_frequency <- c(sampling_frequency, configurations$sample_rate[which(configurations$experiment == "ms_mfcr" & configurations$number == data_file)])
+        sn <- configurations$serial_number[which(configurations$experiment == "ms_mfcr" & configurations$number == data_file)]
+        sf <- configurations$sample_rate[which(configurations$experiment == "ms_mfcr" & configurations$number == data_file)]
       } else {
-        serial_number <- c(serial_number, configurations$serial_number[which(configurations$experiment == experiment & configurations$number == data_file)])
-        sampling_frequency <- c(sampling_frequency, configurations$sample_rate[which(configurations$experiment == experiment & configurations$number == data_file)])
+        sn <- configurations$serial_number[which(configurations$experiment == experiment & configurations$number == data_file)]
+        sf <- configurations$sample_rate[which(configurations$experiment == experiment & configurations$number == data_file)]
       }
-      dynamic_range <- c(dynamic_range, NA) #What is the dynamic range?
+      dr <- NA #What is the dynamic range?
+      lab <- paste0("MOX_", substr(sn, (nchar(sn)-2), nchar(sn)))
     }
+    serial_number <- c(serial_number, sn)
+    sampling_frequency <- c(sampling_frequency, sf)
+    dynamic_range <- c(dynamic_range, dr)
+    label <- c(label, lab)
   }
-  specifications <- cbind(serial_number, sampling_frequency, dynamic_range)
+  specifications <- cbind(label, serial_number, sampling_frequency, dynamic_range)
   
   return(specifications)
 }

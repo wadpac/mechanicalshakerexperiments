@@ -48,15 +48,15 @@ loaddata <- function(path, brand, experiment, windows = TRUE, experimentfile, ac
   #------------------------------------------------------------
   # Get brand specific file extensions
   if (brand == "Actigraph") {
-    pattern ="*.gt3x"
+    pattern = "*.gt3x"
   } else if (brand == "Activpal" | brand == "MOX") {
-    pattern ="*.csv"
+    pattern = "*.csv"
   } else if (brand == "Acttrust") {
-    pattern ="*.txt"
+    pattern = "*.txt"
   } else if (brand == "Axivity") {
-    pattern ="*.cwa"
+    pattern = "*.cwa"
   } else if (brand == "GENEActiv") {
-    pattern ="*.bin"
+    pattern = "*.bin"
   }
   #else {} #fitbit
   #------------------------------------------------------------
@@ -98,8 +98,34 @@ loaddata <- function(path, brand, experiment, windows = TRUE, experimentfile, ac
                          rawdata <- as.data.frame(GGIR::read.gt3x_ggir(paste(file_path, file_list[i], sep = "/"), asDataFrame = TRUE))
                          options(digits.secs = 5)
                          options(scipen = 999)
+                         options(digits = 20)
                          rawdata$time = as.POSIXct(rawdata$time, origin = "1970-01-01", tz = tz)
                          rawdata$time = as.POSIXlt(as.character(rawdata$time), tz = tz, origin = "1970-01-01")
+                         rawdata_backup = rawdata
+                         #======================================
+                         # resampling
+                         # extract sample rate to aid resampling:
+                         head <- attributes(rawdata)[setdiff(names(attributes(rawdata)), c("dim", "dimnames", "time_index"))]
+                         sampling_frequency <- head$header$`Sample Rate`
+                         rm(head)
+                         # prepare data for resampling
+                         raw = as.matrix(rawdata[, c("X", "Y", "Z")])
+                         rawTime = as.numeric(rawdata$time)
+                         time = seq(ceiling(min(rawTime)), floor(max(rawTime)), by = 1/sampling_frequency)
+                         # resample
+                         rawdata2 = as.data.frame(GGIR::resample(raw = raw, rawTime = rawTime, time = time, nrow(raw), 2))
+                         # put data back into expected format
+                         rawdata2$time = NA
+                         colnames(rawdata2) = c("X", "Y", "Z", "time")
+                         rawdata2 = rawdata2[,c("time", "X", "Y", "Z")]
+                         rawdata2$time = time
+                         rawdata2$time = as.POSIXct(rawdata2$time, origin = "1970-01-01", tz = tz)
+                         rawdata2$time = as.POSIXlt(as.character(rawdata2$time), tz = tz, origin = "1970-01-01")
+                         # try to preserve rawdata object attributes copy them to new object
+                         rawdata = rawdata2
+                         attributes(rawdata) = attributes(rawdata_backup)
+                         rm(rawdata_backup, rawdata2)
+                         #======================================
                        } else if (brand == "Activpal") {
                          rawdata <- read.activpal(paste(file_path, file_list[i], sep = "/"))
                          rawdata[,c("X","Y","Z")] = ((rawdata[,c("X","Y","Z")] / (2^8)) - 0.5) * 2 * 2
@@ -134,6 +160,14 @@ loaddata <- function(path, brand, experiment, windows = TRUE, experimentfile, ac
                          rawdata$time = as.POSIXct(rawdata$time, format = "%Y-%m-%d %H:%M:%OS")
                          rawdata <- rawdata[, c("time", "AccX", "AccY", "AccZ")]
                        }# brand = Fitbit
+                       
+                       # rename the acceleration data column names for consistency
+                       if(brand %in% c("Actigraph", "Activpal")) {
+                         names(rawdata) <- tolower(names(rawdata))
+                       }
+                       if(brand == "MOX") {
+                         names(rawdata) <- c("time", "x", "y", "z")
+                       }
                        
                        # make selection of the data with 2 minutes before and after each experiment
                        # this to reduce amount data in memory
@@ -186,9 +220,6 @@ loaddata <- function(path, brand, experiment, windows = TRUE, experimentfile, ac
                            rawdata$data = rawdata$data[which(rawdata$data$time >= start & rawdata$data$time <= end),]
                          }
                        }
-                       #if(actigraph_preprocessing = TRUE) {
-                       #data <- fill_sleepmode(rawdata, start, end)
-                       #}
                        return(rawdata)
                      }
   }
