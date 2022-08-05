@@ -19,8 +19,8 @@ if (!file.exists(filename_flatHA)) {
 load(filename_flatHA)
 
 # Select data of high and low sampling frequency experiments only
-data <- ms_flat_HA$data[ms_flat_HA$specifications$experiment == "ms_hfcr" | ms_flat_HA$specifications$experiment == "ms_lfcr"]
-specifications <- ms_flat_HA$specifications[ms_flat_HA$specifications$experiment == "ms_hfcr" | ms_flat_HA$specifications$experiment == "ms_lfcr",]
+data <- ms_flat_HA$data
+specifications <- ms_flat_HA$specifications
 rm(ms_flat_HA, filename_flatHA, shaker_experiments_folder)
 
 #====================================================================================
