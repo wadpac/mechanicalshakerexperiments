@@ -1,5 +1,5 @@
 ## Script to subset the required HA data (horizontal axis; x-axis) for the analyses into one data.frame (ms_flat_HA) 
-## from structured data for the shaker experiments (required for freq. spec and cross-correlation analyses with the experimental data)
+## from structured data for the shaker experiments (required for freq. spec and cross-correlation analyses with the required experimental data)
 
 rm(list=ls())
 graphics.off()
@@ -15,7 +15,7 @@ outputdir = paste0(shaker_experiments_folder, "/analyses")
 if (!dir.exists(outputdir)) dir.create(outputdir)
 
 brands_to_load = c("Actigraph", "Activpal", "Axivity", "GENEActiv", "MOX")
-experiments_to_load = c("ms_hfcr", "ms_lfcr", "ms_mfcr", "ms_hfmr", "ms_lfmr")
+experiments_to_load = c("ms_hfcr", "ms_lfcr")#, "ms_mfcr", "ms_hfmr", "ms_lfmr")
 
 ms_flat_HA <- list()
 specifications <- data.frame()

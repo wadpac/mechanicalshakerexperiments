@@ -49,6 +49,7 @@ computeCrossCorrelations <- function(data) {
       if (x==y) {
         correlationMatrix[x,y] <- 1
         x = x + 1
+        #create pair-wise plots here
       }
       else {
         crossCorr <- ccf(data[[x]]$HA, data[[y]]$HA, type = "correlation", plot = FALSE)
@@ -137,8 +138,9 @@ max(correlation_matrices$low$lags, na.rm = TRUE)
 sd(correlation_matrices$low$lags, na.rm = TRUE)
 
 # Heatmap
-heatmap_low <- corrplot::corrplot(correlation_matrices$low$correlationMatrix, type = 'lower', method = 'color', 
-                                  col.lim = c(0,1), addCoef.col = 'black', tl.srt=45, diag = TRUE, 
+xy <- correlation_matrices$low$correlationMatrix
+heatmap_low <- corrplot::corrplot(pmax(xy, t(xy), na.rm = TRUE), type = 'lower', method = 'color', order = "alphabet",
+                                  col.lim = c(0,1), addCoef.col = 'black', tl.srt=45, 
                                   number.cex = 0.75, tl.cex = 0.5, tl.col = "black")
 heatmap_low
 
@@ -156,7 +158,8 @@ max(correlation_matrices$high$lags, na.rm = TRUE)
 sd(correlation_matrices$high$lags, na.rm = TRUE)
 
 # Heatmap
-heatmap_high <- corrplot::corrplot(correlation_matrices$high$correlationMatrix, type = 'lower', method = 'color', 
+xy <- correlation_matrices$high$correlationMatrix
+heatmap_high <- corrplot::corrplot(pmax(xy, t(xy), na.rm = TRUE), type = 'lower', method = 'color', order = "alphabet",
                                    col.lim = c(0,1), addCoef.col = 'black', tl.srt=45, diag = TRUE, 
                                    number.cex = 0.5, tl.cex = 0.5, tl.col = "black")
 heatmap_high
