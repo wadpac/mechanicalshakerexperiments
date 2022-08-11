@@ -281,15 +281,15 @@ rm(df_long)
 #load(paste0(datadir, "domfreq_meanPSD_HA_ms_dataset_long_lf.RData"))
 
 ## Boxplots
-pdf(paste0(datadir, "plots/boxplots_HA_LOW.pdf")) # Open pdf file
-par(mfrow = c(1, 2))
-# Dominant frequency
-bxp_domfreq_low <- createBoxplot(df_low, outcome = "domFreq", type = "between")
-bxp_domfreq_low
-# Mean PSD
-bxp_psd_low <- createBoxplot(df_low, outcome = "meanPSD", type = "between")
-bxp_psd_low
-dev.off() 
+bxp_domfreq_low <- createBoxplot(df_low, outcome = "domFreq", type = "between") # Dominant frequency
+bxp_psd_low <- createBoxplot(df_low, outcome = "meanPSD", type = "between") # Mean PSD
+
+#merge the two plots within one grid (and visualize this)
+ggpubr::grid.arrange(bxp_domfreq_low, bxp_psd_low, nrow=1) #arranges plots within grid
+#save
+g <- gridExtra::arrangeGrob(bxp_domfreq_low + theme(legend.position="none"), bxp_psd_low + theme(legend.position="bottom"), nrow=2) #generates g
+ggsave(file=paste0(datadir, "plots/boxplots_HA_LOW.pdf"), g) #saves g
+
 rm(bxp_domfreq_low, bxp_psd_low)
 
 ## MIXED MODEL ANALYSIS
@@ -332,16 +332,17 @@ getOutputMM(domFreq_intercept_id_low_HA)
 #load(paste0(datadir, "domfreq_meanPSD_ms_HA_dataset_long_hf.RData"))
 
 ## Boxplots
-pdf(paste0(datadir, "plots/boxplots_HA_HIGH.pdf")) # Open pdf file
-par(mfrow = c(1, 2))
-# Dominant frequency
-bxp_domfreq_high <- createBoxplot(df_high, outcome = "domFreq", type = "between")
-bxp_domfreq_high
-# Mean PSD
-bxp_psd_high <- createBoxplot(df_high, outcome = "meanPSD", type = "between")
-bxp_psd_high
-dev.off() 
+bxp_domfreq_high <- createBoxplot(df_high, outcome = "domFreq", type = "between") # Dominant frequency
+bxp_psd_high <- createBoxplot(df_high, outcome = "meanPSD", type = "between") # Mean PSD
+
+#merge the two plots within one grid (and visualize this)
+ggpubr::grid.arrange(bxp_domfreq_high, bxp_psd_high, nrow=1) #arranges plots within grid
+#save
+g <- gridExtra::arrangeGrob(bxp_domfreq_high + theme(legend.position="none"), bxp_psd_high + theme(legend.position="bottom"), nrow=2) #generates g
+ggsave(file=paste0(datadir, "plots/boxplots_HA_HIGH.pdf"), g) #saves g
+
 rm(bxp_domfreq_high, bxp_psd_high)
+
 
 ## MIXED MODEL ANALYSIS
 # Starting model: with random intercept for accelerometer id (to adjust for the repeated measurements of the accelerometer devices)
