@@ -107,7 +107,7 @@ createBoxplot <- function(data, outcome = c("domFreq", "meanPSD"), type = c("wit
   }
 
   boxplot <- ggpubr::ggboxplot(data, x = "freqBin", y = outcome, color = per,
-                               xlab = "Mean frequency bin (Hz)", ylab = label) +
+                               xlab = "Mean frequency bin (Hz)", ylab = label, order = c("t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9", "t10")) +
     scale_x_discrete(breaks=c("t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9", "t10"),
                      labels= c("0.25",  "0.67", "1.04", "1.46", "1.88", "2.29", "2.71", "3.13", "3.54", "3.96", "4.59")) 
   return(boxplot)

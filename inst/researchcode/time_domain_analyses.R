@@ -91,34 +91,12 @@ pairwisePlots <- function(correlationMatrix, data) {
           ggplot2::geom_point(data = data[[y]], ggplot2::aes(time, HA), color = "red", 
                               alpha =  0.1, size = 0.25) +
           ggplot2::ggtitle(file_name)
+        p
         dev.off()
         plot_list[[counter]] <- p
       }
     }
   }
-  return(plot_list)
-}
-pairwisePlots <- function(correlationMatrix, data) {
-  plot_list <- list()
-  list_name <- c()
-  counter = 0
-  for (x in 1:nrow(correlationMatrix)){
-    for (y in 1:ncol(correlationMatrix)){
-      if (correlationMatrix[x,y] < 1 | !is.na(correlationMatrix[x,y])) {
-        counter = counter + 1
-        file_name <- paste(names(data)[[x]], names(data)[[y]], sep = "_vs_")
-        list_name <- c(list_name, file_name)
-        jpeg(paste(datadir, file_name, ".jpeg", sep = "/plots/"), width=600, height=500, res=120) 
-        p <- ggplot2::ggplot() +
-          ggplot2::geom_point(data = data[[x]], ggplot2::aes(time, HA), alpha = 0.1, size = 0.25)+
-          ggplot2::geom_point(data = data[[y]], ggplot2::aes(time, HA), color = "red", 
-                              alpha =  0.1, size = 0.25)
-        dev.off()
-        plot_list[[counter]] <- p
-      }
-    }
-  }
-  names(plot_list) <- list_name
   return(plot_list)
 }
 
