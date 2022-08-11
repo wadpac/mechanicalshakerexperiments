@@ -138,8 +138,8 @@ max(correlation_matrices$low$lags, na.rm = TRUE)
 sd(correlation_matrices$low$lags, na.rm = TRUE)
 
 # Heatmap
-xy <- correlation_matrices$low$correlationMatrix
-heatmap_low <- corrplot::corrplot(pmax(xy, t(xy), na.rm = TRUE), type = 'lower', method = 'color', order = "alphabet",
+fullmatrix_low <- correlation_matrices$low$correlationMatrix
+heatmap_low <- corrplot::corrplot(pmax(fullmatrix_low, t(fullmatrix_low), na.rm = TRUE), type = 'lower', method = 'color', order = "alphabet",
                                   col.lim = c(0,1), addCoef.col = 'black', tl.srt=45, 
                                   number.cex = 0.75, tl.cex = 0.5, tl.col = "black")
 heatmap_low
@@ -158,8 +158,8 @@ max(correlation_matrices$high$lags, na.rm = TRUE)
 sd(correlation_matrices$high$lags, na.rm = TRUE)
 
 # Heatmap
-xy <- correlation_matrices$high$correlationMatrix
-heatmap_high <- corrplot::corrplot(pmax(xy, t(xy), na.rm = TRUE), type = 'lower', method = 'color', order = "alphabet",
+fullmatrix_high <- correlation_matrices$high$correlationMatrix
+heatmap_high <- corrplot::corrplot(pmax(fullmatrix_high, t(fullmatrix_high), na.rm = TRUE), type = 'lower', method = 'color', order = "alphabet",
                                    col.lim = c(0,1), addCoef.col = 'black', tl.srt=45, diag = TRUE, 
                                    number.cex = 0.5, tl.cex = 0.5, tl.col = "black")
 heatmap_high
