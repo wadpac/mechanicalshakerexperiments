@@ -40,7 +40,7 @@ rm(shaker_experiments_folder, filename_flatHA, ms_flat_HA_new)
 #' @param data An object of class "spec"
 #' @return List object consisting of two elements: \item{correlationMatrix}{A correlation matrix representing the maximum cross-correlations between the signals} \item{lags}{A matrix that presents the lags corresponding to the lag in which the maximum cross-correlation occurred}
 #' @export
-computeCrossCorrelations <- function(data) {
+computeCrossCorrelations <- function(data, plot = TRUE) {
   correlationMatrix <- matrix(data=NA,nrow=length(data),ncol=length(data)) # create empty matrix for max cross-correlations
   lagMatrix <- matrix(data=NA,nrow=length(data),ncol=length(data)) # create empty matrix to save lags corresponding to max cross-correlations
   for (x in 1:length(data)) {
@@ -49,12 +49,17 @@ computeCrossCorrelations <- function(data) {
       if (x==y) {
         correlationMatrix[x,y] <- 1
         x = x + 1
-        #create pair-wise plots here
       }
       else {
         crossCorr <- ccf(data[[x]]$HA, data[[y]]$HA, type = "correlation", plot = FALSE)
         correlationMatrix[x,y] <- max(crossCorr$acf)
         lagMatrix[x,y] <- crossCorr$lag[crossCorr$acf==max(crossCorr$acf)]
+        #create pair-wise plots
+        if (plot == TRUE) {
+          ggplot2::ggplot()
+          + ggplot2::geom_point(data = data[[x]], ggplot2::aes(time, HA), alpha = 0.1, size = 0.25) 
+          + ggplot2::geom_point(data = data[[y]], ggplot::aes(time, HA), color = "red", alpha = 0.1, size = 0.25)
+        }
       }
     }
   }
@@ -63,6 +68,58 @@ computeCrossCorrelations <- function(data) {
   colnames(lagMatrix) <- names(data)
   rownames(lagMatrix) <- names(data)
   return(list(correlationMatrix = correlationMatrix, lags = lagMatrix))
+}
+
+#' pairwisePlots
+#'
+#' @description 'pairwisePlots' plots two timeseries
+#' @param correlationMatrix A matrix that indicates for which pairs plots need to be derived
+#' @param data A list that includes the timeseries data
+#' @return Plot including two time series the timeseries of the device first in the title is presented in black
+#' @export
+pairwisePlots <- function(correlationMatrix, data) {
+  plot_list <- list()
+  counter = 0
+  for (x in 1:nrow(correlationMatrix)){
+    for (y in 1:ncol(correlationMatrix)){
+      if (correlationMatrix[x,y] < 1 & !is.na(correlationMatrix[x,y])) {
+        counter = counter + 1
+        file_name <- paste(names(data)[[x]], names(data)[[y]], sep = "_vs_")
+        jpeg(paste(datadir, file_name, ".jpeg", sep = "/plots/"), width=600, height=500, res=120) 
+        p <- ggplot2::ggplot() +
+          ggplot2::geom_point(data = data[[x]], ggplot2::aes(time, HA), alpha = 0.1, size = 0.25)+
+          ggplot2::geom_point(data = data[[y]], ggplot2::aes(time, HA), color = "red", 
+                              alpha =  0.1, size = 0.25) +
+          ggplot2::ggtitle(file_name)
+        dev.off()
+        plot_list[[counter]] <- p
+      }
+    }
+  }
+  return(plot_list)
+}
+pairwisePlots <- function(correlationMatrix, data) {
+  plot_list <- list()
+  list_name <- c()
+  counter = 0
+  for (x in 1:nrow(correlationMatrix)){
+    for (y in 1:ncol(correlationMatrix)){
+      if (correlationMatrix[x,y] < 1 | !is.na(correlationMatrix[x,y])) {
+        counter = counter + 1
+        file_name <- paste(names(data)[[x]], names(data)[[y]], sep = "_vs_")
+        list_name <- c(list_name, file_name)
+        jpeg(paste(datadir, file_name, ".jpeg", sep = "/plots/"), width=600, height=500, res=120) 
+        p <- ggplot2::ggplot() +
+          ggplot2::geom_point(data = data[[x]], ggplot2::aes(time, HA), alpha = 0.1, size = 0.25)+
+          ggplot2::geom_point(data = data[[y]], ggplot2::aes(time, HA), color = "red", 
+                              alpha =  0.1, size = 0.25)
+        dev.off()
+        plot_list[[counter]] <- p
+      }
+    }
+  }
+  names(plot_list) <- list_name
+  return(plot_list)
 }
 
 #' dataframeShapeComparisonBeween
@@ -115,14 +172,15 @@ dataframeShapeComparisonBeween <- function(crossCorrelations, specifications){
 #====================================================================================
 
 ### COMPUTE: cross-correlation matrices ###
-correlations_low <- computeCrossCorrelations(data_low_25) 
-correlations_high <- computeCrossCorrelations(data_high_100)
+correlations_low <- computeCrossCorrelations(data_low_25, plot = TRUE) 
+correlations_high <- computeCrossCorrelations(data_high_100, plot = TRUE)
 cat("\nSaving data...")
 correlation_matrices <- list(low = correlations_low, high = correlations_high)
 save(correlation_matrices, file = paste0(datadir, "cross_correlations.RData"))
 
 ### DATA ANALYSES ###
 #load(paste0(datadir, "cross_correlations.RData"))
+
 
 ## LOW FREQUENCY EXPERIMENT 
 # Summary statistics
@@ -144,6 +202,9 @@ heatmap_low <- corrplot::corrplot(pmax(fullmatrix_low, t(fullmatrix_low), na.rm 
                                   number.cex = 0.75, tl.cex = 0.5, tl.col = "black")
 heatmap_low
 
+## Pairwise plots
+pairwisePlots(correlation_matrices$low$correlationMatrix, data_low_25) 
+
 ## HIGH FREQUENCY EXPERIMENT 
 # Summary statistics
 # cross-correlations
@@ -163,6 +224,9 @@ heatmap_high <- corrplot::corrplot(pmax(fullmatrix_high, t(fullmatrix_high), na.
                                    col.lim = c(0,1), addCoef.col = 'black', tl.srt=45, diag = TRUE, 
                                    number.cex = 0.5, tl.cex = 0.5, tl.col = "black")
 heatmap_high
+
+## Pairwise plots
+pairwisePlots(correlation_matrices$high$correlationMatrix, data_high_100) 
 
 ## DERIVE: data.frames required for comparison of the signal shape between brands
 ## Between brand comparison
