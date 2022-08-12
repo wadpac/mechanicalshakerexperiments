@@ -92,9 +92,10 @@ deriveComparisonValues <- function(spectrum, freqBins){
 #' @param data A data set containing the comparison values for the experiment
 #' @param outcome String containing the type of the comparison value. One of c("domFreq", "meanPSD") 
 #' @param type String containing the axis the outcome value is derived from. One of c("within", "between") 
+#' @param logscale Boolean to indicate whether the vertical axis needs to be logtransformed. One of c("TRUE", "FALSE") 
 #' @return Boxplot between or within devices for the outcome (y-axis) per frequency bin (x-axis)
 #' @export
-createBoxplot <- function(data, outcome = c("domFreq", "meanPSD"), type = c("within", "between")){
+createBoxplot <- function(data, outcome = c("domFreq", "meanPSD"), type = c("within", "between"), logscale = c(TRUE, FALSE)){
   if(type == "between"){
     per = "brand"
   } else {
@@ -110,6 +111,9 @@ createBoxplot <- function(data, outcome = c("domFreq", "meanPSD"), type = c("wit
                                xlab = "Mean frequency bin (Hz)", ylab = label, order = c("t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9", "t10")) +
     scale_x_discrete(breaks=c("t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9", "t10"),
                      labels= c("0.25",  "0.67", "1.04", "1.46", "1.88", "2.29", "2.71", "3.13", "3.54", "3.96", "4.59")) 
+  if(logscale == TRUE){
+    boxplot <- boxplot + ggpubr::yscale("log10", .format = TRUE)
+  }
   return(boxplot)
 }
 
@@ -281,14 +285,14 @@ rm(df_long)
 #load(paste0(datadir, "domfreq_meanPSD_HA_ms_dataset_long_lf.RData"))
 
 ## Boxplots
-bxp_domfreq_low <- createBoxplot(df_low, outcome = "domFreq", type = "between") # Dominant frequency
-bxp_psd_low <- createBoxplot(df_low, outcome = "meanPSD", type = "between") # Mean PSD
+bxp_domfreq_low <- createBoxplot(df_low, outcome = "domFreq", type = "between", logscale = FALSE) # Dominant frequency
+bxp_psd_low <- createBoxplot(df_low, outcome = "meanPSD", type = "between", logscale = FALSE) # Mean PSD
 ggpubr::grid.arrange(bxp_domfreq_low, bxp_psd_low, nrow=1) #arranges plots within grid
 g <- gridExtra::arrangeGrob(bxp_domfreq_low + theme(legend.position="none"), bxp_psd_low + theme(legend.position="bottom"), nrow=2) #generates g 
 ggsave(file=paste0(datadir, "plots/boxplots_HA_LOW.pdf"), g) #saves g
 
-bxp_domfreq_low_log <- bxp_domfreq_low + ggpubr::yscale("log2", .format = TRUE)
-bxp_psd_low_log <- bxp_psd_low + ggpubr::yscale("log2", .format = TRUE)
+bxp_domfreq_low_log <- createBoxplot(df_low, outcome = "domFreq", type = "between", logscale = TRUE) # Dominant frequency
+bxp_psd_low_log <- createBoxplot(df_low, outcome = "meanPSD", type = "between", logscale = TRUE) # Mean PSD
 ggpubr::grid.arrange(bxp_domfreq_low_log, bxp_psd_low_log, nrow=1) #arranges plots within grid
 g_log <- gridExtra::arrangeGrob(bxp_domfreq_low_log + theme(legend.position="none"), bxp_psd_low_log + theme(legend.position="bottom"), nrow=2) #generates g_log
 ggsave(file=paste0(datadir, "plots/boxplots_HA_LOW_logscale.pdf"), g_log) #saves g_log
@@ -335,14 +339,14 @@ getOutputMM(domFreq_intercept_id_low_HA)
 #load(paste0(datadir, "domfreq_meanPSD_ms_HA_dataset_long_hf.RData"))
 
 ## Boxplots
-bxp_domfreq_high <- createBoxplot(df_high, outcome = "domFreq", type = "between") # Dominant frequency
-bxp_psd_high <- createBoxplot(df_high, outcome = "meanPSD", type = "between") # Mean PSD
+bxp_domfreq_high <- createBoxplot(df_high, outcome = "domFreq", type = "between", logscale = FALSE) # Dominant frequency
+bxp_psd_high <- createBoxplot(df_high, outcome = "meanPSD", type = "between", logscale = FALSE) # Mean PSD
 ggpubr::grid.arrange(bxp_domfreq_high, bxp_psd_high, nrow=1) #arranges plots within grid
 g <- gridExtra::arrangeGrob(bxp_domfreq_high + theme(legend.position="none"), bxp_psd_high + theme(legend.position="bottom"), nrow=2) #generates g
 ggsave(file=paste0(datadir, "plots/boxplots_HA_HIGH.pdf"), g) #saves g
 
-bxp_domfreq_high_log <- bxp_domfreq_high + ggpubr::yscale("log2", .format = TRUE)
-bxp_psd_high_log <- bxp_psd_high + ggpubr::yscale("log2", .format = TRUE)
+bxp_domfreq_high_log <- createBoxplot(df_high, outcome = "domFreq", type = "between", logscale = TRUE) # Dominant frequency
+bxp_psd_high_log <- createBoxplot(df_high, outcome = "meanPSD", type = "between", logscale = TRUE) # Mean PSD
 ggpubr::grid.arrange(bxp_domfreq_high_log, bxp_psd_high_log, nrow=1) #arranges plots within grid
 g_log <- gridExtra::arrangeGrob(bxp_domfreq_high_log + theme(legend.position="none"), bxp_psd_high_log + theme(legend.position="bottom"), nrow=2) #generates g_log
 ggsave(file=paste0(datadir, "plots/boxplots_HA_HIGH_logscale.pdf"), g_log) #saves g_log
