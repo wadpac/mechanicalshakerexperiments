@@ -343,7 +343,6 @@ ggsave(file=paste0(datadir, "plots/boxplots_HA_HIGH.pdf"), g) #saves g
 
 rm(bxp_domfreq_high, bxp_psd_high)
 
-
 ## MIXED MODEL ANALYSIS
 # Starting model: with random intercept for accelerometer id (to adjust for the repeated measurements of the accelerometer devices)
 meanPSD_intercept_id_high <- nlme::lme(meanPSD ~ brand, random = ~ 1|id, method="ML", data = df_high)
