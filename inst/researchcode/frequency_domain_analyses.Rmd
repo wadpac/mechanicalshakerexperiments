@@ -433,13 +433,13 @@ bxp_domfreq_high <- createBoxplot(df_high, outcome = "domFreq", type = "between"
 bxp_psd_high <- createBoxplot(df_high, outcome = "meanPSD", type = "between", logscale = FALSE) # Mean PSD
 gridExtra::grid.arrange(bxp_domfreq_high, bxp_psd_high, nrow=1) #arranges plots within grid
 g <- gridExtra::arrangeGrob(bxp_domfreq_high + theme(legend.position="none"), bxp_psd_high + theme(legend.position="bottom"), nrow=2) #generates g
-ggsave(file=paste0(datadir, "plots/boxplots_HA_HIGH.pdf"), g) #saves g
+#ggsave(file=paste0(datadir, "plots/boxplots_HA_HIGH.pdf"), g) #saves g
 
 bxp_domfreq_high_log <- createBoxplot(df_high, outcome = "domFreq", type = "between", logscale = TRUE) # Dominant frequency
 bxp_psd_high_log <- createBoxplot(df_high, outcome = "meanPSD", type = "between", logscale = TRUE) # Mean PSD
 gridExtra::grid.arrange(bxp_domfreq_high_log, bxp_psd_high_log, nrow=1) #arranges plots within grid
 g_log <- gridExtra::arrangeGrob(bxp_domfreq_high_log + theme(legend.position="none"), bxp_psd_high_log + theme(legend.position="bottom"), nrow=2) #generates g_log
-ggsave(file=paste0(datadir, "plots/boxplots_HA_HIGH_logscale.pdf"), g_log) #saves g_log
+#ggsave(file=paste0(datadir, "plots/boxplots_HA_HIGH_logscale.pdf"), g_log) #saves g_log
 
 #rm(bxp_domfreq_high, bxp_psd_high, bxp_domfreq_high_log, bxp_psd_high_log, g, g_log)
 ```
@@ -462,14 +462,14 @@ rm(meanPSD_intercept_freqbin_high, domFreq_intercept_freqbin_high)
 
 Model assumptions
 
-```{r Model assumptions high sampling frequency experiment}
-print("Normal distribution of residuals")
-print("Mean PSD")
+```{r Model assumptions high sampling frequency experiment, echo=FALSE}
+cat("Normal distribution of residuals")
+cat("Mean PSD")
 ggpubr::ggqqplot(df_high, "meanPSD", facet.by = "freqBin")
 residuals_meanPSD <- resid(meanPSD_intercept_id_high)
 summary(residuals_meanPSD)
 hist(residuals_meanPSD)
-print("Dominant frequency")
+cat("Dominant frequency")
 ggpubr::ggqqplot(df_high, "domFreq", facet.by = "freqBin")
 residuals_domFreq <- resid(domFreq_intercept_id_high)
 summary(residuals_domFreq)
@@ -480,32 +480,32 @@ hist(residuals_domFreq) # approximately normally distributed
 Mean Power Spectral Density 
 
 Reference: ActiGraph
-```{r Report results for Mean PSD high sampling frequency experiment: ActiGraph}
+```{r Report results for Mean PSD high sampling frequency experiment: ActiGraph, echo=FALSE}
 getOutputMM(meanPSD_intercept_id_high)
 ```
 Reference: MOX
-```{r Report results for Mean PSD high sampling frequency experiment: MOX}
+```{r Report results for Mean PSD high sampling frequency experiment: MOX, echo=FALSE}
 df_high$brand <- relevel(df_high$brand, ref = 5) 
 meanPSD_intercept_id_high <- nlme::lme(meanPSD ~ brand, random = ~ 1|id, method="ML", data = df_high)
 getOutputMM(meanPSD_intercept_id_high)
 ```
 
 Reference: GENEActiv
-```{r Report results for Mean PSD high sampling frequency experiment: GENEActiv}
+```{r Report results for Mean PSD high sampling frequency experiment: GENEActiv, echo=FALSE}
 df_high$brand <- relevel(df_high$brand, ref = 5) 
 meanPSD_intercept_id_high <- nlme::lme(meanPSD ~ brand, random = ~ 1|id, method="ML", data = df_high)
 getOutputMM(meanPSD_intercept_id_high)
 ```
 Reference: Axivity
 
-```{r Report results for Mean PSD high sampling frequency experiment: Axivity}
+```{r Report results for Mean PSD high sampling frequency experiment: Axivity, echo=FALSE}
 df_high$brand <- relevel(df_high$brand, ref = 5) 
 meanPSD_intercept_id_high <- nlme::lme(meanPSD ~ brand, random = ~ 1|id, method="ML", data = df_high)
 getOutputMM(meanPSD_intercept_id_high)
 ```
 Reference: activPAL
 
-```{r Report results for Mean PSD high sampling frequency experiment: activPAL}
+```{r Report results for Mean PSD high sampling frequency experiment: activPAL, echo=FALSE}
 df_high$brand <- relevel(df_high$brand, ref = 5) 
 meanPSD_intercept_id_high <- nlme::lme(meanPSD ~ brand, random = ~ 1|id, method="ML", data = df_high)
 getOutputMM(meanPSD_intercept_id_high)
@@ -514,7 +514,7 @@ Dominant Frequency
 
 Reference: ActiGraph
 
-```{r Report results for Dominant frequency high sampling frequency experiment: ActiGraph}
+```{r Report results for Dominant frequency high sampling frequency experiment: ActiGraph, echo=FALSE}
 df_high$brand <- relevel(df_high$brand, ref = 5) 
 domFreq_intercept_id_high <- nlme::lme(domFreq ~ brand, random = ~ 1|id, method="ML", data = df_high)
 getOutputMM(domFreq_intercept_id_high)
@@ -522,7 +522,7 @@ getOutputMM(domFreq_intercept_id_high)
 
 Reference: MOX
 
-```{r Report results for Dominant frequency high sampling frequency experiment: MOX}
+```{r Report results for Dominant frequency high sampling frequency experiment: MOX, echo=FALSE}
 df_high$brand <- relevel(df_high$brand, ref = 5) 
 domFreq_intercept_id_high <- nlme::lme(domFreq ~ brand, random = ~ 1|id, method="ML", data = df_high)
 getOutputMM(domFreq_intercept_id_high)
@@ -530,7 +530,7 @@ getOutputMM(domFreq_intercept_id_high)
 ```
 Reference: GENEActiv
 
-```{r Report results for Dominant frequency high sampling frequency experiment: GENEActiv}
+```{r Report results for Dominant frequency high sampling frequency experiment: GENEActiv, echo=FALSE}
 df_high$brand <- relevel(df_high$brand, ref = 5) 
 domFreq_intercept_id_high <- nlme::lme(domFreq ~ brand, random = ~ 1|id, method="ML", data = df_high)
 getOutputMM(domFreq_intercept_id_high)
@@ -539,7 +539,7 @@ getOutputMM(domFreq_intercept_id_high)
 
 Reference: Axivity
 
-```{r Report results for Dominant frequency high sampling frequency experiment: Axivity}
+```{r Report results for Dominant frequency high sampling frequency experiment: Axivity, echo=FALSE}
 df_high$brand <- relevel(df_high$brand, ref = 5) 
 domFreq_intercept_id_high <- nlme::lme(domFreq ~ brand, random = ~ 1|id, method="ML", data = df_high)
 getOutputMM(domFreq_intercept_id_high)
@@ -547,7 +547,7 @@ getOutputMM(domFreq_intercept_id_high)
 ```
 Reference: activPAL
 
-```{r Report results for Dominant frequency high sampling frequency experiment: activPAL}
+```{r Report results for Dominant frequency high sampling frequency experiment: activPAL, echo=FALSE}
 df_high$brand <- relevel(df_high$brand, ref = 5) 
 domFreq_intercept_id_high <- nlme::lme(domFreq ~ brand, random = ~ 1|id, method="ML", data = df_high)
 getOutputMM(domFreq_intercept_id_high)
