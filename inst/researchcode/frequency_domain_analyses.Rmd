@@ -33,7 +33,7 @@ specifications <- ms_flat_HA$specifications[ms_flat_HA$specifications$experiment
 rm(ms_flat_HA, filename_flatHA, shaker_experiments_folder)
 ```
 
-```{r Functions, include= FALSE}
+```{r Functions, include=FALSE}
 #' deriveSpectrum
 #'
 #' @description 'deriveSpectrum' derives the frequency spectrum of a signal (called from within derivePeakIntervals to derive smoothed spectrum)
@@ -110,13 +110,13 @@ createBoxplot <- function(data, outcome = c("domFreq", "meanPSD"), type = c("wit
     per = "id"
   }
   if (outcome == "domFreq"){
-    label = "Dominant frequency (Hz)"
+    label = "Dominant frequency (Hertz)"
   } else{
-    label = "Mean PSD (g2/Hz)"
+    label = "Mean PSD (g2/Hertz)"
   }
 
   boxplot <- ggpubr::ggboxplot(data, x = "freqBin", y = outcome, color = per,
-                               xlab = "Mean frequency bin (Hz)", ylab = label, order = c("t0", "t1", "t2", "t3", "t4",
+                               xlab = "Mean frequency bin (Hertz)", ylab = label, order = c("t0", "t1", "t2", "t3", "t4",
                                                                                          "t5", "t6", "t7", "t8", "t9",
                                                                                          "t10"), 
                                font.label = list(size = 8, color = "black")) +
@@ -170,8 +170,8 @@ In this section the raw frequency spectra are printed for each accelerometer rec
 
 # Plot parameters
 plot = TRUE
-xlabel = "Frequency (Hz)"
-ylabel = "Spectral Density (g2/Hz)"
+xlabel = "Frequency (Hertz)"
+ylabel = "Spectral Density (g2/Hertz)"
 XLIM = c(0, 5) # Limit frequency content to 5 Hz (as 250 rpm / 60 = 4.1667 Hz is the expected max)
 
 # DERIVE RAW FREQUENCY SPECTRA (for visual inspection and save data for further analysis)
@@ -227,14 +227,15 @@ save(ms_flat_HA_new, file = paste0(datadir, "ms_flat_HA_deviates_removed.RData")
 ## Spectrum plots with mechanical shaker cutoffs
 
 ```{r Mechanical Shaker Cuttoffs, echo=FALSE}
+#load(paste0(datadir, "ms_flat_HA_deviates_removed.RData"))
 rpm <- c(30, 50, 75, 100, 125, 150, 175, 200, 225, 250)
 shaking_frequencies <- rpm / 60
 
 # Plot spectra with these cutoffs
 for (spectrum in 1:length(raw_spectra$HA)) {
-  print(names(raw_spectra$HA)[[spectrum]])
+  title <- paste0(names(raw_spectra$HA)[[spectrum]], " with mechanical shaker cutoffs")
   plot(raw_spectra$HA[[spectrum]]$specx, raw_spectra$HA[[spectrum]]$specy,
-       main = "HA with MS cutoffs", xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l") # Zoom in on low-frequencies (at most 5 is expected based on max rpm)
+       main = title, xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l") # Zoom in on low-frequencies (at most 5 is expected based on max rpm)
   for(i in 1:length(shaking_frequencies)){
     abline(v=shaking_frequencies[i], col = "red")
     abline(v=shaking_frequencies[i], col = "red")
