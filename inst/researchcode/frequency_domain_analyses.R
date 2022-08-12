@@ -283,14 +283,17 @@ rm(df_long)
 ## Boxplots
 bxp_domfreq_low <- createBoxplot(df_low, outcome = "domFreq", type = "between") # Dominant frequency
 bxp_psd_low <- createBoxplot(df_low, outcome = "meanPSD", type = "between") # Mean PSD
-
-#merge the two plots within one grid (and visualize this)
 ggpubr::grid.arrange(bxp_domfreq_low, bxp_psd_low, nrow=1) #arranges plots within grid
-#save
-g <- gridExtra::arrangeGrob(bxp_domfreq_low + theme(legend.position="none"), bxp_psd_low + theme(legend.position="bottom"), nrow=2) #generates g
+g <- gridExtra::arrangeGrob(bxp_domfreq_low + theme(legend.position="none"), bxp_psd_low + theme(legend.position="bottom"), nrow=2) #generates g 
 ggsave(file=paste0(datadir, "plots/boxplots_HA_LOW.pdf"), g) #saves g
 
-rm(bxp_domfreq_low, bxp_psd_low)
+bxp_domfreq_low_log <- bxp_domfreq_low + ggpubr::yscale("log2", .format = TRUE)
+bxp_psd_low_log <- bxp_psd_low + ggpubr::yscale("log2", .format = TRUE)
+ggpubr::grid.arrange(bxp_domfreq_low_log, bxp_psd_low_log, nrow=1) #arranges plots within grid
+g_log <- gridExtra::arrangeGrob(bxp_domfreq_low_log + theme(legend.position="none"), bxp_psd_low_log + theme(legend.position="bottom"), nrow=2) #generates g_log
+ggsave(file=paste0(datadir, "plots/boxplots_HA_LOW_logscale.pdf"), g_log) #saves g_log
+
+rm(bxp_domfreq_low, bxp_psd_low, bxp_domfreq_low_log, bxp_psd_low_log, g, g_log)
 
 ## MIXED MODEL ANALYSIS
 # Starting model: with random intercept for accelerometer id (to adjust for the repeated measurements of the accelerometer devices)
@@ -334,14 +337,17 @@ getOutputMM(domFreq_intercept_id_low_HA)
 ## Boxplots
 bxp_domfreq_high <- createBoxplot(df_high, outcome = "domFreq", type = "between") # Dominant frequency
 bxp_psd_high <- createBoxplot(df_high, outcome = "meanPSD", type = "between") # Mean PSD
-
-#merge the two plots within one grid (and visualize this)
 ggpubr::grid.arrange(bxp_domfreq_high, bxp_psd_high, nrow=1) #arranges plots within grid
-#save
 g <- gridExtra::arrangeGrob(bxp_domfreq_high + theme(legend.position="none"), bxp_psd_high + theme(legend.position="bottom"), nrow=2) #generates g
 ggsave(file=paste0(datadir, "plots/boxplots_HA_HIGH.pdf"), g) #saves g
 
-rm(bxp_domfreq_high, bxp_psd_high)
+bxp_domfreq_high_log <- bxp_domfreq_high + ggpubr::yscale("log2", .format = TRUE)
+bxp_psd_high_log <- bxp_psd_high + ggpubr::yscale("log2", .format = TRUE)
+ggpubr::grid.arrange(bxp_domfreq_high_log, bxp_psd_high_log, nrow=1) #arranges plots within grid
+g_log <- gridExtra::arrangeGrob(bxp_domfreq_high_log + theme(legend.position="none"), bxp_psd_high_log + theme(legend.position="bottom"), nrow=2) #generates g_log
+ggsave(file=paste0(datadir, "plots/boxplots_HA_HIGH_logscale.pdf"), g_log) #saves g_log
+
+rm(bxp_domfreq_high, bxp_psd_high, bxp_domfreq_high_log, bxp_psd_high_log, g, g_log)
 
 ## MIXED MODEL ANALYSIS
 # Starting model: with random intercept for accelerometer id (to adjust for the repeated measurements of the accelerometer devices)
