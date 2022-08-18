@@ -4,7 +4,7 @@ author: "Annelinde Lettink"
 output: 
   html_notebook:
     toc: true
-    toc_depth: 4  # upto three depths of headings (specified by #, ## and ###)
+    toc_depth: 4  # upto four depths of headings (specified by #, ##, ###, and ####)
 ---
 
 ```{r Setup and load data, include=FALSE}
@@ -131,7 +131,7 @@ createBoxplot <- function(data, outcome = c("domFreq", "meanPSD"), type = c("wit
     ggpubr::font("y.text", size = 8, color = "black") + 
     ggpubr::font("legend.title", size = 8, color = "black") +
     ggpubr::font("legend.text", size = 8, color = "black") + 
-    scale_x_discrete(breaks=c("t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9", "t10"),
+    ggplot2::scale_x_discrete(breaks=c("t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9", "t10"),
                      labels= c("0.25",  "0.67", "1.04", "1.46", "1.88", "2.29", "2.71", "3.13",
                                "3.54", "3.96", "4.59")) 
   if(logscale == TRUE){
@@ -373,18 +373,18 @@ This section presents the statistical comparison of the spectrum plots in terms 
 bxp_domfreq_low <- createBoxplot(df_low, outcome = "domFreq", type = "between", logscale = FALSE)
 bxp_psd_low <- createBoxplot(df_low, outcome = "meanPSD", type = "between", logscale = FALSE)
 gridExtra::grid.arrange(bxp_domfreq_low, bxp_psd_low, nrow=1) #arranges plots within grid
-g <- gridExtra::arrangeGrob(bxp_domfreq_low + theme(legend.position="none"), 
-                            bxp_psd_low + theme(legend.position="bottom"), nrow=2) #generates g 
-#ggsave(file=paste0(datadir, "plots/boxplots_HA_LOW.pdf"), g) #saves g
+g <- gridExtra::arrangeGrob(bxp_domfreq_low + ggplot2::theme(legend.position="none"), 
+                            bxp_psd_low + ggplot2::theme(legend.position="bottom"), nrow=2) #generates g 
+#ggplot2::ggsave(file=paste0(datadir, "plots/boxplots_HA_LOW.pdf"), g) #saves g
 
 bxp_domfreq_low_log <- createBoxplot(df_low, outcome = "domFreq", type = "between", 
                                      logscale = TRUE)
 bxp_psd_low_log <- createBoxplot(df_low, outcome = "meanPSD", type = "between", logscale = TRUE) 
 gridExtra::grid.arrange(bxp_domfreq_low_log, bxp_psd_low_log, nrow=1) #arranges plots within grid
-g_log <- gridExtra::arrangeGrob(bxp_domfreq_low_log + theme(legend.position="none"),
-                                bxp_psd_low_log + theme(legend.position="bottom"),
+g_log <- gridExtra::arrangeGrob(bxp_domfreq_low_log + ggplot2::theme(legend.position="none"),
+                                bxp_psd_low_log + ggplot2::theme(legend.position="bottom"),
                                 nrow=2)#generates g_log
-#ggsave(file=paste0(datadir, "plots/boxplots_HA_LOW_logscale.pdf"), g_log) #saves g_log
+#ggplot2::ggsave(file=paste0(datadir, "plots/boxplots_HA_LOW_logscale.pdf"), g_log) #saves g_log
 ```
 
 ### Boxplots
@@ -394,14 +394,12 @@ Boxplot
 
 ```{r Print boxplot low sampling frequency experiment, echo=FALSE}
 plot(g)
-rm(bxp_domfreq_low, bxp_psd_low, g)
 ```
 
 Boxplot with log scale
 
 ```{r Print log boxplot low sampling frequency experiment, echo=FALSE}
 plot(g_log)
-rm(bxp_domfreq_low_log, bxp_psd_low_log, g_log)
 ```
 ### Mixed model analyses
 In this section the statistical comparison between the brand for the low sampling frequency experiment is presented. Thee mixed models for mean power spectral density and dominant frequency with a random intercept for serial number (id) are presented separately.
@@ -528,33 +526,31 @@ bxp_domfreq_high <- createBoxplot(df_high, outcome = "domFreq", type = "between"
 bxp_psd_high <- createBoxplot(df_high, outcome = "meanPSD", type = "between", logscale = FALSE) 
 
 gridExtra::grid.arrange(bxp_domfreq_high, bxp_psd_high, nrow=1) #arranges plots within grid
-g <- gridExtra::arrangeGrob(bxp_domfreq_high + theme(legend.position="none"), 
-                            bxp_psd_high + theme(legend.position="bottom"), nrow=2) #generates g
-#ggsave(file=paste0(datadir, "plots/boxplots_HA_HIGH.pdf"), g) #saves g
+g <- gridExtra::arrangeGrob(bxp_domfreq_high + ggplot2::theme(legend.position="none"), 
+                            bxp_psd_high + ggplot2::theme(legend.position="bottom"), nrow=2) #generates g
+#ggplot2::ggsave(file=paste0(datadir, "plots/boxplots_HA_HIGH.pdf"), g) #saves g
 
 bxp_domfreq_high_log <- createBoxplot(df_high, outcome = "domFreq", type = "between", 
                                       logscale = TRUE)
 bxp_psd_high_log <- createBoxplot(df_high, outcome = "meanPSD", type = "between", logscale = TRUE)
 gridExtra::grid.arrange(bxp_domfreq_high_log, bxp_psd_high_log, 
                         nrow=1) #arranges plots within grid
-g_log <- gridExtra::arrangeGrob(bxp_domfreq_high_log + theme(legend.position="none"),
-                                bxp_psd_high_log + theme(legend.position="bottom"), 
+g_log <- gridExtra::arrangeGrob(bxp_domfreq_high_log + ggplot2::theme(legend.position="none"),
+                                bxp_psd_high_log + ggplot2::theme(legend.position="bottom"), 
                                 nrow=2) #generates g_log
-#ggsave(file=paste0(datadir, "plots/boxplots_HA_HIGH_logscale.pdf"), g_log) #saves g_log
+#ggplot2::ggsave(file=paste0(datadir, "plots/boxplots_HA_HIGH_logscale.pdf"), g_log) #saves g_log
 ```
 
 Boxplot
 
 ```{r Print boxplot high sampling frequency experiment, echo=FALSE}
 plot(g)
-rm(bxp_domfreq_high, bxp_psd_high, g)
 ```
 
 Boxplot with log scale
 
 ```{r Print log boxplot high sampling frequency experiment, echo=FALSE}
 plot(g_log)
-rm(bxp_domfreq_high_log, bxp_psd_high_log, g_log)
 ```
 
 ### Mixed model analyses
@@ -675,4 +671,33 @@ df_high$brand <- relevel(df_high$brand, ref = 5)
 domFreq_intercept_id_high <- nlme::lme(domFreq ~ brand, random = ~ 1|id, 
                                        method="ML", data = df_high)
 getOutputMM(domFreq_intercept_id_high)
+```
+
+```{r Create boxplot mean power spectral density, include=FALSE}
+gridExtra::grid.arrange(bxp_psd_low, bxp_psd_high, nrow=1) #arranges plots within grid
+g <- gridExtra::arrangeGrob(bxp_psd_low + ggplot2::theme(legend.position="none"), 
+                            bxp_psd_high + ggplot2::theme(legend.position="bottom"), nrow=2, top = "Low sampling frequency experiment", bottom = "High sampling frequency experiment", left = "Mean power spectral density (g2/Hertz)") #generates g
+#ggplot2::ggsave(file=paste0(datadir, "plots/boxplot_meanPSD.pdf"), g) #saves g
+
+gridExtra::grid.arrange(bxp_psd_low_log, bxp_psd_high_log, nrow=1) #arranges plots within grid
+g_log <- gridExtra::arrangeGrob(bxp_psd_low_log + ggplot2::theme(legend.position="none"),
+                                bxp_psd_high_log + ggplot2::theme(legend.position="bottom"), 
+                                nrow=2, top = "Low sampling frequency experiment", bottom = "High sampling frequency experiment", left = "Mean power spectral density (g2/Hertz)") #generates g_log
+#ggplot2::ggsave(file=paste0(datadir, "plots/boxplot_meanPSD_log.pdf"), g_log) #saves g_log
+```
+
+
+```{r Create boxplot dominant frequency, include=FALSE}
+gridExtra::grid.arrange(bxp_domfreq_low, bxp_domfreq_high, nrow=1) #arranges plots within grid
+g <- gridExtra::arrangeGrob(bxp_domfreq_low + ggplot2::theme(legend.position="none"), 
+                            bxp_domfreq_high + ggplot2::theme(legend.position="bottom"), nrow=2, top = "Low sampling frequency experiment", bottom = "High sampling frequency experiment", left = "Dominant frequency (Hertz)") #generates g
+#ggplot2::ggsave(file=paste0(datadir, "plots/boxplot_domFreq.pdf"), g) #saves g
+
+
+gridExtra::grid.arrange(bxp_domfreq_low_log, bxp_domfreq_high_log, 
+                        nrow=1) #arranges plots within grid
+g_log <- gridExtra::arrangeGrob(bxp_domfreq_low_log + ggplot2::theme(legend.position="none"),
+                                bxp_domfreq_high_log + ggplot2::theme(legend.position="bottom"), 
+                                nrow=2, top = "Low sampling frequency experiment", bottom = "High sampling frequency experiment", left = "Dominant frequency (Hertz)") #generates g_log
+#ggplot2::ggsave(file=paste0(datadir, "plots/boxplot_domFreq_log.pdf"), g_log) #saves g_log
 ```
