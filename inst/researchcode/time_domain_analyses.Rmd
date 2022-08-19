@@ -4,7 +4,7 @@ author: "Annelinde Lettink"
 output: 
   html_notebook:
     toc: true
-    toc_depth: 4 # upto four depths of headings (specified by #, ##, ###, and ####)
+    toc_depth: 5 # upto four depths of headings (specified by #, ##, ###, #### and #####)
 ---
 
 ```{r Setup and load data, include = FALSE}
@@ -94,13 +94,18 @@ pairwisePlots <- function(correlationMatrix, data, threshold) {
           counter = counter + 1
           device1 <- names(data)[[x]]
           device2 <- names(data)[[y]]
-          file_name <- paste(paste(names(data)[[x]], names(data)[[y]], sep = "_vs_"), correlationMatrix[x,y], sep = " r = ")
+          file_name <- paste(paste(device1, device2, sep = "_vs_"), correlationMatrix[x,y], sep = " r = ")
         jpeg(paste(datadir, file_name, ".jpeg", sep = "/plots/"), width=600, height=500, res=120) 
         p <- ggplot2::ggplot() +
-          ggplot2::geom_point(data = data[[x]], ggplot2::aes(x = time, y = HA), color = "black", alpha = 0.4, size = 0.25) +
-          ggplot2::geom_point(data = data[[y]], ggplot2::aes(x = time, y = HA), color = "red", alpha =  0.4, size = 0.25, show.legend = TRUE) +
-          ggplot2::scale_fill_manual(values = c(device1 = "black", device2 = "red"), labels = c(device1, device2)) +
-          ggplot2::ggtitle(file_name) + ggplot2::theme_light() 
+          ggplot2::geom_point(data = data[[x]], ggplot2::aes(x = time, y = HA, colour = "black"), 
+                              alpha = 0.2, size = 0.25) +
+          ggplot2::geom_point(data = data[[y]], ggplot2::aes(x = time, y = HA, colour = "red"), 
+                              alpha =  0.2, size = 0.25) +
+          ggplot2::theme_bw() +
+          ggplot2::labs(y = "acceleration (g)") +
+          #Legend
+          ggplot2::scale_color_manual(values = c("black", "red"), labels=c(device1, device2)) +
+          ggplot2::scale_fill_manual(name =" ") + ggplot2::theme(legend.position = "right") 
         dev.off()
         plot_list[[counter]] <- p
         }
