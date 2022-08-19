@@ -44,7 +44,7 @@ specifications_low <- ms_flat_HA_new$specifications[ms_flat_HA_new$specification
 rm(shaker_experiments_folder, filename_flatHA, ms_flat_HA_new)
 ```
 
-```{r Functions, include= FALSE}
+```{r Functions, include=FALSE}
 #' computeCrossCorrelations
 #'
 #' @description 'computeCrossCorrelations' computes the maximum cross-correlations between two signals and the corresponding lag
@@ -90,8 +90,7 @@ pairwisePlots <- function(correlationMatrix, data, threshold) {
   for (x in 1:nrow(correlationMatrix)){
     for (y in 1:ncol(correlationMatrix)){
       if (correlationMatrix[x,y] < 1 & !is.na(correlationMatrix[x,y])) {
-        #maybe add condition: if correlation < .3? Now also pairwise plots are printed for high correlations.
-        if(correlationMatrix[x,y] <= threshold){
+        if(correlationMatrix[x,y] <= threshold){ #only create pairwise plots if the cross-correlation is equal/lower to the treshold
           counter = counter + 1
           file_name <- paste(paste(names(data)[[x]], names(data)[[y]], sep = "_vs_"), correlationMatrix[x,y], sep = " r = ")
         jpeg(paste(datadir, file_name, ".jpeg", sep = "/plots/"), width=600, height=500, res=120) 
@@ -99,7 +98,8 @@ pairwisePlots <- function(correlationMatrix, data, threshold) {
           ggplot2::geom_point(data = data[[x]], ggplot2::aes(time, HA), alpha = 0.1, size = 0.25)+
           ggplot2::geom_point(data = data[[y]], ggplot2::aes(time, HA), color = "red", 
                               alpha =  0.1, size = 0.25) +
-          ggplot2::ggtitle(file_name) + ggplot2::theme_light()
+          ggplot2::ggtitle(file_name) + ggplot2::theme_light() +
+          ggplot::theme(legend.title=element_blank())
         dev.off()
         plot_list[[counter]] <- p
         }
@@ -229,8 +229,9 @@ for(plot in 1:length(plots_low)){
 
 
 ## High sampling frequency experiment
+
 ### Heatmap
-```{r Heatmap high frequency experiment, echo=FALSE, , out.extra='angle=90', fig.width=14, fig.height=14}
+```{r Heatmap high sampling frequency experiment, echo=FALSE, , out.extra='angle=90', fig.width=14, fig.height=14}
 fullmatrix_high <- correlation_matrices$high$correlationMatrix
 heatmap_high <- corrplot::corrplot(pmax(fullmatrix_high, t(fullmatrix_high), na.rm = TRUE), 
                                    type = 'lower', method = 'color', order = "alphabet",
@@ -243,7 +244,7 @@ In this section pairwise plots are generated for cross-correlations that are 1 S
 
 #### Descriptive statistics
 
-```{r Summary statistics high frequency experiment, echo=FALSE}
+```{r Summary statistics high sampling frequency experiment, echo=FALSE}
 # cross-correlations
 M <- mean(correlation_matrices$high$correlationMatrix, na.rm = TRUE)
 SD <- sd(correlation_matrices$high$correlationMatrix, na.rm = TRUE)
@@ -266,7 +267,7 @@ tab
 rm(tab, M, SD, min, max, threshold_high)
 ```
 
-```{r High Frequency Experiment: Pairwise plots, include=FALSE}
+```{r High Sampling Frequency Experiment: Pairwise plots, include=FALSE}
 plots_high <- pairwisePlots(correlationMatrix = correlation_matrices$high$correlationMatrix, 
                             data = data_high_100, threshold = crosscorr_high_threshold)
 ```
@@ -279,6 +280,89 @@ for(plot in 1:length(plots_high)){
 }
 ```
 
+### Data crop
+The pairwise plots indicate that the maximum lagged cross-corrlationas are low due to repetition of some measurements in the high sampling frequency experiment because one GENEActiv device got loose. Therefore, we repeated the analyses for cropped signals (i.e., data of the time points for which all devices were included during the shaking frequencies).
+
+```{r Crop signals, include=FALSE}
+data_high_100_crop <- list()
+
+tz <- "Europe/Amsterdam"
+#Times from experiment file where accelerometers_used = all
+start1 <- as.POSIXlt("2020-11-24 9:42:00", tz = tz)
+end1 <- as.POSIXlt("2020-11-24 10:13:00", tz = tz)
+start2 <- as.POSIXlt("2020-11-24 10:35:05", tz = tz)
+end2 <- as.POSIXlt("2020-11-24 10:47:00", tz = tz)
+
+for(file in 1:length(data_high_100)){
+  data_high_crop1 <- data_high_100[[file]][which(data_high_100[[file]]$time >= start1 & data_high_100[[file]]$time <= end1),]
+  data_high_crop2 <- data_high_100[[file]][which(data_high_100[[file]]$time >= start2 & data_high_100[[file]]$time <= end2),]
+  data_high_100_crop[[file]] <- rbind(data_high_crop1, data_high_crop2)
+}
+
+names(data_high_100_crop) <- names(data_high_100)
+
+save(data_high_100_crop, file = paste0(datadir, "data_high_100_cropped.RData"))
+```
+
+```{r Compute cross-correlation matrices for cropped signal, include = FALSE}
+correlations_high_crop <- computeCrossCorrelations(data_high_100_crop, plot = TRUE)
+save(correlations_high_crop, file = paste0(datadir, "cross_correlations_high_crop.RData"))
+```
+
+#### Cross-correlations
+In this section the maximum lagged cross-correlations between all cropped signal pairs are presented for the high sampling experiment.
+
+##### Heatmap
+```{r Heatmap high sampling frequency experiment cropped, echo=FALSE, fig.width=14, fig.height=14}
+fullmatrix_high_crop <- correlations_high_crop$correlationMatrix
+heatmap_high_crop <- corrplot::corrplot(pmax(fullmatrix_high_crop, t(fullmatrix_high_crop), na.rm = TRUE), 
+                                  type = 'lower', method = 'color', order = "alphabet", 
+                                  number.cex = 1.25, cl.cex = 2, tl.cex = 2,
+                                  col.lim = c(0,1), addCoef.col = 'black', tl.srt = 45, 
+                                  diag = TRUE, tl.col = "black")
+rm(fullmatrix_high_crop, heatmap_high_crop)
+```
+##### Pairwise signal plots
+In this section pairwise plots are generated for cross-correlations that are 1 SD lower than the mean cross-correlation.
+
+###### Descriptive statistics
+
+```{r Summary statistics high sampling frequency experiment cropped signals, echo=FALSE}
+# cross-correlations
+M <- mean(correlations_high_crop$correlationMatrix, na.rm = TRUE)
+SD <- sd(correlations_high_crop$correlationMatrix, na.rm = TRUE)
+min <- min(correlations_high_crop$correlationMatrix, na.rm = TRUE)
+max <- max(correlations_high_crop$correlationMatrix, na.rm = TRUE)
+crosscorr_high_crop_threshold <- M - SD
+cross_correlations <- c(M, SD, min, max, crosscorr_high_crop_threshold)
+
+# lags
+M <- mean(correlations_high_crop$lags, na.rm = TRUE)
+SD <- sd(correlations_high_crop$lags, na.rm = TRUE)
+min <- min(correlations_high_crop$lags, na.rm = TRUE)
+max <- max(correlations_high_crop$lags, na.rm = TRUE)
+threshold_high <- NA
+lags <- c(M, SD, min, max, threshold_high)
+
+tab <- rbind(cross_correlations, lags)
+colnames(tab) <- c("M", "SD", "min", "max", "threshold")
+tab
+rm(tab, M, SD, min, max, threshold_high)
+```
+
+```{r High Sampling Frequency Experiment: Pairwise plots cropped signals, include=FALSE}
+plots_high_crop <- pairwisePlots(correlationMatrix = correlations_high_crop$correlationMatrix, 
+                            data = data_high_100_crop, threshold = crosscorr_high_crop_threshold)
+```
+
+###### Pairwise plots
+
+```{r Print pairwise plots: high sampling experiment cropped signals, echo=FALSE}
+for(plot in 1:length(plots_high_crop)){
+  print(plots_high_crop[[plot]])
+}
+```
+
 # Between brand comparison
 In this section the average maximum lagged cross-correlation between the pair brands are presented separately for both experiments.
 
@@ -286,13 +370,17 @@ In this section the average maximum lagged cross-correlation between the pair br
 ```{r  Derive data.frames required for comparison of the signal shape between brands, include=FALSE}
 df_correlations_low <- dataframeShapeComparisonBeween(correlation_matrices$low, specifications_low) 
 df_correlations_high <- dataframeShapeComparisonBeween(correlation_matrices$high, specifications_high) 
+df_correlations_high_crop <- dataframeShapeComparisonBeween(correlations_high_crop, specifications_high) 
+
 cat("\nSaving data...")
 correlation_df <- list(low = df_correlations_low, high = df_correlations_high)
 save(correlation_df, file = paste0(datadir, "cross_correlation_df.RData"))
+save(df_correlations_high_crop, file = paste0(datadir, "cross_correlation_df_high_crop.RData"))
 
 #Subset the data
 correlations_between_low <- correlation_df$low[correlation_df$low$same_brand =="0", ]
 correlations_between_high <- correlation_df$high[correlation_df$high$same_brand =="0", ]
+correlations_between_high_cropped <- df_correlations_high_crop[df_correlations_high_crop$same_brand =="0", ]
 ```
 
 ### Low sampling frequency experiment
@@ -313,7 +401,7 @@ tab
 ```
 
 ### High sampling frequency experiment
-```{r Descriptives high samping frequency experiment, echo=FALSE}
+```{r Descriptives high sampling frequency experiment, echo=FALSE}
 library(dplyr)
 correlations_between_high$correlation <- as.numeric(correlations_between_high$correlation)
 # table_between_high <- correlations_between_high %>% group_by(brands)
@@ -331,3 +419,21 @@ tab
 
 ```
 
+### High sampling frequency experiment cropped signals
+```{r Descriptives high sampling frequency experiment cropped, echo=FALSE}
+library(dplyr)
+correlations_between_high_cropped$correlation <- as.numeric(correlations_between_high_cropped$correlation)
+# table_between_high_crop <- correlations_between_high_cropped %>% group_by(brands)
+avg_cor <- tapply(correlations_between_high_cropped$correlation, correlations_between_high_cropped$brands, summary)
+SD <- tapply(correlations_between_high_cropped$correlation, correlations_between_high_cropped$brands, sd)
+
+tab <- rbind(avg_cor$AxivityActigraph, avg_cor$GENEActivActigraph, avg_cor$GENEActivAxivity, avg_cor$MOXActigraph, avg_cor$MOXAxivity, avg_cor$MOXGENEActiv)
+rownames(tab) <- c("AxivityActigraph", "GENEActivActigraph", "GENEActivAxivity", "MOXActigraph", "MOXAxivity", "MOXGENEActiv")
+tab <- tab[,-2]
+tab <- tab[,-4]
+
+SD <- c(SD[2], SD[4], SD[5], SD[7], SD[8], SD[9])
+tab <- cbind(tab, SD)
+tab
+
+```
