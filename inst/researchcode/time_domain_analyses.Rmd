@@ -90,16 +90,17 @@ pairwisePlots <- function(correlationMatrix, data, threshold) {
   for (x in 1:nrow(correlationMatrix)){
     for (y in 1:ncol(correlationMatrix)){
       if (correlationMatrix[x,y] < 1 & !is.na(correlationMatrix[x,y])) {
-        if(correlationMatrix[x,y] <= threshold){ #only create pairwise plots if the cross-correlation is equal/lower to the treshold
+        if(correlationMatrix[x,y] <= threshold){ #only create pairwise plots if the cross-correlation is equal/lower to the threshold
           counter = counter + 1
+          device1 <- names(data)[[x]]
+          device2 <- names(data)[[y]]
           file_name <- paste(paste(names(data)[[x]], names(data)[[y]], sep = "_vs_"), correlationMatrix[x,y], sep = " r = ")
         jpeg(paste(datadir, file_name, ".jpeg", sep = "/plots/"), width=600, height=500, res=120) 
         p <- ggplot2::ggplot() +
-          ggplot2::geom_point(data = data[[x]], ggplot2::aes(time, HA), alpha = 0.1, size = 0.25)+
-          ggplot2::geom_point(data = data[[y]], ggplot2::aes(time, HA), color = "red", 
-                              alpha =  0.1, size = 0.25) +
-          ggplot2::ggtitle(file_name) + ggplot2::theme_light() +
-          ggplot::theme(legend.title=element_blank())
+          ggplot2::geom_point(data = data[[x]], ggplot2::aes(x = time, y = HA), color = "black", alpha = 0.4, size = 0.25) +
+          ggplot2::geom_point(data = data[[y]], ggplot2::aes(x = time, y = HA), color = "red", alpha =  0.4, size = 0.25, show.legend = TRUE) +
+          ggplot2::scale_fill_manual(values = c(device1 = "black", device2 = "red"), labels = c(device1, device2)) +
+          ggplot2::ggtitle(file_name) + ggplot2::theme_light() 
         dev.off()
         plot_list[[counter]] <- p
         }
