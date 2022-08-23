@@ -32,7 +32,7 @@ for (brand in 1:length(brands_to_load)) {
       load(paste0(structured_data_dir, "/", brands_to_load[brand], "_", experiments_to_load[experiment], ".RData"))
       for (file in 1:length(extracteddata$data)) {
         tmp <- extracteddata$data[[file]] #tmp is the structured data now
-        if(length(tmp > 0)) {
+        if(length(which(tmp > 0))) {
           tmp$time = as.POSIXct(tmp$time, origin = "1970-01-01", tz="Europe/Amsterdam")
           # Check if the x-axis was the axis aligned with the shaker direction 
           maxAxes <- c(sd(tmp$x), sd(tmp$y), sd(tmp$z)) # calculate the standard deviation of the axes
