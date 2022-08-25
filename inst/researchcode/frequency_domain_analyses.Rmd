@@ -186,8 +186,7 @@ ylabel = "Spectral Density (g2/Hertz)"
 XLIM = c(0, 5) # Limit frequency content to 5 Hz (as 250 rpm / 60 = 4.1667 Hz is the expected max)
 ```
 
-##Low sampling frequency experiment 
-```{r Derive frequency spectra low sampling frequency, echo=FALSE}
+```{r Derive frequency spectra low sampling frequency experiment, echo=FALSE}
 # DERIVE RAW FREQUENCY SPECTRA (for visual inspection and save data for further analysis)
 raw.spectra_low <- list() 
 
@@ -202,8 +201,7 @@ rm(rawSpectrum, file)
 names(raw.spectra_low) <- clean_data_low$specifications$label  
 ```
 
-##High sampling frequency experiment
-```{r Derive frequency spectra, echo=FALSE}
+```{r Derive frequency spectra high sampling frequency experiment, echo=FALSE}
 # Note: activPAL was set to a sampling frequency of 20 Hz (in both experiments), however, these data were considered for the high sampling frequency experiment as the recorded amplitude was expected to be the same.
 
 # DERIVE RAW FREQUENCY SPECTRA (for visual inspection and save data for further analysis)
@@ -232,7 +230,7 @@ rm(raw.spectra_high, raw.spectra_low, HA, sampling_frequency)
 The marked rotations per minute (rpm) on the analogical shaker machines' turning wheel were divided by 60 to derive the associated frequency in Hertz. The marked rpm were: 30, 50, 75, 100, 125, 150, 175, 200, 225, and 250. This resulted in the following associated frequencies: 0.50, 0.83, 1.25, 1.67, 2.08, 2.50, 2.92, 3.33, 3.75, and 4.17. 
 These associated frequencies were used as cut-offs for frequency bins, over which aggregated outcome values (i.e., dominant frequency and mean power spectral density) were calculated for statistical comparison between brands.
 
-```{r Derive frequency bins}
+```{r Derive frequency bins, include=FALSE}
 rpm <- c(30, 50, 75, 100, 125, 150, 175, 200, 225, 250)
 shaking_frequencies <- rpm / 60
 rm(rpm)
