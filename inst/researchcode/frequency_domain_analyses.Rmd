@@ -1,0 +1,692 @@
+---
+title: "Frequency domain analyses"
+author: "Annelinde Lettink"
+output: 
+  html_notebook:
+    toc: true
+    toc_depth: 4  # upto four depths of headings (specified by #, ##, ###, and ####)
+---
+
+```{r Setup and load data, include=FALSE}
+#install.packages("knitr")
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(dev = 'pdf')
+
+rm(list=ls())
+graphics.off()
+
+# Update to be your local directory, if all goes well this is the only line you will have to update
+shaker_experiments_folder = "/Users/annelindelettink/Documents/Work MacBook Pro Annelinde/Mechanical Shaker Machine"
+# shaker_experiments_folder = "~/data/VUMC/shaker_experiments"
+
+#====================================================================================
+# Specify file paths
+datadir = paste0(shaker_experiments_folder, "/analyses/")
+if (!dir.exists(datadir)) {
+  stop(paste0("Directory does not exist: ", datadir))
+}
+
+# Load cleaned mechanical shaker machine data for both experiments
+filename_high = paste0(datadir, "ms_flat_HA_cleaned_high.RData") 
+filename_low = paste0(datadir, "ms_flat_HA_cleaned_low.RData") 
+if (!file.exists(filename_high)) {
+  stop(paste0("File does not exist: ", filename_high))
+}
+load(filename_high)
+if (!file.exists(filename_low)) {
+  stop(paste0("File does not exist: ", filename_low))
+}
+load(filename_low)
+rm(filename_high, filename_low)
+```
+
+```{r Functions, include= FALSE}
+#' deriveSpectrum
+#'
+#' @description 'deriveSpectrum' derives the frequency spectrum of a signal (called from within derivePeakIntervals to derive smoothed spectrum)
+#'
+#' @param x Vector that contains the values of the signal (i.e., acceleration)
+#' @param sampling_frequency Integer that indicates the sampling frequency of the signal (i.e., the average number of samples obtained in one second in Hz)
+#' @param raw Boolean, if TRUE the raw frequency spectrum will be derived, FALSE: smoothed spectrum will be derived
+#' @param file_name String to indicate the name of the plot (i.e., "spectrum" result in the following name for plot 1 "spectrum_1.jpeg").
+#' @return An object of class "spec", which is a list containing at least the following components: 
+#' \item{freq}{Vector of frequencies at which the spectral density is estimated.} 
+#' \item{spec}{Vector (for univariate series) or matrix (for multivariate series) of estimates of the spectral density at frequencies corresponding to freq.}
+#' \item{coh}{NULL for univariate series. For multivariate time series, a matrix containing the squared coherency between different series.}  
+#' \item{phase}{NULL for univariate series. For multivariate time series a matrix containing the cross-spectrum phase between different series.} 
+#' \item{series}{The name of the time series.}
+#' \item{snames}{For multivariate input, the names of the component series.}
+#' \item{method}{The method used to calculate the spectrum.} 
+#' @export
+deriveSpectrum <- function(x, sampling_frequency, raw = TRUE, file_name) {
+  if(raw == TRUE){
+    specd <- spectrum(x, log = "no", plot = FALSE) # Default calculate spectrum on log-scale, but we use raw data
+  } else {
+    specd <- spectrum(x, log = "no", span = 75, plot = FALSE) # Smooth the raw signal
+  }
+  # Frequency axis of the spectrum, specd, is calculated in terms of cycles per sampling interval
+  delta <- 1/sampling_frequency
+  specd$specx <- specd$freq/delta # Converts to cycles per unit time (divide by sampling interval)
+  specd$specy <- 2*specd$spec # Multiply the spectrum by 2 to make it actually equal to variance
+  
+  #Save the frequency spectrum plot and zoom in on low-frequencies (at most 5 based on max rpm)
+  if (plot == TRUE){
+    jpeg(paste(datadir, paste0(paste(file_name, file, sep = "_"), ".jpeg"), sep = "/plots/"),
+         width=600, height=500, res=120) # start export
+    plot(specd$specx, specd$specy,
+         main = "HA", xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l") 
+    dev.off()
+  }
+  return(specd)
+}
+
+#' deriveComparisonValues
+#'
+#' @description 'deriveComparisonValues' derives the dominant frequency and the mean power spectral density from a frequency spectrum
+#'
+#' @param spectrum An object of class "spec"
+#' @param freqBins Vector containing frequency values that define the frequency bins (can be derived using the function 'defineFreqBins') 
+#' @return Data.frame consisting of two columns: \item{domFreq}{The dominant frequency of the signal in each frequency bin} \item{meanPSD}{The mean power spectral density of the signal in each frequency bin}
+#' @export
+deriveComparisonValues <- function(spectrum, freqBins){
+  df <- data.frame()
+  for(i in 1:(length(freqBins)-1)){
+    lower <- freqBins[i]
+    upper <- freqBins[i+1]
+    index <- which(spectrum$specx >= lower & spectrum$specx <= upper)
+    df[i, 1] <- spectrum$specx[index[which.max(spectrum$specy[index])]] # dominant frequency
+    df[i, 2] <- mean(spectrum$specy[index]) # mean power spectral density
+  }
+  colnames(df) <- c("domFreq", "meanPSD")
+  return(df)
+}
+
+#' createBoxplot
+#'
+#' @description 'createBoxplot' creates a boxplot between or within devices for the dominant frequency or the mean power spectral density per frequency bin
+#'
+#' @param data A data set containing the comparison values for the experiment
+#' @param outcome String containing the type of the comparison value. One of c("domFreq", "meanPSD") 
+#' @param type String containing the axis the outcome value is derived from. One of c("within", "between") 
+#' @param logscale Boolean to indicate whether the vertical axis needs to be logtransformed. One of c("TRUE", "FALSE") 
+#' @return Boxplot between or within devices for the outcome (y-axis) per frequency bin (x-axis)
+#' @export
+createBoxplot <- function(data, outcome = c("domFreq", "meanPSD"), type = c("within", "between"), logscale = c(TRUE, FALSE)){
+  if(type == "between"){
+    per = "brand"
+  } else {
+    per = "id"
+  }
+  if (outcome == "domFreq"){
+    label = "Dominant frequency (Hertz)"
+  } else{
+    label = "Mean power spectral density (g2/Hertz)"
+  }
+  boxplot <- ggpubr::ggboxplot(data, x = "freqBin", y = outcome, color = per,
+                               xlab = "Mean frequency bin (Hertz)", ylab = label, 
+                               order = c("t0", "t1", "t2", "t3", "t4", "t5", "t6", 
+                                         "t7", "t8", "t9", "t10"), 
+                               font.label = list(size = 8, color = "black")) +
+    ggpubr::font("xlab", size = 8, color = "black") +
+    ggpubr::font("x.text", size = 8, color = "black") + 
+    ggpubr::font("ylab", size = 8, color = "black") +
+    ggpubr::font("y.text", size = 8, color = "black") + 
+    ggpubr::font("legend.title", size = 8, color = "black") +
+    ggpubr::font("legend.text", size = 8, color = "black") + 
+    ggplot2::scale_x_discrete(breaks=c("t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9", "t10"),
+                     labels= c("0.25",  "0.67", "1.04", "1.46", "1.88", "2.29", "2.71", "3.13",
+                               "3.54", "3.96", "4.59")) 
+  if(logscale == TRUE){
+    boxplot <- boxplot + ggpubr::yscale("log10", .format = TRUE)
+  }
+  return(boxplot)
+}
+
+#' evaluateMM
+#'
+#' @description 'evaluateMM' function to indicate if the likelihood ratio test was significant
+#'
+#' @param model1 Model object with the least parameters
+#' @param model2 Model object with the most parameters
+#' @param type String containing the addition to the model. One of c("randomIntercept", "randomSlope") 
+#' @return Boolean: \item{TRUE}{The addition of a random intercept/slope is necessary} \item{FALSE}{The addition of a random intercept/slope is not necessary}
+#' @export
+evaluateMM <- function(model1, model2, type = c("randomIntercept", "randomSlope")){
+  logLikDiff <- (-2*(logLik(model1))) - (-2*logLik(model2))
+  if(type == "randomIntercept"){
+    return(logLikDiff > 3.84)
+  }
+  else{ 
+    return(logLikDiff > 5.99)
+  }
+}
+
+#' getOutputMM
+#'
+#' @description 'getOutputMM' function print the model output
+#'
+#' @param finalModel Model object for which the output will be printed
+#' @return Printed model output including fixed and random effect estimates
+#' @export
+getOutputMM <- function(finalModel) {
+  print(summary(finalModel)) #fixed effect estimates
+  lme4::VarCorr(finalModel) #random effect estimates
+}
+```
+
+# Raw frequency spectra
+
+In this section the raw frequency spectra are printed for each accelerometer recording  and for both experiments separately.
+
+```{r Settings for frequency spectra, include=FALSE}
+# Plot parameters
+plot = TRUE
+xlabel = "Frequency (Hertz)"
+ylabel = "Spectral Density (g2/Hertz)"
+XLIM = c(0, 5) # Limit frequency content to 5 Hz (as 250 rpm / 60 = 4.1667 Hz is the expected max)
+```
+
+##Low sampling frequency experiment 
+```{r Derive frequency spectra low sampling frequency, echo=FALSE}
+# DERIVE RAW FREQUENCY SPECTRA (for visual inspection and save data for further analysis)
+raw.spectra_low <- list() 
+
+for (file in 1:length(clean_data_low$data)) { # for all accelerometer files
+  sampling_frequency <- as.numeric(clean_data_low$specifications$sampling_frequency[file])  
+  HA <- clean_data_low$data[[file]]$HA #for horizontal axis
+  rawSpectrum <- deriveSpectrum(HA, sampling_frequency, raw = TRUE, 
+                                   file_name = names(clean_data_low$data)[[file]])
+  raw.spectra_low[[file]] <- rawSpectrum
+}
+rm(rawSpectrum, file)
+names(raw.spectra_low) <- clean_data_low$specifications$label  
+```
+
+##High sampling frequency experiment
+```{r Derive frequency spectra, echo=FALSE}
+# Note: activPAL was set to a sampling frequency of 20 Hz (in both experiments), however, these data were considered for the high sampling frequency experiment as the recorded amplitude was expected to be the same.
+
+# DERIVE RAW FREQUENCY SPECTRA (for visual inspection and save data for further analysis)
+raw.spectra_high <- list() 
+
+for (file in 1:length(clean_data_high$data)) { # for all accelerometer files
+  sampling_frequency <- as.numeric(clean_data_high$specifications$sampling_frequency[file])  
+  HA <- clean_data_high$data[[file]]$HA #for horizontal axis
+  rawSpectrum <- deriveSpectrum(HA, sampling_frequency, raw = TRUE, 
+                                   file_name = names(clean_data_high$data)[[file]])
+  raw.spectra_high[[file]] <- rawSpectrum
+}
+rm(rawSpectrum, file)
+names(raw.spectra_high) <- clean_data_high$specifications$label
+```
+
+```{r Save raw spectra, include=FALSE}
+raw_spectra <- list(high = raw.spectra_high, specifications_high = clean_data_high$specifications,
+                    low = raw.spectra_low, specifications_low = clean_data_low$specifications) # Save derived raw spectra for HA in one list
+#cat("\nSaving data...")
+save(raw_spectra, file = paste0(datadir, "frequency_spectra.RData"))
+rm(raw.spectra_high, raw.spectra_low, HA, sampling_frequency)
+```
+
+## Frequency bins
+The marked rotations per minute (rpm) on the analogical shaker machines' turning wheel were divided by 60 to derive the associated frequency in Hertz. The marked rpm were: 30, 50, 75, 100, 125, 150, 175, 200, 225, and 250. This resulted in the following associated frequencies: 0.50, 0.83, 1.25, 1.67, 2.08, 2.50, 2.92, 3.33, 3.75, and 4.17. 
+These associated frequencies were used as cut-offs for frequency bins, over which aggregated outcome values (i.e., dominant frequency and mean power spectral density) were calculated for statistical comparison between brands.
+
+```{r Derive frequency bins}
+rpm <- c(30, 50, 75, 100, 125, 150, 175, 200, 225, 250)
+shaking_frequencies <- rpm / 60
+rm(rpm)
+```
+
+### Frequency spectrum plots
+This section presents the frequency spectrum plots of the device acceleration signals included in the analyses with the frequency bins indicated by red vertical lines.
+
+#### High sampling frequency experiment
+
+```{r Plot spectra high sampling frequency experiment, echo=FALSE}
+
+for (spec in 1:length(raw_spectra$high)) {
+  spectrum <- raw_spectra$high[[spec]]
+  title <- paste("Frequency spectrum plot: ", raw_spectra$specifications_high$label[[spec]])
+  plot(spectrum$specx, spectrum$specy, main = title, 
+       xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l") 
+  for(i in 1:length(shaking_frequencies)){
+    abline(v=shaking_frequencies[i], col = "red")
+    abline(v=shaking_frequencies[i], col = "red")
+  }  
+}
+rm(spec, title, spectrum, i)
+```
+
+#### Low sampling frequency experiment
+
+```{r Plot spectra low sampling frequency experiment, echo=FALSE}
+for (spec in 1:length(raw_spectra$low)) {
+  spectrum <- raw_spectra$low[[spec]]
+  title <- paste("Frequency spectrum plot: ", raw_spectra$specifications_low$label[[spec]])
+  plot(spectrum$specx, spectrum$specy, main = title, 
+       xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l")
+  for(i in 1:length(shaking_frequencies)){
+    abline(v=shaking_frequencies[i], col = "red")
+    abline(v=shaking_frequencies[i], col = "red")
+  }  
+}
+rm(spec, title, spectrum, i)
+```
+
+```{r Compute dominant frequency (domFreq) and mean power spectral density (meanPSD) for HA , include = FALSE}
+# Derive frequency bins from the cutoffs
+freqBins <- round(c(XLIM[1], shaking_frequencies, XLIM[2]), digits = 2)
+rm(rpm, shaking_frequencies)
+
+comparison_values_low <- list()
+for(spectrum in 1:length(raw_spectra$low)){ 
+  comparison_values_low[[spectrum]] <- deriveComparisonValues(raw_spectra$low[[spectrum]], freqBins)
+}
+names(comparison_values_low) <- names(raw_spectra$low)
+
+comparison_values_high <- list()
+for(spectrum in 1:length(raw_spectra$high)){ 
+  comparison_values_high[[spectrum]] <- deriveComparisonValues(raw_spectra$high[[spectrum]], freqBins)
+}
+names(comparison_values_high) <- names(raw_spectra$high)
+#cat("\nSaving data...")
+comparison_values <- list(high = comparison_values_high, low = comparison_values_low)
+save(comparison_values, file = paste0(datadir, "domFreq_meanPSD.RData")) 
+
+rm(spectrum, comparison_values_high, comparison_values_low)
+```
+
+```{r WIDE FORMAT: Prepare data set for statistical analyses, include = FALSE}
+# Wide format: for both experiments and outcomes domFreq and meanPSD
+
+df_wide_low <- data.frame()
+id <- names(comparison_values$low)
+df_wide_low <- cbind(id, clean_data_low$specifications$brand, clean_data_low$specifications$sampling_frequency,
+                 clean_data_low$specifications$dynamic_range)
+domFreq_wide_low <- data.frame() 
+meanPSD_wide_low <- data.frame()
+for (accelerometer in 1:length(comparison_values$low)) {
+  domFreq_wide_low <- rbind(domFreq_wide_low, comparison_values$low[[accelerometer]]$domFreq)
+  meanPSD_wide_low <- rbind(meanPSD_wide_low, comparison_values$low[[accelerometer]]$meanPSD)
+}
+domFreq_ms_wide_low <- cbind(df_wide_low, domFreq_wide_low)
+colnames(domFreq_ms_wide_low) <- c("id", "brand", "sampling_frequency", "dynamic_range", 
+                               "t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9", "t10")
+meanPSD_ms_wide_low <- cbind(df_wide_low, meanPSD_wide_low)
+colnames(meanPSD_ms_wide_low) <- c("id", "brand", "sampling_frequency", "dynamic_range", 
+                               "t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9", "t10")
+rm(df_wide_low, id, domFreq_wide_low, meanPSD_wide_low, accelerometer)
+
+df_wide_high <- data.frame()
+id <- names(comparison_values$high)
+df_wide_high <- cbind(id, clean_data_high$specifications$brand, clean_data_high$specifications$sampling_frequency,
+                 clean_data_high$specifications$dynamic_range)
+domFreq_wide_high <- data.frame() 
+meanPSD_wide_high <- data.frame()
+for (accelerometer in 1:length(comparison_values$high)) {
+  domFreq_wide_high <- rbind(domFreq_wide_high, comparison_values$high[[accelerometer]]$domFreq)
+  meanPSD_wide_high <- rbind(meanPSD_wide_high, comparison_values$high[[accelerometer]]$meanPSD)
+}
+domFreq_ms_wide_high <- cbind(df_wide_high, domFreq_wide_high)
+colnames(domFreq_ms_wide_high) <- c("id", "brand", "sampling_frequency", "dynamic_range", 
+                               "t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9", "t10")
+meanPSD_ms_wide_high <- cbind(df_wide_high, meanPSD_wide_high)
+colnames(meanPSD_ms_wide_high) <- c("id", "brand", "sampling_frequency", "dynamic_range", 
+                               "t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9", "t10")
+rm(df_wide_high, id, domFreq_wide_high, meanPSD_wide_high, accelerometer)
+```
+
+```{r LONG FORMAT: Prepare data set for statistical analyses, include = FALSE}
+# Combining domFreq and meanPSD (gather columns for outcome variables)
+library(tidyverse)
+
+domFreq_long_low <- domFreq_ms_wide_low %>%
+  gather(key = "freqBin", value = "domFreq", t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10) %>%
+  rstatix::convert_as_factor(id, freqBin, brand, sampling_frequency, dynamic_range)
+meanPSD_long_low <- meanPSD_ms_wide_low %>%
+  gather(key = "freqBin", value = "meanPSD", t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10) %>%
+  rstatix::convert_as_factor(id, freqBin, brand, sampling_frequency, dynamic_range)
+df_low <- merge(domFreq_long_low, meanPSD_long_low) # Join both data.frame objects to derive a single dataset
+rm(domFreq_long_low, domFreq_ms_wide_low, meanPSD_long_low, meanPSD_ms_wide_low)
+df_low <- df_low[order(df_low$id),]
+
+domFreq_long_high <- domFreq_ms_wide_high %>%
+  gather(key = "freqBin", value = "domFreq", t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10) %>%
+  rstatix::convert_as_factor(id, freqBin, brand, sampling_frequency, dynamic_range)
+meanPSD_long_high <- meanPSD_ms_wide_high %>%
+  gather(key = "freqBin", value = "meanPSD", t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10) %>%
+  rstatix::convert_as_factor(id, freqBin, brand, sampling_frequency, dynamic_range)
+df_high <- merge(domFreq_long_high, meanPSD_long_high) # Join both data.frame objects to derive a single dataset
+rm(domFreq_long_high, domFreq_ms_wide_high, meanPSD_long_high, meanPSD_ms_wide_high)
+df_high <- df_high[order(df_high$id),]
+
+df_long <- list(low = df_low, high = df_high)
+#cat("\nSaving data...")
+save(df_long, file = paste0(datadir, "domfreq_meanPSD_long.RData"))
+rm(df_high, df_low)
+```
+
+# Statistical comparison
+
+This section presents the statistical comparison of the frequency spectra in terms of the aggregated dominant frequency and mean power spectral density for each frequency bin per sampling frequency experiment.
+
+## Low sampling frequency experiment
+
+```{r Create boxplots low sampling frequency experiment, include=FALSE}
+#load(paste0(datadir, "domfreq_meanPSD_long.RData"))
+
+bxp_domfreq_low <- createBoxplot(df_long$low, outcome = "domFreq", type = "between", logscale = FALSE)
+bxp_psd_low <- createBoxplot(df_long$low, outcome = "meanPSD", type = "between", logscale = FALSE)
+gridExtra::grid.arrange(bxp_domfreq_low, bxp_psd_low, nrow=1) #arranges plots within grid
+g <- gridExtra::arrangeGrob(bxp_domfreq_low + ggplot2::theme(legend.position="none"), 
+                            bxp_psd_low + ggplot2::theme(legend.position="bottom"), nrow=2) #generates g 
+ggplot2::ggsave(file=paste0(datadir, "plots/boxplots_HA_LOW.pdf"), g) #saves g
+
+bxp_domfreq_low_log <- createBoxplot(df_long$low, outcome = "domFreq", type = "between", 
+                                     logscale = TRUE)
+bxp_psd_low_log <- createBoxplot(df_long$low, outcome = "meanPSD", type = "between", logscale = TRUE) 
+gridExtra::grid.arrange(bxp_domfreq_low_log, bxp_psd_low_log, nrow=1) #arranges plots within grid
+g_log <- gridExtra::arrangeGrob(bxp_domfreq_low_log + ggplot2::theme(legend.position="none"),
+                                bxp_psd_low_log + ggplot2::theme(legend.position="bottom"),
+                                nrow=2)#generates g_log
+ggplot2::ggsave(file=paste0(datadir, "plots/boxplots_HA_LOW_logscale.pdf"), g_log) #saves g_log
+```
+
+### Boxplots
+This section presents the boxplots for both outcomes (dominant frequency and mean power spectral density) for the low sampling frequency experiment.
+
+Boxplot
+```{r Print boxplot low sampling frequency experiment, echo=FALSE}
+plot(g)
+```
+
+Boxplot with log scale
+```{r Print log boxplot low sampling frequency experiment, echo=FALSE}
+plot(g_log)
+```
+
+### Mixed model analyses
+This section presents the statistical comparison between the brand for the low sampling frequency experiment. Thee mixed models for mean power spectral density and dominant frequency with a random intercept for serial number (id) are presented separately.
+
+```{r Mixed Model Analyses low sampling frequency experiment, include=FALSE}
+# Starting model: with random intercept for accelerometer id (to adjust for the repeated measurements of the accelerometer devices)
+meanPSD_intercept_id_low <- nlme::lme(meanPSD ~ brand, random = ~ 1|id, 
+                                      method="ML", data = df_long$low)
+domFreq_intercept_id_low <- nlme::lme(domFreq ~ brand, random = ~ 1|id, 
+                                      method="ML", data = df_long$low)
+
+# Add random intercept for freqBin (to adjust for the frequencies)
+meanPSD_intercept_freqbin_low <- nlme::lme(meanPSD ~ brand, random = list(~ 1|id, ~ 1|freqBin),
+                                           method="ML", data = df_long$low)
+domFreq_intercept_freqbin_low <- nlme::lme(domFreq ~ brand, random = list(~ 1|id, ~ 1|freqBin),
+                                           method="ML", data = df_long$low)
+
+# Evaluate if adding a random intercept for freqBin is necessary
+evaluateMM(meanPSD_intercept_id_low, meanPSD_intercept_freqbin_low, type = "randomIntercept") #FALSE adding a random intercept for frequency bin to the model is not necessary
+evaluateMM(domFreq_intercept_id_low, domFreq_intercept_freqbin_low, type = "randomIntercept") #FALSE adding a random intercept for frequency bin to the model is not necessary
+rm(meanPSD_intercept_freqbin_low, domFreq_intercept_freqbin_low)
+```
+
+#### Model assumption: normal distribution of residuals
+
+```{r Mean PSD Model assumptions low sampling frequency experiment, echo=FALSE}
+ggpubr::ggqqplot(df_long$low, "meanPSD", facet.by = "freqBin", title = "QQ-plot mean power spectral density")
+residuals_meanPSD <- resid(meanPSD_intercept_id_low)
+#summary(residuals_meanPSD)
+hist(residuals_meanPSD)
+```
+
+```{r Dominant frequency Model assumptions low sampling frequency experiment, echo=FALSE}
+ggpubr::ggqqplot(df_long$low, "domFreq", facet.by = "freqBin", title = "QQ-plot dominant frequency")
+residuals_domFreq <- resid(domFreq_intercept_id_low)
+#summary(residuals_domFreq)
+hist(residuals_domFreq) # approximately normally distributed
+```
+
+#### Results for the Mean Power Spectral Density
+
+##### Reference: ActiGraph 
+```{r Report results for Mean PSD low sampling frequency experiment: ActiGraph, echo=FALSE}
+getOutputMM(meanPSD_intercept_id_low)
+```
+##### Reference: MOX
+```{r Report results for Mean PSD low sampling frequency experiment: MOX, echo=FALSE}
+df_long$low$brand <- relevel(df_long$low$brand, ref = 5) 
+meanPSD_intercept_id_low <- nlme::lme(meanPSD ~ brand, random = ~ 1|id, 
+                                      method="ML", data = df_long$low)
+getOutputMM(meanPSD_intercept_id_low)
+```
+##### Reference: GENEActiv
+```{r Report results for Mean PSD low sampling frequency experiment: GENEActiv, echo=FALSE}
+df_long$low$brand <- relevel(df_long$low$brand, ref = 5) 
+meanPSD_intercept_id_low <- nlme::lme(meanPSD ~ brand, random = ~ 1|id, 
+                                      method="ML", data = df_long$low)
+getOutputMM(meanPSD_intercept_id_low)
+```
+##### Reference: Axivity
+```{r Report results for Mean PSD low sampling frequency experiment: Axivity, echo=FALSE}
+df_long$low$brand <- relevel(df_long$low$brand, ref = 5) 
+meanPSD_intercept_id_low <- nlme::lme(meanPSD ~ brand, random = ~ 1|id, 
+                                      method="ML", data = df_long$low)
+getOutputMM(meanPSD_intercept_id_low)
+```
+
+##### Reference: activPAL
+```{r Report results for Mean PSD low sampling frequency experiment: activPAL, echo=FALSE}
+df_long$low$brand <- relevel(df_long$low$brand, ref = 5) 
+meanPSD_intercept_id_low <- nlme::lme(meanPSD ~ brand, random = ~ 1|id, 
+                                      method="ML", data = df_long$low)
+getOutputMM(meanPSD_intercept_id_low)
+```
+#### Results for the Dominant Frequency
+
+##### Reference: ActiGraph
+```{r Report results for Dominant frequency low sampling frequency experiment: ActiGraph, echo=FALSE}
+df_long$low$brand <- relevel(df_long$low$brand, ref = 5) 
+domFreq_intercept_id_low <- nlme::lme(domFreq ~ brand, random = ~ 1|id, 
+                                      method="ML", data = df_long$low)
+getOutputMM(domFreq_intercept_id_low)
+```
+##### Reference: MOX
+```{r Report results for Dominant frequency low sampling frequency experiment: MOX, echo=FALSE}
+df_long$low$brand <- relevel(df_long$low$brand, ref = 5) 
+domFreq_intercept_id_low <- nlme::lme(domFreq ~ brand, random = ~ 1|id, 
+                                      method="ML", data = df_long$low)
+getOutputMM(domFreq_intercept_id_low)
+```
+##### Reference: GENEActiv
+```{r Report results for Dominant frequency low sampling frequency experiment: GENEActiv, echo=FALSE}
+df_long$low$brand <- relevel(df_long$low$brand, ref = 5) 
+domFreq_intercept_id_low <- nlme::lme(domFreq ~ brand, random = ~ 1|id, 
+                                      method="ML", data = df_long$low)
+getOutputMM(domFreq_intercept_id_low)
+```
+##### Reference: Axivity
+
+```{r Report results for Dominant frequency low sampling frequency experiment: Axivity, echo=FALSE}
+df_long$low$brand <- relevel(df_long$low$brand, ref = 5) 
+domFreq_intercept_id_low <- nlme::lme(domFreq ~ brand, random = ~ 1|id, 
+                                      method="ML", data = df_long$low)
+getOutputMM(domFreq_intercept_id_low)
+```
+##### Reference: activPAL
+
+```{r Report results for Dominant frequency low sampling frequency experiment: activPAL, echo=FALSE}
+df_long$low$brand <- relevel(df_long$low$brand, ref = 5) 
+domFreq_intercept_id_low <- nlme::lme(domFreq ~ brand, random = ~ 1|id, 
+                                      method="ML", data = df_long$low)
+getOutputMM(domFreq_intercept_id_low)
+```
+
+## High sampling frequency experiment
+
+### Boxplots
+This section presents the boxplots for both outcomes (dominant frequency and mean power spectral density) for the high sampling frequency experiment.
+
+```{r Create boxplots high sampling frequency, include=FALSE}
+#load(paste0(datadir, "domfreq_meanPSD_ms_HA_dataset_long_hf.RData"))
+bxp_domfreq_high <- createBoxplot(df_long$high, outcome = "domFreq", type = "between", 
+                                  logscale = FALSE)
+bxp_psd_high <- createBoxplot(df_long$high, outcome = "meanPSD", type = "between", logscale = FALSE) 
+
+gridExtra::grid.arrange(bxp_domfreq_high, bxp_psd_high, nrow=1) #arranges plots within grid
+g <- gridExtra::arrangeGrob(bxp_domfreq_high + ggplot2::theme(legend.position="none"), 
+                            bxp_psd_high + ggplot2::theme(legend.position="bottom"), nrow=2) #generates g
+ggplot2::ggsave(file=paste0(datadir, "plots/boxplots_HA_HIGH.pdf"), g) #saves g
+
+bxp_domfreq_high_log <- createBoxplot(df_long$high, outcome = "domFreq", type = "between", 
+                                      logscale = TRUE)
+bxp_psd_high_log <- createBoxplot(df_long$high, outcome = "meanPSD", type = "between", logscale = TRUE)
+gridExtra::grid.arrange(bxp_domfreq_high_log, bxp_psd_high_log, 
+                        nrow=1) #arranges plots within grid
+g_log <- gridExtra::arrangeGrob(bxp_domfreq_high_log + ggplot2::theme(legend.position="none"),
+                                bxp_psd_high_log + ggplot2::theme(legend.position="bottom"), 
+                                nrow=2) #generates g_log
+ggplot2::ggsave(file=paste0(datadir, "plots/boxplots_HA_HIGH_logscale.pdf"), g_log) #saves g_log
+```
+
+Boxplot
+
+```{r Print boxplot high sampling frequency experiment, echo=FALSE}
+plot(g)
+```
+
+Boxplot with log scale
+
+```{r Print log boxplot high sampling frequency experiment, echo=FALSE}
+plot(g_log)
+```
+
+### Mixed model analyses
+This section presents the statistical comparison between the brand for the high sampling frequency experiment. Thee mixed models for mean power spectral density and dominant frequency with a random intercept for serial number (id) are presented separately.
+
+```{r Mixed Model Analyses high sampling frequency experiment, include=FALSE}
+# Starting model: with random intercept for accelerometer id (to adjust for the repeated measurements of the accelerometer devices)
+meanPSD_intercept_id_high <- nlme::lme(meanPSD ~ brand, random = ~ 1|id, 
+                                       method="ML", data = df_long$high)
+domFreq_intercept_id_high <- nlme::lme(domFreq ~ brand, random = ~ 1|id, 
+                                       method="ML", data = df_long$high)
+
+# Add random intercept for freqBin (to adjust for the frequencies)
+meanPSD_intercept_freqbin_high <- nlme::lme(meanPSD ~ brand, random = list(~ 1|id, ~ 1|freqBin), 
+                                            method="ML", data = df_long$high)
+domFreq_intercept_freqbin_high <- nlme::lme(domFreq ~ brand, random = list(~ 1|id, ~ 1|freqBin), 
+                                            method="ML", data = df_long$high)
+
+# Evaluate if adding a random intercept for freqBin is necessary
+evaluateMM(meanPSD_intercept_id_high, meanPSD_intercept_freqbin_high, type = "randomIntercept") #FALSE adding a random intercept for frequency bin to the model is not necessary
+evaluateMM(domFreq_intercept_id_high, domFreq_intercept_freqbin_high, type = "randomIntercept") #FALSE adding a random intercept for frequency bin to the model is not necessary
+rm(meanPSD_intercept_freqbin_high, domFreq_intercept_freqbin_high)
+```
+
+#### Model assumption: normal distributions of residuals
+```{r Mean PSD Model assumptions high sampling frequency experiment, echo=FALSE}
+ggpubr::ggqqplot(df_long$high, "meanPSD", facet.by = "freqBin", 
+                 title = "QQ-plot mean power spectral density")
+residuals_meanPSD <- resid(meanPSD_intercept_id_high)
+#summary(residuals_meanPSD)
+hist(residuals_meanPSD)
+```
+
+```{r Dominant frequency Model assumptions high sampling frequency experiment, echo=FALSE}
+ggpubr::ggqqplot(df_long$high, "domFreq", facet.by = "freqBin", title = "QQ-plot dominant frequency")
+residuals_domFreq <- resid(domFreq_intercept_id_high)
+#summary(residuals_domFreq)
+hist(residuals_domFreq) # approximately normally distributed
+```
+
+#### Results for the Mean Power Spectral Density
+
+##### Reference: activPAL
+```{r Report results for Mean PSD high sampling frequency experiment: activPAL, echo=FALSE}
+getOutputMM(meanPSD_intercept_id_high)
+```
+##### Reference: ActiGraph
+```{r Report results for Mean PSD high sampling frequency experiment: ActiGraph, echo=FALSE}
+df_long$high$brand <- relevel(df_long$high$brand, ref = 4) 
+meanPSD_intercept_id_high <- nlme::lme(meanPSD ~ brand, random = ~ 1|id, 
+                                       method="ML", data = df_long$high)
+getOutputMM(meanPSD_intercept_id_high)
+```
+
+##### Reference: GENEActiv
+```{r Report results for Mean PSD high sampling frequency experiment: GENEActiv, echo=FALSE}
+df_long$high$brand <- relevel(df_long$high$brand, ref = 4) 
+meanPSD_intercept_id_high <- nlme::lme(meanPSD ~ brand, random = ~ 1|id, 
+                                       method="ML", data = df_long$high)
+getOutputMM(meanPSD_intercept_id_high)
+```
+##### Reference: Axivity
+
+```{r Report results for Mean PSD high sampling frequency experiment: Axivity, echo=FALSE}
+df_long$high$brand <- relevel(df_long$high$brand, ref = 4) 
+meanPSD_intercept_id_high <- nlme::lme(meanPSD ~ brand, random = ~ 1|id, 
+                                       method="ML", data = df_long$high)
+getOutputMM(meanPSD_intercept_id_high)
+```
+
+#### Results for the Dominant Frequency
+
+##### Reference: activPAL
+
+```{r Report results for Dominant frequency high sampling frequency experiment: activPAL, echo=FALSE}
+df_long$high$brand <- relevel(df_long$high$brand, ref = 4) 
+domFreq_intercept_id_high <- nlme::lme(domFreq ~ brand, random = ~ 1|id, 
+                                       method="ML", data = df_long$high)
+getOutputMM(domFreq_intercept_id_high)
+```
+
+##### Reference: ActiGraph
+
+```{r Report results for Dominant frequency high sampling frequency experiment: ActiGraph, echo=FALSE}
+df_long$high$brand <- relevel(df_long$high$brand, ref = 4) 
+domFreq_intercept_id_high <- nlme::lme(domFreq ~ brand, random = ~ 1|id, 
+                                       method="ML", data = df_long$high)
+getOutputMM(domFreq_intercept_id_high)
+```
+##### Reference: GENEActiv
+
+```{r Report results for Dominant frequency high sampling frequency experiment: GENEActiv, echo=FALSE}
+df_long$high$brand <- relevel(df_long$high$brand, ref = 4) 
+domFreq_intercept_id_high <- nlme::lme(domFreq ~ brand, random = ~ 1|id, 
+                                       method="ML", data = df_long$high)
+getOutputMM(domFreq_intercept_id_high)
+```
+##### Reference: Axivity
+
+```{r Report results for Dominant frequency high sampling frequency experiment: Axivity, echo=FALSE}
+df_long$high$brand <- relevel(df_long$high$brand, ref = 4) 
+domFreq_intercept_id_high <- nlme::lme(domFreq ~ brand, random = ~ 1|id, 
+                                       method="ML", data = df_long$high)
+getOutputMM(domFreq_intercept_id_high)
+```
+
+```{r Create boxplot mean power spectral density, include=FALSE}
+gridExtra::grid.arrange(bxp_psd_low, bxp_psd_high, nrow=1) #arranges plots within grid
+g <- gridExtra::arrangeGrob(bxp_psd_low + ggplot2::theme(legend.position="none"), 
+                            bxp_psd_high + ggplot2::theme(legend.position="bottom"), nrow=2, top = "Low sampling frequency experiment", bottom = "High sampling frequency experiment", left = "Mean power spectral density (g2/Hertz)") #generates g
+ggplot2::ggsave(file=paste0(datadir, "plots/boxplot_meanPSD.pdf"), g) #saves g
+
+gridExtra::grid.arrange(bxp_psd_low_log, bxp_psd_high_log, nrow=1) #arranges plots within grid
+g_log <- gridExtra::arrangeGrob(bxp_psd_low_log + ggplot2::theme(legend.position="none"),
+                                bxp_psd_high_log + ggplot2::theme(legend.position="bottom"), 
+                                nrow=2, top = "Low sampling frequency experiment", bottom = "High sampling frequency experiment", left = "Mean power spectral density (g2/Hertz)") #generates g_log
+ggplot2::ggsave(file=paste0(datadir, "plots/boxplot_meanPSD_log.pdf"), g_log) #saves g_log
+```
+
+
+```{r Create boxplot dominant frequency, include=FALSE}
+gridExtra::grid.arrange(bxp_domfreq_low, bxp_domfreq_high, nrow=1) #arranges plots within grid
+g <- gridExtra::arrangeGrob(bxp_domfreq_low + ggplot2::theme(legend.position="none"), 
+                            bxp_domfreq_high + ggplot2::theme(legend.position="bottom"), nrow=2, top = "Low sampling frequency experiment", bottom = "High sampling frequency experiment", left = "Dominant frequency (Hertz)") #generates g
+ggplot2::ggsave(file=paste0(datadir, "plots/boxplot_domFreq.pdf"), g) #saves g
+
+
+gridExtra::grid.arrange(bxp_domfreq_low_log, bxp_domfreq_high_log, 
+                        nrow=1) #arranges plots within grid
+g_log <- gridExtra::arrangeGrob(bxp_domfreq_low_log + ggplot2::theme(legend.position="none"),
+                                bxp_domfreq_high_log + ggplot2::theme(legend.position="bottom"), 
+                                nrow=2, top = "Low sampling frequency experiment", bottom = "High sampling frequency experiment", left = "Dominant frequency (Hertz)") #generates g_log
+ggplot2::ggsave(file=paste0(datadir, "plots/boxplot_domFreq_log.pdf"), g_log) #saves g_log
+```
