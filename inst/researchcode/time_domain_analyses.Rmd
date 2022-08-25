@@ -201,7 +201,7 @@ rm(fullmatrix_low, heatmap_low)
 ```
 
 ### Pairwise signal plots
-In this section pairwise plots are generated for cross-correlations that are 2 SD lower than the mean cross-correlation.
+In this section pairwise plots are generated for cross-correlations that are 2 SD lower than the mean cross-correlation (i.e., threshold).
 
 #### Descriptive statistics
 
@@ -252,7 +252,7 @@ heatmap_high <- corrplot::corrplot(pmax(fullmatrix_high, t(fullmatrix_high), na.
                                    tl.col = "black")
 ```
 ### Pairwise signal plots
-In this section pairwise plots are generated for cross-correlations that are 2 SD lower than the mean cross-correlation.
+In this section pairwise plots are generated for cross-correlations that are 2 SD lower than the mean cross-correlation (i.e., threshold).
 
 #### Descriptive statistics
 
