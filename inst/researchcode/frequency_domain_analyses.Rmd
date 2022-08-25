@@ -40,7 +40,7 @@ load(filename_low)
 rm(filename_high, filename_low)
 ```
 
-```{r Functions, include= FALSE}
+```{r Functions, include=FALSE}
 #' deriveSpectrum
 #'
 #' @description 'deriveSpectrum' derives the frequency spectrum of a signal (called from within derivePeakIntervals to derive smoothed spectrum)
@@ -242,6 +242,7 @@ This section presents the frequency spectrum plots of the device acceleration si
 #### High sampling frequency experiment
 
 ```{r Plot spectra high sampling frequency experiment, echo=FALSE}
+#load(paste0(datadir, "frequency_spectra.RData"))
 
 for (spec in 1:length(raw_spectra$high)) {
   spectrum <- raw_spectra$high[[spec]]
@@ -596,18 +597,10 @@ hist(residuals_domFreq) # approximately normally distributed
 
 #### Results for the Mean Power Spectral Density
 
-##### Reference: activPAL
-```{r Report results for Mean PSD high sampling frequency experiment: activPAL, echo=FALSE}
-getOutputMM(meanPSD_intercept_id_high)
-```
 ##### Reference: ActiGraph
 ```{r Report results for Mean PSD high sampling frequency experiment: ActiGraph, echo=FALSE}
-df_long$high$brand <- relevel(df_long$high$brand, ref = 4) 
-meanPSD_intercept_id_high <- nlme::lme(meanPSD ~ brand, random = ~ 1|id, 
-                                       method="ML", data = df_long$high)
 getOutputMM(meanPSD_intercept_id_high)
 ```
-
 ##### Reference: GENEActiv
 ```{r Report results for Mean PSD high sampling frequency experiment: GENEActiv, echo=FALSE}
 df_long$high$brand <- relevel(df_long$high$brand, ref = 4) 
@@ -615,9 +608,17 @@ meanPSD_intercept_id_high <- nlme::lme(meanPSD ~ brand, random = ~ 1|id,
                                        method="ML", data = df_long$high)
 getOutputMM(meanPSD_intercept_id_high)
 ```
-##### Reference: Axivity
 
+##### Reference: Axivity
 ```{r Report results for Mean PSD high sampling frequency experiment: Axivity, echo=FALSE}
+df_long$high$brand <- relevel(df_long$high$brand, ref = 4) 
+meanPSD_intercept_id_high <- nlme::lme(meanPSD ~ brand, random = ~ 1|id, 
+                                       method="ML", data = df_long$high)
+getOutputMM(meanPSD_intercept_id_high)
+```
+##### Reference: activPAL
+
+```{r Report results for Mean PSD high sampling frequency experiment: activPAL, echo=FALSE}
 df_long$high$brand <- relevel(df_long$high$brand, ref = 4) 
 meanPSD_intercept_id_high <- nlme::lme(meanPSD ~ brand, random = ~ 1|id, 
                                        method="ML", data = df_long$high)
@@ -625,15 +626,6 @@ getOutputMM(meanPSD_intercept_id_high)
 ```
 
 #### Results for the Dominant Frequency
-
-##### Reference: activPAL
-
-```{r Report results for Dominant frequency high sampling frequency experiment: activPAL, echo=FALSE}
-df_long$high$brand <- relevel(df_long$high$brand, ref = 4) 
-domFreq_intercept_id_high <- nlme::lme(domFreq ~ brand, random = ~ 1|id, 
-                                       method="ML", data = df_long$high)
-getOutputMM(domFreq_intercept_id_high)
-```
 
 ##### Reference: ActiGraph
 
@@ -643,6 +635,7 @@ domFreq_intercept_id_high <- nlme::lme(domFreq ~ brand, random = ~ 1|id,
                                        method="ML", data = df_long$high)
 getOutputMM(domFreq_intercept_id_high)
 ```
+
 ##### Reference: GENEActiv
 
 ```{r Report results for Dominant frequency high sampling frequency experiment: GENEActiv, echo=FALSE}
@@ -654,6 +647,14 @@ getOutputMM(domFreq_intercept_id_high)
 ##### Reference: Axivity
 
 ```{r Report results for Dominant frequency high sampling frequency experiment: Axivity, echo=FALSE}
+df_long$high$brand <- relevel(df_long$high$brand, ref = 4) 
+domFreq_intercept_id_high <- nlme::lme(domFreq ~ brand, random = ~ 1|id, 
+                                       method="ML", data = df_long$high)
+getOutputMM(domFreq_intercept_id_high)
+```
+##### Reference: activPAL
+
+```{r Report results for Dominant frequency high sampling frequency experiment: activPAL, echo=FALSE}
 df_long$high$brand <- relevel(df_long$high$brand, ref = 4) 
 domFreq_intercept_id_high <- nlme::lme(domFreq ~ brand, random = ~ 1|id, 
                                        method="ML", data = df_long$high)
