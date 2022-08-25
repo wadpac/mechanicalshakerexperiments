@@ -40,10 +40,10 @@ load(filename_low)
 rm(filename_high, filename_low)
 ```
 
-```{r Functions, include=FALSE}
+```{r Functions, include =FALSE}
 #' deriveSpectrum
 #'
-#' @description 'deriveSpectrum' derives the frequency spectrum of a signal (called from within derivePeakIntervals to derive smoothed spectrum)
+#' @description 'deriveSectrum' derives the frequency spectrum of a signal (called from within derivePeakIntervals to derive smoothed spectrum)
 #'
 #' @param x Vector that contains the values of the signal (i.e., acceleration)
 #' @param sampling_frequency Integer that indicates the sampling frequency of the signal (i.e., the average number of samples obtained in one second in Hz)
@@ -660,6 +660,127 @@ domFreq_intercept_id_high <- nlme::lme(domFreq ~ brand, random = ~ 1|id,
                                        method="ML", data = df_long$high)
 getOutputMM(domFreq_intercept_id_high)
 ```
+
+## High sampling frequency experiment (activPAL excluded)
+
+### Boxplots
+This section presents the boxplots for both outcomes (dominant frequency and mean power spectral density) for the high sampling frequency experiment.
+
+```{r Exclude activPAL data, include=FALSE}
+df_long_high_excl_aP <- df_long$high[!df_long$high$brand =="Activpal",]
+```
+
+
+```{r Create boxplots high sampling frequency ap, include=FALSE}
+bxp_domfreq_high_ap <- createBoxplot(df_long_high_excl_aP, outcome = "domFreq", type = "between", 
+                                  logscale = FALSE)
+bxp_psd_high_ap <- createBoxplot(df_long_high_excl_aP, outcome = "meanPSD", type = "between", logscale = FALSE) 
+
+gridExtra::grid.arrange(bxp_domfreq_high_ap, bxp_psd_high_ap, nrow=1) #arranges plots within grid
+g <- gridExtra::arrangeGrob(bxp_domfreq_high_ap + ggplot2::theme(legend.position="none"), 
+                            bxp_psd_high_ap + ggplot2::theme(legend.position="bottom"), nrow=2) #generates g
+ggplot2::ggsave(file=paste0(datadir, "plots/boxplots_HA_HIGH_ap.pdf"), g) #saves g
+
+bxp_domfreq_high_ap_log <- createBoxplot(df_long_high_excl_aP, outcome = "domFreq", type = "between", 
+                                      logscale = TRUE)
+bxp_psd_high_ap_log <- createBoxplot(df_long_high_excl_aP, outcome = "meanPSD", type = "between", logscale = TRUE)
+gridExtra::grid.arrange(bxp_psd_high_ap_log, bxp_psd_high_log, 
+                        nrow=1) #arranges plots within grid
+g_log <- gridExtra::arrangeGrob(bxp_domfreq_high_ap_log + ggplot2::theme(legend.position="none"),
+                                bxp_psd_high_ap_log + ggplot2::theme(legend.position="bottom"), 
+                                nrow=2) #generates g_log
+ggplot2::ggsave(file=paste0(datadir, "plots/boxplots_HA_HIGH_ap_logscale.pdf"), g_log) #saves g_log
+```
+
+Boxplot
+
+```{r Print boxplot high sampling frequency experiment ap, echo=FALSE}
+plot(g)
+```
+
+Boxplot with log scale
+
+```{r Print log boxplot high sampling frequency experiment ap, echo=FALSE}
+plot(g_log)
+```
+
+### Mixed model analyses
+This section presents the statistical comparison between the brand for the high sampling frequency experiment. Thee mixed models for mean power spectral density and dominant frequency with a random intercept for serial number (id) are presented separately.
+
+```{r Mixed Model Analyses high sampling frequency experiment ap, include=FALSE}
+# Starting model: with random intercept for accelerometer id (to adjust for the repeated measurements of the accelerometer devices)
+meanPSD_intercept_id_high <- nlme::lme(meanPSD ~ brand, random = ~ 1|id, 
+                                       method="ML", data = df_long_high_excl_aP)
+domFreq_intercept_id_high <- nlme::lme(domFreq ~ brand, random = ~ 1|id, 
+                                       method="ML", data = df_long_high_excl_aP)
+
+# Add random intercept for freqBin (to adjust for the frequencies)
+meanPSD_intercept_freqbin_high <- nlme::lme(meanPSD ~ brand, random = list(~ 1|id, ~ 1|freqBin), 
+                                            method="ML", data = df_long_high_excl_aP)
+domFreq_intercept_freqbin_high <- nlme::lme(domFreq ~ brand, random = list(~ 1|id, ~ 1|freqBin), 
+                                            method="ML", data = df_long_high_excl_aP)
+
+# Evaluate if adding a random intercept for freqBin is necessary
+evaluateMM(meanPSD_intercept_id_high, meanPSD_intercept_freqbin_high, type = "randomIntercept") #FALSE adding a random intercept for frequency bin to the model is not necessary
+evaluateMM(domFreq_intercept_id_high, domFreq_intercept_freqbin_high, type = "randomIntercept") #FALSE adding a random intercept for frequency bin to the model is not necessary
+rm(meanPSD_intercept_freqbin_high, domFreq_intercept_freqbin_high)
+```
+
+#### Model assumption: normal distributions of residuals
+```{r Mean PSD Model assumptions high sampling frequency experiment ap, echo=FALSE}
+ggpubr::ggqqplot(df_long_high_excl_aP, "meanPSD", facet.by = "freqBin", 
+                 title = "QQ-plot mean power spectral density")
+residuals_meanPSD <- resid(meanPSD_intercept_id_high)
+#summary(residuals_meanPSD)
+hist(residuals_meanPSD)
+```
+
+```{r Dominant frequency Model assumptions high sampling frequency experiment ap, echo=FALSE}
+ggpubr::ggqqplot(df_long_high_excl_aP, "domFreq", facet.by = "freqBin", title = "QQ-plot dominant frequency")
+residuals_domFreq <- resid(domFreq_intercept_id_high)
+#summary(residuals_domFreq)
+hist(residuals_domFreq) # approximately normally distributed
+```
+
+#### Results for the Mean Power Spectral Density
+
+##### Reference: Axivity
+```{r Report results for Mean PSD high sampling frequency experiment ap: Axivity, echo=FALSE}
+getOutputMM(meanPSD_intercept_id_high)
+```
+##### Reference: GENEActiv
+```{r Report results for Mean PSD high sampling frequency experiment ap: GENEActiv, echo=FALSE}
+df_long_high_excl_aP$brand <- relevel(df_long_high_excl_aP$brand, ref = 3) 
+meanPSD_intercept_id_high <- nlme::lme(meanPSD ~ brand, random = ~ 1|id, 
+                                       method="ML", data = df_long_high_excl_aP)
+getOutputMM(meanPSD_intercept_id_high)
+```
+
+#### Results for the Dominant Frequency
+
+##### Reference: GENEActiv
+
+```{r Report results for Dominant frequency high sampling frequency experiment ap: GENEActiv, echo=FALSE}
+df_long_high_excl_aP$brand <- relevel(df_long_high_excl_aP$brand, ref = 3) 
+domFreq_intercept_id_high <- nlme::lme(domFreq ~ brand, random = ~ 1|id, 
+                                       method="ML", data = df_long_high_excl_aP)
+getOutputMM(domFreq_intercept_id_high)
+```
+
+##### Reference: Axivity
+
+```{r Report results for Dominant frequency high sampling frequency experiment ap: Axivity, echo=FALSE}
+df_long_high_excl_aP$brand <- relevel(df_long_high_excl_aP$brand, ref = 3) 
+domFreq_intercept_id_high <- nlme::lme(domFreq ~ brand, random = ~ 1|id, 
+                                       method="ML", data = df_long_high_excl_aP)
+getOutputMM(domFreq_intercept_id_high)
+```
+
+
+
+
+
+
 
 ```{r Create boxplot mean power spectral density, include=FALSE}
 gridExtra::grid.arrange(bxp_psd_low, bxp_psd_high, nrow=1) #arranges plots within grid
