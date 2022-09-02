@@ -201,7 +201,7 @@ rm(fullmatrix_low, heatmap_low)
 ```
 
 ### Pairwise signal plots
-In this section pairwise plots are generated for cross-correlations that are 2 SD lower than the mean cross-correlation (i.e., threshold).
+In this section pairwise plots are generated for cross-correlations that are 1 SD lower than the mean cross-correlation (i.e., threshold).
 
 #### Descriptive statistics
 
@@ -209,23 +209,25 @@ In this section pairwise plots are generated for cross-correlations that are 2 S
 # cross-correlations
 M <- mean(correlation_matrices$low$correlationMatrix, na.rm = TRUE)
 SD <- sd(correlation_matrices$low$correlationMatrix, na.rm = TRUE)
-min <- min(correlation_matrices$low$correlationMatrix, na.rm = TRUE)
-max <- max(correlation_matrices$low$correlationMatrix, na.rm = TRUE)
-crosscorr_low_threshold <- M - 2*SD
-cross_correlations <- c(M, SD, min, max, crosscorr_low_threshold)
+Q1 <- quantile(correlation_matrices$low$correlationMatrix, na.rm = TRUE)[2]
+Median <- median(correlation_matrices$low$correlationMatrix, na.rm = TRUE)
+Q3 <- quantile(correlation_matrices$low$correlationMatrix, na.rm = TRUE)[4]
+crosscorr_low_threshold <- M - SD
+cross_correlations <- c(M, SD, Q1, Median, Q3, crosscorr_low_threshold)
 
 # lags
 M <- mean(correlation_matrices$low$lags, na.rm = TRUE)
 SD <- sd(correlation_matrices$low$lags, na.rm = TRUE)
-min <- min(correlation_matrices$low$lags, na.rm = TRUE)
-max <- max(correlation_matrices$low$lags, na.rm = TRUE)
+Q1 <- quantile(correlation_matrices$low$lags, na.rm = TRUE)[2]
+Median <- median(correlation_matrices$low$lags, na.rm = TRUE)
+Q3 <- quantile(correlation_matrices$low$lags, na.rm = TRUE)[4]
 low_threshold <- NA
-lags <- c(M, SD, min, max, low_threshold)
+lags <- c(M, SD, Q1, Median, Q3, low_threshold)
 
 tab <- rbind(cross_correlations, lags)
-colnames(tab) <- c("M", "SD", "min", "max", "threshold")
+colnames(tab) <- c("M", "SD", "Q1", "Median", "Q3", "threshold")
 tab
-rm(tab, M, SD, min, max, low_threshold)
+rm(tab, M, SD, Q1, Median, Q3, low_threshold)
 ```
 
 ```{r Low Frequency Experiment: Pairwise plots, include=FALSE}
@@ -251,8 +253,9 @@ heatmap_high <- corrplot::corrplot(pmax(fullmatrix_high, t(fullmatrix_high), na.
                                    col.lim = c(0,1), addCoef.col = 'black', tl.srt=45, diag = TRUE, 
                                    tl.col = "black")
 ```
+
 ### Pairwise signal plots
-In this section pairwise plots are generated for cross-correlations that are 2 SD lower than the mean cross-correlation (i.e., threshold).
+In this section pairwise plots are generated for cross-correlations that are 1 SD lower than the mean cross-correlation (i.e., threshold).
 
 #### Descriptive statistics
 
@@ -260,23 +263,25 @@ In this section pairwise plots are generated for cross-correlations that are 2 S
 # cross-correlations
 M <- mean(correlation_matrices$high$correlationMatrix, na.rm = TRUE)
 SD <- sd(correlation_matrices$high$correlationMatrix, na.rm = TRUE)
-min <- min(correlation_matrices$high$correlationMatrix, na.rm = TRUE)
-max <- max(correlation_matrices$high$correlationMatrix, na.rm = TRUE)
+Q1 <- quantile(correlation_matrices$high$correlationMatrix, na.rm = TRUE)[2]
+Median <- median(correlation_matrices$high$correlationMatrix, na.rm = TRUE)
+Q3 <- quantile(correlation_matrices$high$correlationMatrix, na.rm = TRUE)[4]
 crosscorr_high_threshold <- M - SD
-cross_correlations <- c(M, SD, min, max, crosscorr_high_threshold)
+cross_correlations <- c(M, SD, Q1, Median, Q3, crosscorr_high_threshold)
 
 # lags
 M <- mean(correlation_matrices$high$lags, na.rm = TRUE)
 SD <- sd(correlation_matrices$high$lags, na.rm = TRUE)
-min <- min(correlation_matrices$high$lags, na.rm = TRUE)
-max <- max(correlation_matrices$high$lags, na.rm = TRUE)
+Q1 <- quantile(correlation_matrices$high$lags, na.rm = TRUE)[2]
+Median <- median(correlation_matrices$high$lags, na.rm = TRUE)
+Q3 <- quantile(correlation_matrices$high$lags, na.rm = TRUE)[4]
 threshold_high <- NA
-lags <- c(M, SD, min, max, threshold_high)
+lags <- c(M, SD, Q1, Median, Q3, threshold_high)
 
 tab <- rbind(cross_correlations, lags)
-colnames(tab) <- c("M", "SD", "min", "max", "threshold")
+colnames(tab) <- c("M", "SD", "Q1", "Median", "Q3", "threshold")
 tab
-rm(tab, M, SD, min, max, threshold_high)
+rm(tab, M, SD, Q1, Median, Q3, threshold_high)
 ```
 
 ```{r High Sampling Frequency Experiment: Pairwise plots, include=FALSE}
@@ -316,8 +321,8 @@ correlations_between_low$correlation <- as.numeric(correlations_between_low$corr
 avg_cor <- tapply(correlations_between_low$correlation, correlations_between_low$brands, summary)
 
 tab <- rbind(avg_cor$GENEActivAxivity, avg_cor$MOXAxivity, avg_cor$MOXGENEActiv)
-tab <- tab[,-2]
-tab <- tab[,-4]
+tab <- tab[,-1]
+tab <- tab[,-5]
 
 SD <- tapply(correlations_between_low$correlation, correlations_between_low$brands, sd)
 SD <- c(SD[2], SD[4], SD[5])
@@ -335,8 +340,8 @@ SD <- tapply(correlations_between_high$correlation, correlations_between_high$br
 
 tab <- rbind(avg_cor$AxivityActigraph, avg_cor$GENEActivActigraph, avg_cor$GENEActivAxivity)
 rownames(tab) <- c("AxivityActigraph", "GENEActivActigraph", "GENEActivAxivity")
-tab <- tab[,-2]
-tab <- tab[,-4]
+tab <- tab[,-1]
+tab <- tab[,-5]
 
 SD <- c(SD[2], SD[4], SD[5])
 tab <- cbind(tab, SD)
