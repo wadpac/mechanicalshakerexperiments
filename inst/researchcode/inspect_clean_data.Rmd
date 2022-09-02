@@ -33,6 +33,16 @@ if (!file.exists(filename_flatHA)) {
 load(filename_flatHA)
 ```
 
+```{r Exclude activPAL data from high sampling frequency experiment, include = FALSE}
+index <- which(ms_flat_HA$specifications$brand == "Activpal" & ms_flat_HA$specifications$experiment == "ms_hfcr")
+specifications <- ms_flat_HA$specifications[-index,]
+data <- ms_flat_HA$data
+data[index] <- NULL
+
+ms_flat_HA_aP_excluded <- list(data = data, specifications = specifications)
+```
+
+
 ```{r Functions, include=FALSE}
 #' plotSignals
 #'
