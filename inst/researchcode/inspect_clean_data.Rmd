@@ -40,6 +40,7 @@ data <- ms_flat_HA$data
 data[index] <- NULL
 
 ms_flat_HA_aP_excluded <- list(data = data, specifications = specifications)
+rm(index, data, specifications, ms_flat_HA)
 ```
 
 
@@ -188,7 +189,7 @@ In this section the raw time series data is plotted and inspected.
 ## Signal plots
 ```{r Signal plots, include = FALSE}
 # Save a plot for each signal
-plot_list <- plotSignals(datadir, ms_flat_HA$data)
+plot_list <- plotSignals(datadir, ms_flat_HA_aP_excluded$data)
 rm(filename_flatHA)
 ```
 
@@ -202,43 +203,36 @@ rm(plot, plot_list)
 
 ## Descriptive statistics deviating signals
 Visual inspection of the time series plots showed clear signal deviations for the following devices: aP_490, aP_254 and Ax_406.
-This table presents the descriptive information of the deviating devices during both experiments.
+This table presents the descriptive information of the deviating devices.
 
 ```{r Descriptive data of deviating signals, echo=FALSE}
-deviates <- which(names(ms_flat_HA$data) %in% c("aP_490", "aP_254", "Ax_406"))
+deviates <- which(names(ms_flat_HA_aP_excluded$data) %in% c("aP_490", "aP_254", "Ax_406"))
 M <- c()
 SD <- c()
 min <- c()
 max <- c()
 experiment <- c()
 for (deviation in 1:length(deviates)){
-  M <- c(M, mean(ms_flat_HA$data[[deviates[[deviation]]]]$HA))
-  SD <- c(SD, sd(ms_flat_HA$data[[deviates[[deviation]]]]$HA))
-  min <- c(min, min(ms_flat_HA$data[[deviates[[deviation]]]]$HA))
-  max <- c(max, max(ms_flat_HA$data[[deviates[[deviation]]]]$HA))
-  experiment <- c(experiment, ms_flat_HA$specifications$experiment[deviates[deviation]])
+  M <- c(M, mean(ms_flat_HA_aP_excluded$data[[deviates[[deviation]]]]$HA))
+  SD <- c(SD, sd(ms_flat_HA_aP_excluded$data[[deviates[[deviation]]]]$HA))
+  min <- c(min, min(ms_flat_HA_aP_excluded$data[[deviates[[deviation]]]]$HA))
+  max <- c(max, max(ms_flat_HA_aP_excluded$data[[deviates[[deviation]]]]$HA))
+  experiment <- c(experiment, ms_flat_HA_aP_excluded$specifications$experiment[deviates[deviation]])
 }
 tab <- cbind(experiment, M, SD, min, max)
-rownames(tab) <- names(ms_flat_HA$data[deviates])
+rownames(tab) <- names(ms_flat_HA_aP_excluded$data[deviates])
 tab
 rm(deviation, M, SD, min, max, tab, experiment)
-# Raw data inspection of these devices
-#AP672490: in both experiments raw values around 7.3 (M = 7.332, SD = 0.01083037)
-# measured during all shaking frequencies
-#AP473254: in both experiments values around 0.3 (M = 0.32503, SD = 0.00628132) 
-# measured during all shaking frequencies
-#6011406: in both experiments value around 0 (M = -0.0148, SD = 0.2275247) 
-# min of -14 and max of -22 during shaking frequency of 0
 ```
 
 Deviating signals are removed and excluded from further analyses.
 
 ```{r Remove deviating signals and save data, include=FALSE}
-ms_flat_HA$data[deviates] <- NULL
-ms_flat_HA$specifications <- ms_flat_HA$specifications[-deviates,]
+ms_flat_HA_aP_excluded$data[deviates] <- NULL
+ms_flat_HA_aP_excluded$specifications <- ms_flat_HA_aP_excluded$specifications[-deviates,]
 
 cat("\nSaving data...")
-save(ms_flat_HA, file = paste0(datadir, "ms_flat_HA_deviates_removed.RData"))
+save(ms_flat_HA_aP_excluded, file = paste0(datadir, "ms_flat_HA_deviates_removed.RData"))
 rm(deviates)
 ```
 
@@ -246,8 +240,8 @@ rm(deviates)
 Remove the data for which the shaking frequency was null in order to avoid comparison of the signal noise. In addition we removed repeated measurements for some of the shaking frequencies because a device got loose during the high sampling frequency experiment.
 
 ```{r Clean the signals, include = FALSE}
-data_cleaned <- cleanSignals(ms_flat_HA)
-rm(ms_flat_HA)
+data_cleaned <- cleanSignals(ms_flat_HA_aP_excluded)
+rm(ms_flat_HA_aP_excluded)
 ```
 
 ## Cleaned signals
