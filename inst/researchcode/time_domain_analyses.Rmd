@@ -244,7 +244,9 @@ for(plot in 1:length(plots_low)){
 
 ## High sampling frequency experiment
 
-### Heatmap
+### Heatmaps
+This section presents the heatmaps for all devices and per brand.
+
 ```{r Heatmap high sampling frequency experiment, echo=FALSE, , out.extra='angle=90', fig.width=14, fig.height=14}
 fullmatrix_high <- correlation_matrices$high$correlationMatrix
 heatmap_high <- corrplot::corrplot(pmax(fullmatrix_high, t(fullmatrix_high), na.rm = TRUE), 
@@ -252,6 +254,36 @@ heatmap_high <- corrplot::corrplot(pmax(fullmatrix_high, t(fullmatrix_high), na.
                                    number.cex = 1.25, cl.cex = 2, tl.cex = 2,
                                    col.lim = c(0,1), addCoef.col = 'black', tl.srt=45, diag = TRUE, 
                                    tl.col = "black")
+```
+
+#### ActiGraph
+```{r Heatmap high sampling frequency experiment, echo=FALSE, , out.extra='angle=90', fig.width=14, fig.height=14}
+matrix_high_AG <- correlation_matrices$high$correlationMatrix[grep("AG",rownames(correlation_matrices$high$correlationMatrix)), grep("AG", colnames(correlation_matrices$high$correlationMatrix))] 
+heatmap_high_AG <- corrplot::corrplot(pmax(matrix_high_AG, t(matrix_high_AG), na.rm = TRUE), 
+                                      type = 'lower', method = 'color', order = "alphabet",
+                                      number.cex = 1.25, cl.cex = 2, tl.cex = 2,
+                                      col.lim = c(0,1), addCoef.col = 'black', tl.srt=45, diag = TRUE, 
+                                      tl.col = "black")
+```
+
+#### Axivity
+```{r Heatmap high sampling frequency experiment, echo=FALSE, , out.extra='angle=90', fig.width=14, fig.height=14}
+matrix_high_Ax <- correlation_matrices$high$correlationMatrix[grep("Ax",rownames(correlation_matrices$high$correlationMatrix)), grep("Ax", colnames(correlation_matrices$high$correlationMatrix))] 
+heatmap_high_Ax <- corrplot::corrplot(pmax(matrix_high_Ax, t(matrix_high_Ax), na.rm = TRUE), 
+                                      type = 'lower', method = 'color', order = "alphabet",
+                                      number.cex = 1.25, cl.cex = 2, tl.cex = 2,
+                                      col.lim = c(0,1), addCoef.col = 'black', tl.srt=45, diag = TRUE, 
+                                      tl.col = "black")
+```
+
+#### GENEActiv
+```{r Heatmap high sampling frequency experiment, echo=FALSE, , out.extra='angle=90', fig.width=14, fig.height=14}
+matrix_high_GA <- correlation_matrices$high$correlationMatrix[grep("GA",rownames(correlation_matrices$high$correlationMatrix)), grep("GA", colnames(correlation_matrices$high$correlationMatrix))] 
+heatmap_high_GA <- corrplot::corrplot(pmax(matrix_high_GA, t(matrix_high_GA), na.rm = TRUE), 
+                                      type = 'lower', method = 'color', order = "alphabet",
+                                      number.cex = 1.25, cl.cex = 2, tl.cex = 2,
+                                      col.lim = c(0,1), addCoef.col = 'black', tl.srt=45, diag = TRUE, 
+                                      tl.col = "black")
 ```
 
 ### Pairwise signal plots
