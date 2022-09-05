@@ -380,3 +380,22 @@ tab <- cbind(tab, SD)
 tab
 ```
 
+#### With and without ActiGraphs with IDLE sleepmode on
+```{r Descriptives high sampling frequency experiment ActiGraph IDLE mode, echo=FALSE}
+IDLE_on <- c("AG_", "", "") #
+
+CLE1B03130039
+CLE1B03130077
+CLE1B03130091
+CLE2B04130132
+MOS2A51130028
+MOS2B21140192
+MOS2D02170352
+MOS2D36155527
+MOS2D37156008
+
+matrix_high_GA <- correlation_matrices$high$correlationMatrix[grep("GA",rownames(correlation_matrices$high$correlationMatrix)), grep("GA", colnames(correlation_matrices$high$correlationMatrix))] 
+
+
+```
+
