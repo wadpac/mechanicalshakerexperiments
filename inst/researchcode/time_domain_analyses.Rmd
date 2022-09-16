@@ -194,7 +194,7 @@ rm(correlations_low, correlations_high)
 fullmatrix_low <- correlation_matrices$low$correlationMatrix
 heatmap_low <- corrplot::corrplot(pmax(fullmatrix_low, t(fullmatrix_low), na.rm = TRUE), 
                                   type = 'lower', method = 'color', order = "alphabet", 
-                                  number.cex = 2, cl.cex = 2, tl.cex = 2,
+                                  number.cex = 1.25, cl.cex = 2, tl.cex = 2,
                                   col.lim = c(0,1), addCoef.col = 'black', tl.srt = 45, 
                                   diag = TRUE, tl.col = "black")
 rm(fullmatrix_low, heatmap_low)
@@ -363,6 +363,9 @@ tab
 ```
 
 ### High sampling frequency experiment
+During the high sampling frequency experiment ActiGraph IDLE sleep mode accidentally turned on in nine devices. We therefore decided to report the cross-correlation for this experiment with and without these devices.
+
+#### Including ActiGraphs with IDLE sleep mode
 ```{r Descriptives high sampling frequency experiment, echo=FALSE}
 library(dplyr)
 correlations_between_high$correlation <- as.numeric(correlations_between_high$correlation)
@@ -380,22 +383,28 @@ tab <- cbind(tab, SD)
 tab
 ```
 
-#### With and without ActiGraphs with IDLE sleepmode on
+#### Excluding ActiGraphs with IDLE sleep mode
 ```{r Descriptives high sampling frequency experiment ActiGraph IDLE mode, echo=FALSE}
-IDLE_on <- c("AG_", "", "") #
+IDLE_on <- c("AG_CLE_039", "AG_CLE_077", "AG_CLE_091", "AG_CLE_132", "AG_MOS_028", 
+             "AG_MOS_192", "AG_MOS_352", "AG_MOS_527", "AG_MOS_008") #
 
-CLE1B03130039
-CLE1B03130077
-CLE1B03130091
-CLE2B04130132
-MOS2A51130028
-MOS2B21140192
-MOS2D02170352
-MOS2D36155527
-MOS2D37156008
+correlation_df_exclIDLE <- correlation_df$high[!correlation_df$high$device1 %in% IDLE_on,]
+correlation_df_exclIDLE <- correlation_df_exclIDLE[!correlation_df_exclIDLE$device2 %in% IDLE_on,]
 
-matrix_high_GA <- correlation_matrices$high$correlationMatrix[grep("GA",rownames(correlation_matrices$high$correlationMatrix)), grep("GA", colnames(correlation_matrices$high$correlationMatrix))] 
+correlations_between_high_exclIDLE <- correlation_df_exclIDLE[correlation_df_exclIDLE$same_brand =="0", ]
 
+correlations_between_high_exclIDLE$correlation <- as.numeric(correlations_between_high_exclIDLE$correlation)
+avg_cor <- tapply(correlations_between_high_exclIDLE$correlation, correlations_between_high_exclIDLE$brands, summary)
+SD <- tapply(correlations_between_high_exclIDLE$correlation, correlations_between_high_exclIDLE$brands, sd)
+
+tab <- rbind(avg_cor$AxivityActigraph, avg_cor$GENEActivActigraph, avg_cor$GENEActivAxivity)
+rownames(tab) <- c("AxivityActigraph", "GENEActivActigraph", "GENEActivAxivity")
+tab <- tab[,-1]
+tab <- tab[,-5]
+
+SD <- c(SD[2], SD[4], SD[5])
+tab <- cbind(tab, SD)
+tab
 
 ```
 
