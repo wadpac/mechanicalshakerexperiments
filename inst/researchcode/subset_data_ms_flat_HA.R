@@ -34,14 +34,14 @@ for (brand in 1:length(brands_to_load)) {
         tmp <- extracteddata$data[[file]] #tmp is the structured data now
         if(length(which(tmp > 0))) {
           tmp$time = as.POSIXct(tmp$time, origin = "1970-01-01", tz="Europe/Amsterdam")
-          # Check if the x-axis was the axis aligned with the shaker direction 
+          # Check if the x-axis was the axis aligned with the shaker direction
           maxAxes <- c(sd(tmp$x), sd(tmp$y), sd(tmp$z)) # calculate the standard deviation of the axes
           HA <- unlist(tmp[which.max(maxAxes) + 1]) # select the axis with the highest SD as this will be the shaking direction
           tmp = tmp[, c("shaking_frequency", "time")] # select data for the HA (x-axis), time, and shaking_frequency
           tmp$HA <- HA
           ms_flat_HA$data[[counter]] <- tmp
           counter = counter + 1
-          specs <- c(extracteddata$specifications[file,"label"], extracteddata$specifications[file,"serial_number"], brands_to_load[brand], experiments_to_load[experiment], 
+          specs <- c(extracteddata$specifications[file,"label"], extracteddata$specifications[file,"serial_number"], brands_to_load[brand], experiments_to_load[experiment],
                      extracteddata$specifications[file,"sampling_frequency"], extracteddata$specifications[file,"dynamic_range"])
           specifications <- rbind(specifications, unname(specs))
         }
