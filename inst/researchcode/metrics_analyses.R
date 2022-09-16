@@ -1,4 +1,4 @@
-rm(list=ls())
+rm(list = ls())
 graphics.off()
 
 # Update to be your local directory, if all goes well this is the only line you will have to update
@@ -19,7 +19,7 @@ library(SummarizedActigraphy)
 library(MIMSunit)
 library(activityCounts)
 options(digits.secs = 7)
-options(scipen=999)
+options(scipen = 999)
 # library("MIMSunit")
 
 #====================================================================================
@@ -34,16 +34,16 @@ if (!dir.exists(calib_files)) {
 fns = dir(extracted_data_path, full.names = TRUE)
 outputfile = paste0(shaker_experiments_folder, "/metric_analyses/explore_metrics.RData")
 sessionames = c("pro2_ses1", "pro2_ses2", "pro2_ses3") # "pro3_ses3" #<= ignore protocol session 3 for now as this did not have flat orientation
-overwrite= FALSE
+overwrite = FALSE
 epochsize = 5
 averageperws3 = function(x,sf,epochsize) {
-  x2 =cumsum(c(0,x))
-  select = seq(1,length(x2),by=sf*epochsize)
+  x2 = cumsum(c(0, x))
+  select = seq(1,length(x2), by = sf * epochsize)
   x3 = diff(x2[round(select)]) / abs(diff(round(select)))
 }
 if (!file.exists(outputfile) | overwrite == TRUE) {
   combineddata <- list()
-  sn_ignored= c()
+  sn_ignored = c()
   cnt  = 1
   for (ses_name in sessionames) { #
     ses1 = grep(basename(fns), pattern = ses_name)
@@ -67,10 +67,10 @@ if (!file.exists(outputfile) | overwrite == TRUE) {
           sf = as.numeric(extractedata$specifications[i, "sampling_frequency"])
           sn = as.character(extractedata$specifications[i, "serial_number"])
           if (brand == "Actigraph" | brand == "Activpal") {
-            tmp$time = as.POSIXct(tmp$time, origin = "1970-01-01", tz="Europe/Amsterdam")
+            tmp$time = as.POSIXct(tmp$time, origin = "1970-01-01", tz = "Europe/Amsterdam")
             tmp = tmp[, c("time","X","Y","Z","shaking_frequency")] #,"shaking_frequency"
           } else if (brand == "Axivity" | brand == "GENEActiv" ) {
-            tmp$time = as.POSIXct(tmp$time, origin = "1970-01-01", tz="Europe/Amsterdam")
+            tmp$time = as.POSIXct(tmp$time, origin = "1970-01-01", tz = "Europe/Amsterdam")
             tmp = tmp[, c("time","x","y","z","shaking_frequency")] #
             colnames(tmp)[2:4] = c("X", "Y", "Z")
           }
@@ -86,8 +86,8 @@ if (!file.exists(outputfile) | overwrite == TRUE) {
           }
           #-----------------------------------------
           # fill time gaps, which is needed for Actigraph, which can go into sleep.mode
-          time_gaps= 1
-          while(length(time_gaps) > 0) {
+          time_gaps = 1
+          while (length(time_gaps) > 0) {
             dt = diff(as.numeric(tmp$HEADER_TIME_STAMP))
             time_gaps = which(dt > 1)
             
@@ -98,10 +98,10 @@ if (!file.exists(outputfile) | overwrite == TRUE) {
                 inpute = as.data.frame(matrix(0, dt[time_gaps[j]]*sf, ncol(tmp)))
                 colnames(inpute) = colnames(tmp)
                 newtime = seq(tmp$HEADER_TIME_STAMP[time_gaps[j]], 
-                              tmp$HEADER_TIME_STAMP[time_gaps[j]+1], by = 1/sf)
+                              tmp$HEADER_TIME_STAMP[time_gaps[j] + 1], by = 1/sf)
                 inpute$HEADER_TIME_STAMP = newtime[1:nrow(inpute)]
                 if (j == 1) {
-                  cnt2 = time_gaps[j]-1
+                  cnt2 = time_gaps[j] - 1
                 } else {
                   cnt2 = nrow(tmp2)
                 }
@@ -110,7 +110,7 @@ if (!file.exists(outputfile) | overwrite == TRUE) {
                 if (j != length(time_gaps)) {
                   tmp2 = rbind(tmp2[1:cnt2,], inpute)
                 } else {
-                  tmp2 = rbind(tmp2[1:cnt2,], inpute, tmp[(time_gaps[j]+1):nrow(tmp),])
+                  tmp2 = rbind(tmp2[1:cnt2,], inpute, tmp[(time_gaps[j] + 1):nrow(tmp),])
                 }
               }
               tmp = tmp2
@@ -120,7 +120,7 @@ if (!file.exists(outputfile) | overwrite == TRUE) {
           if (length(negativ_shakef) > 0) {
             tmp$shaking_frequency[negativ_shakef] = -100000
           }
-          shakefreq = averageperws3(x= tmp$shaking_frequency,sf,epochsize=5)
+          shakefreq = averageperws3(x = tmp$shaking_frequency, sf, epochsize = 5)
           shakefreq[which(shakefreq < 0)] = -1
           tmp = tmp[,-which(colnames(tmp) == "shaking_frequency")]
           #-----------------------------------------------------------
@@ -167,31 +167,31 @@ if (!file.exists(outputfile) | overwrite == TRUE) {
                   verbose = FALSE)
                 # # Turned off because too slow to compute
                 # S_MIMSunit = MIMSunit::mims_unit(df = tmp, epoch = '5 sec', dynamic_range = c(-DR, DR), output_mims_per_axis = TRUE)
-                TIMESTAMPS = tmp$HEADER_TIME_STAMP[seq(1,nrow(tmp), by = sf*5)]
+                TIMESTAMPS = tmp$HEADER_TIME_STAMP[seq(1, nrow(tmp), by = sf * 5)]
                 AI = out_i$AI
                 
                 #========================================================
                 # implement simplified and faster mims:
-                MIMSlight_fun = function(df, epochsize=5, acc_columns = 2:4, range=8) {
-                  averageperepoch = function(x,sf,epochsize) { 
+                MIMSlight_fun = function(df, epochsize = 5, acc_columns = 2:4, range = 8) {
+                  averageperepoch = function(x, sf, epochsize) { 
                     # I am aware that this is numerically unstable, but in our use-case
                     # expected drop in precision is far beyond required precision
                     # and by that acceptable.
-                    x2 =cumsum(c(0,x))
-                    select = seq(1,length(x2),by=sf*epochsize)
+                    x2 = cumsum(c(0, x))
+                    select = seq(1, length(x2), by = sf * epochsize)
                     x3 = diff(x2[round(select)]) / abs(diff(round(select)))
                   }
                   bf_filter = function(lb, hb, n, sf) {
-                    hb = ifelse(test = sf <= (hb*2), yes = (sf / 2) - 0.1, no = hb)
+                    hb = ifelse(test = sf <= (hb * 2), yes = (sf / 2) - 0.1, no = hb)
                     Wc = matrix(0,2,1)
                     Wc[1,1] = lb / (sf/2) # lb: lower boundary
                     Wc[2,1] = hb / (sf/2) # hb: higher boundary
-                    return(signal::butter(n,Wc,type=c("pass"))) 
+                    return(signal::butter(n, Wc, type = c("pass"))) 
                   }
                   mims_per_axis = matrix(NA, floor(nrow(df) / (sf*epochsize)), 3)
                   # df = MIMSunit::extrapolate(df, range=range)
                   for (i in acc_columns) {
-                    coef = bf_filter(lb=0.2, hb=5, n=4, sf=sf)
+                    coef = bf_filter(lb = 0.2, hb = 5, n = 4, sf = sf)
                     filtered_signal = signal::filter(coef, df[,i])
                     # using this way of aggregating is a lot faster, but comes at the price of
                     # new value differences with the original approach, if I insert the orignal approach
@@ -200,12 +200,12 @@ if (!file.exists(outputfile) | overwrite == TRUE) {
                     BFSM_per_axis = averageperepoch(abs(filtered_signal), sf, epochsize)
                     noise = which(BFSM_per_axis < 0.01) # MIMSunit gives zeros when sensor not moving, so we do same
                     if (length(noise) > 0) BFSM_per_axis[noise] = 0
-                    mims_per_axis[,i-1] = BFSM_per_axis * epochsize
+                    mims_per_axis[, i - 1] = BFSM_per_axis * epochsize
                   }
                   MIMSlight = rowSums(mims_per_axis)
                   return(MIMSlight)
                 }
-                MIMSlight = MIMSlight_fun(df=tmp, epochsize=5, acc_columns = 2:4, range = 8)
+                MIMSlight = MIMSlight_fun(df = tmp, epochsize = 5, acc_columns = 2:4, range = 8)
                 
                 #===================================================================
                 # Standardise size of objects and put in single data.frame
@@ -218,14 +218,14 @@ if (!file.exists(outputfile) | overwrite == TRUE) {
                   }
                   return(x)
                 }
-                EN  = checklen(EN, TIMESTAMPS, RR= 1)
-                AI  = checklen(AI, TIMESTAMPS)
+                EN = checklen(EN, TIMESTAMPS, RR = 1)
+                AI = checklen(AI, TIMESTAMPS)
                 MAD  = checklen(MAD, TIMESTAMPS)
                 ENMO  = checklen(ENMO, TIMESTAMPS)
                 MIMSlight = checklen(MIMSlight, TIMESTAMPS)
-                HFEN =checklen(HFEN, TIMESTAMPS)
-                HFENplus =checklen(HFENplus, TIMESTAMPS)
-                BFEN =checklen(BFEN, TIMESTAMPS)
+                HFEN = checklen(HFEN, TIMESTAMPS)
+                HFENplus = checklen(HFENplus, TIMESTAMPS)
+                BFEN = checklen(BFEN, TIMESTAMPS)
                 # MIMS_UNIT= checklen(MIMS_UNIT, TIMESTAMPS) 
                 shakefreq = checklen(shakefreq, TIMESTAMPS)
                 
@@ -295,15 +295,15 @@ D = Dnew
 #=============================================================================
 # Assess whether metrics differ across brands with repeated measures ANOVA
 brands_of_interest = c("GENEActiv", "Axivity", "ActigraphCLE", "ActigraphMOS", "Activpal")
-selection = which(D$ses_name=="pro2_ses2" & D$brand %in% brands_of_interest)
-fitEN = aov(EN ~ brand + Error(shakefreq), data=D[selection,])
-fitENMO = aov(ENMO ~ brand + Error(shakefreq),data=D[selection,])
-fitMAD = aov(ENMO ~ brand + Error(shakefreq),data=D[selection,])
-fitMIMSlight = aov(MIMSlight ~ brand + Error(shakefreq), data=D[selection,])
-fitAI = aov(AI ~ brand + Error(shakefreq), data=D[selection,])
-fitBFEN = aov(BFEN ~ brand + Error(shakefreq), data=D[selection,])
-fitHFEN = aov(HFEN ~ brand + Error(shakefreq), data=D[selection,])
-fitHFENplus = aov(HFENplus ~ brand + Error(shakefreq), data=D[selection,])
+selection = which(D$ses_name == "pro2_ses2" & D$brand %in% brands_of_interest)
+fitEN = aov(EN ~ brand + Error(shakefreq), data = D[selection,])
+fitENMO = aov(ENMO ~ brand + Error(shakefreq), data = D[selection,])
+fitMAD = aov(ENMO ~ brand + Error(shakefreq), data = D[selection,])
+fitMIMSlight = aov(MIMSlight ~ brand + Error(shakefreq), data = D[selection,])
+fitAI = aov(AI ~ brand + Error(shakefreq), data = D[selection,])
+fitBFEN = aov(BFEN ~ brand + Error(shakefreq), data = D[selection,])
+fitHFEN = aov(HFEN ~ brand + Error(shakefreq), data = D[selection,])
+fitHFENplus = aov(HFENplus ~ brand + Error(shakefreq), data = D[selection,])
 
 # print("EN, ENMO, MAD")
 # print(summary(fitEN))
@@ -318,19 +318,19 @@ fitHFENplus = aov(HFENplus ~ brand + Error(shakefreq), data=D[selection,])
 #=============================================================================
 # Create plot per protocol session
 # to ease visualisation we only look at average per shaker frequency per device (so, no epoch values): 
-D$time=as.numeric(D$time) # convert to numeric to ease aggregation
+D$time = as.numeric(D$time) # convert to numeric to ease aggregation
 D = aggregate(D, list(D$ses_name, D$shakefreq, D$brand, D$sn), FUN = mean)
 colnames(D)[1:4] = c("ses_name", "shakefreq", "brand", "sn")
 D = D[,c("brand","ses_name", "sn", "time", "EN", "MAD",
          "AI", "ENMO", "MIMSlight", "HFENplus", "HFEN", "BFEN", "shakefreq")]
-D$time=as.POSIXlt(D$time, tz = "Europe/Amsterdam", origin ="1970-01-01")
+D$time = as.POSIXlt(D$time, tz = "Europe/Amsterdam", origin = "1970-01-01")
 # D = D[-which(D$brand == "Activpal"),]
 
 CX = 0.7
 pdf(file = "~/data/VUMC/shaker_experiments/metric_analyses/inspect_metrics.pdf")
 for (metric in c("EN", "MAD", "AI", "ENMO", "MIMSlight",  "HFENplus", "HFEN", "BFEN")) { #
-  par(mfrow=c(1,3))  
-  YLIM = range(D[,metric], na.rm=TRUE)
+  par(mfrow = c(1,3))  
+  YLIM = range(D[,metric], na.rm = TRUE)
   YLIM[2] = min(YLIM[2], 4)
   for (ses_name in sessionames) {
     GA = which(D$brand == "GENEActiv" & D$ses_name == ses_name)
@@ -338,14 +338,14 @@ for (metric in c("EN", "MAD", "AI", "ENMO", "MIMSlight",  "HFENplus", "HFEN", "B
     AGC = which(D$brand == "ActigraphCLE" & D$ses_name == ses_name)
     AGM = which(D$brand == "ActigraphMOS" & D$ses_name == ses_name)
     AP = which(D$brand == "Activpal" & D$ses_name == ses_name)
-    plot(D$time[GA], D[GA, metric], type="p", pch=20, cex=CX, main= ses_name, ylab=metric, 
-         xlab="time", ylim=YLIM)
-    lines(D$time[AX], D[AX, metric], type="p", pch=20, col="blue", cex=CX)
-    lines(D$time[AGC], D[AGC, metric], type="p", pch=20, col="red", cex=CX)
-    lines(D$time[AGM], D[AGM, metric], type="p",pch=20, col="green", cex=CX)
-    lines(D$time[AP], D[AP, metric], type="p", pch=20, col="purple", cex=CX)
+    plot(D$time[GA], D[GA, metric], type = "p", pch = 20, cex = CX, main = ses_name, ylab = metric, 
+         xlab = "time", ylim = YLIM)
+    lines(D$time[AX], D[AX, metric], type = "p", pch = 20, col = "blue", cex = CX)
+    lines(D$time[AGC], D[AGC, metric], type = "p", pch = 20, col = "red", cex = CX)
+    lines(D$time[AGM], D[AGM, metric], type = "p",pch = 20, col = "green", cex = CX)
+    lines(D$time[AP], D[AP, metric], type = "p", pch = 20, col = "purple", cex = CX)
     legend("topleft",legend = c("GENEActiv","Axivity","Actigraph_CLE","Actigraph_MOS", "Activpal"),
-           col = c("black","blue","red", "green", "purple"), lty=1) #, 
+           col = c("black","blue","red", "green", "purple"), lty = 1) #, 
   }
 }
 dev.off()
