@@ -43,7 +43,7 @@ rm(filename_high, filename_low)
 ```{r Functions, include=FALSE}
 #' deriveSpectrum
 #'
-#' @description 'deriveSectrum' derives the frequency spectrum of a signal (called from within derivePeakIntervals to derive smoothed spectrum)
+#' @description 'deriveSpectrum' derives the frequency spectrum of a signal (called from within derivePeakIntervals to derive smoothed spectrum)
 #'
 #' @param x Vector that contains the values of the signal (i.e., acceleration)
 #' @param sampling_frequency Integer that indicates the sampling frequency of the signal (i.e., the average number of samples obtained in one second in Hz)
@@ -174,9 +174,9 @@ getOutputMM <- function(finalModel) {
 }
 ```
 
-# Raw frequency spectra
+# Frequency spectra
 
-In this section the raw frequency spectra are printed for each accelerometer recording  and for both experiments separately.
+This section presents the frequency spectra. First the mean frequency spectra for both experiments plotted to derive frequency bins. Second, frequency spectra are printed for each accelerometer recording including red lines that indicate these bins for both experiments seperately.
 
 ```{r Settings for frequency spectra, include=FALSE}
 # Plot parameters
@@ -185,6 +185,9 @@ xlabel = "Frequency (Hertz)"
 ylabel = "Spectral Density (g2/Hertz)"
 XLIM = c(0, 5) # Limit frequency content to 5 Hz (as 250 rpm / 60 = 4.1667 Hz is the expected max)
 ```
+
+## Mean frequency spectra
+### Low sampling frequency experiment
 
 ```{r Derive frequency spectra low sampling frequency experiment, echo=FALSE}
 # DERIVE RAW FREQUENCY SPECTRA (for visual inspection and save data for further analysis)
@@ -201,6 +204,32 @@ rm(rawSpectrum, file)
 names(raw.spectra_low) <- clean_data_low$specifications$label  
 ```
 
+Here all raw frequency spectra are plotted in one figure.
+
+```{r Frequency spectra low sampling frequency in same plot, echo=FALSE}
+p <-  plot(raw.spectra_low[[1]]$specx, raw.spectra_low[[1]]$specy, xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l")
+for(spectrum in 2:length(raw.spectra_low)){
+  p <- p + lines(raw.spectra_low[[spectrum]]$specx, raw.spectra_low[[spectrum]]$specy)
+}
+```
+Here the mean frequency spectrum is plotted.
+
+```{r Mean frequency spectrum low sampling frequency, echo=FALSE}
+df_specx <- data.frame()
+df_specy <- data.frame()
+for(spectrum in 1:length(raw.spectra_low)){
+  df_specx <- rbind(df_specx, raw.spectra_low[[spectrum]]$specx)
+  df_specy <- rbind(df_specy, raw.spectra_low[[spectrum]]$specy)
+}
+x_low <- colMeans(df_specx)
+y_low <- colMeans(df_specy)
+
+plot(x_low, y_low, xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l", main = )
+
+```
+
+### High sampling frequency experiment
+
 ```{r Derive frequency spectra high sampling frequency experiment, echo=FALSE}
 # DERIVE RAW FREQUENCY SPECTRA (for visual inspection and save data for further analysis)
 raw.spectra_high <- list() 
@@ -216,6 +245,31 @@ rm(rawSpectrum, file)
 names(raw.spectra_high) <- clean_data_high$specifications$label
 ```
 
+
+Here all raw frequency spectra are plotted in one figure.
+
+```{r Frequency spectra high sampling frequency in same plot, echo=FALSE}
+p <-  plot(raw.spectra_high[[1]]$specx, raw.spectra_high[[1]]$specy, xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l")
+for(spectrum in 2:length(raw.spectra_high)){
+  p <- p + lines(raw.spectra_high[[spectrum]]$specx, raw.spectra_high[[spectrum]]$specy)
+}
+```
+
+Here the mean frequency spectrum is plotted.
+
+```{r Mean frequency spectrum high sampling frequency, echo=FALSE}
+df_specx <- data.frame()
+df_specy <- data.frame()
+for(spectrum in 1:length(raw.spectra_high)){
+  df_specx <- rbind(df_specx, raw.spectra_high[[spectrum]]$specx)
+  df_specy <- rbind(df_specy, raw.spectra_high[[spectrum]]$specy)
+}
+x_high <- colMeans(df_specx)
+y_high <- colMeans(df_specy)
+
+plot(x_high, y_high, xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l", main = )
+
+```
 ```{r Save raw spectra, include=FALSE}
 raw_spectra <- list(high = raw.spectra_high, specifications_high = clean_data_high$specifications,
                     low = raw.spectra_low, specifications_low = clean_data_low$specifications) # Save derived raw spectra for HA in one list
