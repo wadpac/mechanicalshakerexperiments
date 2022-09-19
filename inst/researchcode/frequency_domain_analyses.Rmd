@@ -40,7 +40,7 @@ load(filename_low)
 rm(filename_high, filename_low)
 ```
 
-```{r Functions, include =FALSE}
+```{r Functions, include=FALSE}
 #' deriveSpectrum
 #'
 #' @description 'deriveSectrum' derives the frequency spectrum of a signal (called from within derivePeakIntervals to derive smoothed spectrum)

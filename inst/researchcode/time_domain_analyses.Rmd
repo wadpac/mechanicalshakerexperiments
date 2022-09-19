@@ -40,7 +40,7 @@ rm(filename_high, filename_low)
 ```
 
 ```{r Functions, include=FALSE}
-#' computeCrossCorrelations
+#' computeCrossCorrelatios
 #'
 #' @description 'computeCrossCorrelations' computes the maximum cross-correlations between two signals and the corresponding lag
 #' @param data An object of class "spec"
@@ -366,7 +366,7 @@ tab
 During the high sampling frequency experiment ActiGraph IDLE sleep mode accidentally turned on in nine devices. We therefore decided to report the cross-correlation for this experiment with and without these devices.
 
 #### Including ActiGraphs with IDLE sleep mode
-```{r Descriptives high sampling frequency experiment, echo=FALSE}
+```{r Descriptives high sampling frequency experiment incl IDLE, echo=FALSE}
 library(dplyr)
 correlations_between_high$correlation <- as.numeric(correlations_between_high$correlation)
 # table_between_high <- correlations_between_high %>% group_by(brands)
@@ -384,7 +384,7 @@ tab
 ```
 
 #### Excluding ActiGraphs with IDLE sleep mode
-```{r Descriptives high sampling frequency experiment ActiGraph IDLE mode, echo=FALSE}
+```{r Descriptives high sampling frequency experiment ActiGraph excl IDLE mode, echo=FALSE}
 IDLE_on <- c("AG_CLE_039", "AG_CLE_077", "AG_CLE_091", "AG_CLE_132", "AG_MOS_028", 
              "AG_MOS_192", "AG_MOS_352", "AG_MOS_527", "AG_MOS_008") #
 
