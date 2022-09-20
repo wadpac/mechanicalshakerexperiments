@@ -100,12 +100,65 @@ deriveMeanSpectrum <- function(spectra) {
   return(spec)
 }
 
+#' derivePeaks
+#'
+#' @description 'derivePeaks' derives peaks from the mean frequency spectrum
+#'
+#' @param mean.spec A list containing estimates of the spectral density (y) at corresponding frequencies (x)
+#' @param sampling_frequency An integer indicating whether peaks are derived for the low or high sampling frequency experiment, one of c(25, 100) 
+#' @param XLIM Vector that limits the frequency content, default is c(0, 5) to limit the frequency content to 5 Hz (as 250 rpm / 60 = 4.1667 Hz is the expected max)
+#' @param plot Boolean, default is TRUE the derived peaks will be plotted over the mean frequency spectrum
+#' @return A vector indicating the frequencies at which the peaks occur 
+#' @export
+derivePeaks <- function(mean.spec, sampling_frequency, XLIM = c(0, 5), plot = TRUE) {
+  peaks <- pracma::findpeaks(mean.spec$y[mean.spec$x <= XLIM[2]], 
+                             minpeakheight = mean(mean.spec$y) + sd(mean.spec$y) , 
+                             minpeakdistance = 4*sampling_frequency)
+  local.max <- mean.spec$x[sort(peaks[,2])]
+  local.max <- local.max[local.max <= XLIM[2]]
+  
+  if (plot == TRUE){
+    plot <- plot(mean.spec$x, mean.spec$y,  xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l", main = "Detected peaks")
+    for(max in 1:length(local.max)){
+      p <- plot + abline(v=local.max[max], col = "red")
+    }
+  }
+  return(local.max)
+}
+
+#' deriveBins
+#'
+#' @description 'deriveBins' derives frequency bins from the peaks detected in the mean frequency spectrum
+#'
+#' @param peaks A vector containing the corresponding frequencies of where the peaks (local maxima) are located
+#' @param mean.spec A list containing estimates of the spectral density (y) at corresponding frequencies (x)
+#' @param XLIM Vector that limits the frequency content, default is c(0, 5) to limit the frequency content to 5 Hz (as 250 rpm / 60 = 4.1667 Hz is the expected max)
+#' @param plot Boolean, default is TRUE the derived bins will be plotted over the mean frequency spectrum
+#' @return A vector indicating the frequencies at which the peaks occur 
+#' @export
+deriveBins <- function(peaks, mean.spec, XLIM = c(0, 5), plot = TRUE) {
+  peaks <- c(XLIM[1], peaks)
+  
+  freq.bin <- c()
+  for(bin in 2:length(peaks)){
+    freq.bin <- c(freq.bin, (peaks[bin-1] + peaks[bin])/2)
+  }
+  if(plot == TRUE){
+    plot <- plot(mean.spec$x, mean.spec$y,  xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l", main = "Derived frequency cut-offs")
+    for(bin in 1:length(freq.bin)){
+      p <- plot + abline(v=freq.bin[bin], col = "red")
+    }  
+  }
+  freq.bin <- c(XLIM[1], freq.bin, XLIM[2])
+  return(freq.bin)
+}
+
 #' deriveComparisonValues
 #'
 #' @description 'deriveComparisonValues' derives the dominant frequency and the mean power spectral density from a frequency spectrum
 #'
 #' @param spectrum An object of class "spec"
-#' @param freqBins Vector containing frequency values that define the frequency bins (can be derived using the function 'defineFreqBins') 
+#' @param freqBins Vector containing frequency values that define the frequency bins (can be derived using the function 'deriveBins') 
 #' @return Data.frame consisting of two columns: \item{domFreq}{The dominant frequency of the signal in each frequency bin} \item{meanPSD}{The mean power spectral density of the signal in each frequency bin}
 #' @export
 deriveComparisonValues <- function(spectrum, freqBins){
@@ -254,19 +307,24 @@ plot(mean.freqspec_high$x, mean.freqspec_high$y, xlab = xlabel, ylab = ylabel, t
 ```{r Save raw spectra, include=FALSE}
 raw_spectra <- list(high = raw.spectra_high, high_mean = mean.freqspec_high, specifications_high = clean_data_high$specifications,
                     low = raw.spectra_low, low_mean = mean.freqspec_low, specifications_low = clean_data_low$specifications) # Save derived raw spectra for HA in one list
-#cat("\nSaving data...")
 save(raw_spectra, file = paste0(datadir, "frequency_spectra.RData"))
-rm(raw.spectra_high, raw.spectra_low, HA, sampling_frequency)
+rm(raw.spectra_high, raw.spectra_low, HA, sampling_frequency, mean.freqspec_high, mean.freqspec_low)
 ```
 
 ## Frequency bins
-We grouped the 19 shaker conditions (30, 40, 50, 62, 75, 87, 100, 112, 125, 137, 150, 160, 175, 187, 200, 212, 225, 237, and 250 rotations per minute) into groups of two, and divided the boundary values between the transitions (56, 81, 106, 131, 155, 181, 206, 231, and <300 rpm) by 60 to derive the associated frequency in Hertz. This resulted in the following associated frequencies: 0.93, 1.35, 1.77, 2.18, 2.58, 3.02, 3.43, 3.85, and 5.00 Hz. 
-These associated frequencies were used as cut-offs for frequency bins, over which aggregated outcome values (i.e., dominant frequency and mean power spectral density) were calculated for statistical comparison between brands.
+We derived frequency peaks from the mean frequency spectra for both experiments separately, and derived their associated frequencies in Hertz to indicate where the peaks were localized. We paired these peak locations and divided them by two to derive the frequency cut-offs for the bins to ensure these peaks fell within the frequency bins. Aggregated outcome values (i.e., dominant frequency and mean power spectral density) were calculated over the frequency bins for statistical comparison between brands.
 
-```{r Derive frequency bins, include=FALSE}
-rpm <- c(56, 81, 106, 131, 155, 181, 206, 231)
-shaking_frequencies <- rpm / 60
-rm(rpm)
+### Derive frequency bins
+
+#### Low sampling experiment
+```{r Derive frequency bins low sampling frequency, echo=FALSE}
+peaks_low <- derivePeaks(raw_spectra$low_mean, 25, XLIM, plot = TRUE)
+bins_low <- deriveBins(peaks_low, raw_spectra$low_mean, XLIM = c(0, 5), plot = TRUE) 
+```
+#### High sampling experiment
+```{r Derive frequency bins high sampling frequency, echo=FALSE}
+peaks_high <- derivePeaks(raw_spectra$high_mean, 100, XLIM, plot = TRUE)
+bins_high <- deriveBins(peaks_high, raw_spectra$high_mean, XLIM = c(0, 5), plot = TRUE) 
 ```
 
 ### Frequency spectrum plots
