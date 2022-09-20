@@ -43,12 +43,13 @@ rm(filename_high, filename_low)
 ```{r Functions, include=FALSE}
 #' deriveSpectrum
 #'
-#' @description 'deriveSpectrum' derives the frequency spectrum of a signal (called from within derivePeakIntervals to derive smoothed spectrum)
+#' @description 'deriveSpectrum' derives the frequency spectrum of a signal
 #'
 #' @param x Vector that contains the values of the signal (i.e., acceleration)
 #' @param sampling_frequency Integer that indicates the sampling frequency of the signal (i.e., the average number of samples obtained in one second in Hz)
-#' @param raw Boolean, if TRUE the raw frequency spectrum will be derived, FALSE: smoothed spectrum will be derived
 #' @param file_name String to indicate the name of the plot (i.e., "spectrum" result in the following name for plot 1 "spectrum_1.jpeg").
+#' @param plot Boolean, default is TRUE the derived spectrum will be plotted
+#' @param XLIM Vector that limits the frequency content of the plot, default is c(0, 5) to limit the frequency content to 5 Hz (as 250 rpm / 60 = 4.1667 Hz is the expected max)
 #' @return An object of class "spec", which is a list containing at least the following components: 
 #' \item{freq}{Vector of frequencies at which the spectral density is estimated.} 
 #' \item{spec}{Vector (for univariate series) or matrix (for multivariate series) of estimates of the spectral density at frequencies corresponding to freq.}
@@ -58,12 +59,9 @@ rm(filename_high, filename_low)
 #' \item{snames}{For multivariate input, the names of the component series.}
 #' \item{method}{The method used to calculate the spectrum.} 
 #' @export
-deriveSpectrum <- function(x, sampling_frequency, raw = TRUE, file_name) {
-  if(raw == TRUE){
-    specd <- spectrum(x, log = "no", plot = FALSE) # Default calculate spectrum on log-scale, but we use raw data
-  } else {
-    specd <- spectrum(x, log = "no", span = 75, plot = FALSE) # Smooth the raw signal
-  }
+deriveSpectrum <- function(x, sampling_frequency, file_name, plot = TRUE, XLIM = c(0, 5)) {
+  specd <- spectrum(x, log = "no", plot = FALSE) # Default calculate spectrum on log-scale, but we use raw data
+  
   # Frequency axis of the spectrum, specd, is calculated in terms of cycles per sampling interval
   delta <- 1/sampling_frequency
   specd$specx <- specd$freq/delta # Converts to cycles per unit time (divide by sampling interval)
@@ -78,6 +76,28 @@ deriveSpectrum <- function(x, sampling_frequency, raw = TRUE, file_name) {
     dev.off()
   }
   return(specd)
+}
+
+#' deriveMeanSpectrum
+#'
+#' @description 'deriveMeanSpectrum' derives the mean frequency spectrum from the derived spectra
+#'
+#' @param spectra A list containing the raw spectra over which the mean will be derived
+#' @return A list containing two following elements: 
+#' \item{x}{Vector of frequencies at which the spectral density (y) is estimated} 
+#' \item{y}{Vector of estimates of the spectral density at frequencies corresponding to frequencies (x)}
+#' @export
+deriveMeanSpectrum <- function(spectra) {
+  df_specx <- data.frame()
+  df_specy <- data.frame()
+  for(spectrum in 1:length(spectra)){
+    df_specx <- rbind(df_specx, spectra[[spectrum]]$specx)
+    df_specy <- rbind(df_specy, spectra[[spectrum]]$specy)
+  }
+  x <- colMeans(df_specx)
+  y <- colMeans(df_specy)
+  spec <- list(x = x, y = y)
+  return(spec)
 }
 
 #' deriveComparisonValues
@@ -196,36 +216,17 @@ raw.spectra_low <- list()
 for (file in 1:length(clean_data_low$data)) { # for all accelerometer files
   sampling_frequency <- as.numeric(clean_data_low$specifications$sampling_frequency[file])  
   HA <- clean_data_low$data[[file]]$HA #for horizontal axis
-  rawSpectrum <- deriveSpectrum(HA, sampling_frequency, raw = TRUE, 
-                                   file_name = names(clean_data_low$data)[[file]])
+  rawSpectrum <- deriveSpectrum(HA, sampling_frequency, file_name = names(clean_data_low$data)[[file]])
   raw.spectra_low[[file]] <- rawSpectrum
 }
 rm(rawSpectrum, file)
 names(raw.spectra_low) <- clean_data_low$specifications$label  
+
+mean.freqspec_low <- deriveMeanSpectrum(raw.spectra_low)
 ```
 
-Here all raw frequency spectra are plotted in one figure.
-
-```{r Frequency spectra low sampling frequency in same plot, echo=FALSE}
-p <-  plot(raw.spectra_low[[1]]$specx, raw.spectra_low[[1]]$specy, xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l")
-for(spectrum in 2:length(raw.spectra_low)){
-  p <- p + lines(raw.spectra_low[[spectrum]]$specx, raw.spectra_low[[spectrum]]$specy)
-}
-```
-Here the mean frequency spectrum is plotted.
-
-```{r Mean frequency spectrum low sampling frequency, echo=FALSE}
-df_specx <- data.frame()
-df_specy <- data.frame()
-for(spectrum in 1:length(raw.spectra_low)){
-  df_specx <- rbind(df_specx, raw.spectra_low[[spectrum]]$specx)
-  df_specy <- rbind(df_specy, raw.spectra_low[[spectrum]]$specy)
-}
-x_low <- colMeans(df_specx)
-y_low <- colMeans(df_specy)
-
-plot(x_low, y_low, xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l", main = )
-
+```{r Plot mean frequency spectrum low sampling frequency, echo=FALSE}
+plot(mean.freqspec_low$x, mean.freqspec_low$y, xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l", main = "Mean frequency spectrum low sampling frequency experiment")
 ```
 
 ### High sampling frequency experiment
@@ -237,42 +238,22 @@ raw.spectra_high <- list()
 for (file in 1:length(clean_data_high$data)) { # for all accelerometer files
   sampling_frequency <- as.numeric(clean_data_high$specifications$sampling_frequency[file])  
   HA <- clean_data_high$data[[file]]$HA #for horizontal axis
-  rawSpectrum <- deriveSpectrum(HA, sampling_frequency, raw = TRUE, 
-                                   file_name = names(clean_data_high$data)[[file]])
+  rawSpectrum <- deriveSpectrum(HA, sampling_frequency, file_name = names(clean_data_high$data)[[file]])
   raw.spectra_high[[file]] <- rawSpectrum
 }
 rm(rawSpectrum, file)
 names(raw.spectra_high) <- clean_data_high$specifications$label
+
+mean.freqspec_high <- deriveMeanSpectrum(raw.spectra_high)
 ```
 
-
-Here all raw frequency spectra are plotted in one figure.
-
-```{r Frequency spectra high sampling frequency in same plot, echo=FALSE}
-p <-  plot(raw.spectra_high[[1]]$specx, raw.spectra_high[[1]]$specy, xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l")
-for(spectrum in 2:length(raw.spectra_high)){
-  p <- p + lines(raw.spectra_high[[spectrum]]$specx, raw.spectra_high[[spectrum]]$specy)
-}
+```{r Plot mean frequency spectrum high sampling frequency, echo=FALSE}
+plot(mean.freqspec_high$x, mean.freqspec_high$y, xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l", main = "Mean frequency spectrum high sampling frequency experiment")
 ```
 
-Here the mean frequency spectrum is plotted.
-
-```{r Mean frequency spectrum high sampling frequency, echo=FALSE}
-df_specx <- data.frame()
-df_specy <- data.frame()
-for(spectrum in 1:length(raw.spectra_high)){
-  df_specx <- rbind(df_specx, raw.spectra_high[[spectrum]]$specx)
-  df_specy <- rbind(df_specy, raw.spectra_high[[spectrum]]$specy)
-}
-x_high <- colMeans(df_specx)
-y_high <- colMeans(df_specy)
-
-plot(x_high, y_high, xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l", main = )
-
-```
 ```{r Save raw spectra, include=FALSE}
-raw_spectra <- list(high = raw.spectra_high, specifications_high = clean_data_high$specifications,
-                    low = raw.spectra_low, specifications_low = clean_data_low$specifications) # Save derived raw spectra for HA in one list
+raw_spectra <- list(high = raw.spectra_high, high_mean = mean.freqspec_high, specifications_high = clean_data_high$specifications,
+                    low = raw.spectra_low, low_mean = mean.freqspec_low, specifications_low = clean_data_low$specifications) # Save derived raw spectra for HA in one list
 #cat("\nSaving data...")
 save(raw_spectra, file = paste0(datadir, "frequency_spectra.RData"))
 rm(raw.spectra_high, raw.spectra_low, HA, sampling_frequency)
