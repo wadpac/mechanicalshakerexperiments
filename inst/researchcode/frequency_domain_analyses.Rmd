@@ -249,7 +249,7 @@ getOutputMM <- function(finalModel) {
 
 # Frequency spectra
 
-This section presents the frequency spectra. First the mean frequency spectra for both experiments plotted to derive frequency bins. Second, frequency spectra are printed for each accelerometer recording including red lines that indicate these bins for both experiments seperately.
+This section presents frequency spectra derived from the raw acceleration signals for both experiments. We used the mean frequency spectra to the derive frequency bins for both experiments, over which aggregated outcome values (i.e., dominant frequency and mean power spectral density) were calculated for statistical comparison between brands.
 
 ```{r Settings for frequency spectra, include=FALSE}
 # Plot parameters
@@ -260,6 +260,7 @@ XLIM = c(0, 5) # Limit frequency content to 5 Hz (as 250 rpm / 60 = 4.1667 Hz is
 ```
 
 ## Mean frequency spectra
+This section presents the mean frequency spectra for both experiments separately.
 ### Low sampling frequency experiment
 
 ```{r Derive frequency spectra low sampling frequency experiment, echo=FALSE}
@@ -312,7 +313,7 @@ rm(raw.spectra_high, raw.spectra_low, HA, sampling_frequency, mean.freqspec_high
 ```
 
 ## Frequency bins
-We derived frequency peaks from the mean frequency spectra for both experiments separately, and derived their associated frequencies in Hertz to indicate where the peaks were localized. We paired these peak locations and divided them by two to derive the frequency cut-offs for the bins to ensure these peaks fell within the frequency bins. Aggregated outcome values (i.e., dominant frequency and mean power spectral density) were calculated over the frequency bins for statistical comparison between brands.
+We detected the frequency peaks in the mean frequency spectra both experiments separately, and derived the  frequencies in Hertz associated with these peaks. We divided these frequencies by two to derive the frequency cut-offs for the bins to ensure the peaks fell within these bins. Aggregated outcome values (i.e., dominant frequency and mean power spectral density) were calculated over the frequency bins for statistical comparison between brands.
 
 ### Derive frequency bins
 
@@ -327,7 +328,7 @@ peaks_high <- derivePeaks(raw_spectra$high_mean, 100, XLIM, plot = TRUE)
 bins_high <- deriveBins(peaks_high, raw_spectra$high_mean, XLIM = c(0, 5), plot = TRUE) 
 ```
 ### Frequency spectrum plots
-This section presents the frequency spectrum plots of the device acceleration signals included in the analyses with the frequency bins indicated by red vertical lines overlayed in one and per signal separately.
+This section presents the frequency spectrum plots of the overlayed device acceleration signals and for all signals separately, where the frequency bins are indicated by red vertical lines.
 
 #### Low sampling frequency experiment
 ```{r Overlay all spectra low sampling frequency experiment, echo=FALSE}
