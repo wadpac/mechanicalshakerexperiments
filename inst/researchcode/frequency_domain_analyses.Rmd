@@ -179,7 +179,7 @@ deriveComparisonValues <- function(spectrum, freqBins){
 #' @description 'createBoxplot' creates a boxplot between or within devices for the dominant frequency or the mean power spectral density per frequency bin
 #'
 #' @param data A data set containing the comparison values for the experiment
-#' @param freqBins A vector that indicates the frequency cut-offs for the frequency bins
+#' @param freqBins A vector that indicates the cut-offs for the freqency bins
 #' @param outcome String containing the type of the comparison value. One of c("domFreq", "meanPSD") 
 #' @param experiment String to indicate the experiment. One of c("low", "high") 
 #' @param percentage Boolean to indicate whether the values need to be plotted with respect to the frequency bin mean. One of c("TRUE", "FALSE") 
@@ -196,12 +196,10 @@ createBoxplot <- function(data, freqBins, outcome = c("domFreq", "meanPSD"), exp
     label = "Deviation from mean bin power spectral density (%)"
   }
   if (experiment == "low"){
-    bins = c( "bin1", "bin2", "bin3", "bin4", "bin5", "bin6", "bin7", "bin8", 
-                               "bin9", "bin10", "bin11", "bin12")
-  } else if (experiment == "high"){
-    bins = c( "bin1", "bin2", "bin3", "bin4", "bin5", "bin6", "bin7", "bin8", 
-                               "bin9", "bin10", "bin11", "bin12", "bin13")
-  }
+    bins = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12")
+      } else if (experiment == "high"){
+    bins = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13")
+    }
   bin.labels <- c()
   for (bin in 2:length(freqBins)){
     bin.labels <- c(bin.labels, paste(round(freqBins[bin-1], digits = 2), 
@@ -216,7 +214,7 @@ createBoxplot <- function(data, freqBins, outcome = c("domFreq", "meanPSD"), exp
     outcome = "perc"
   }
   
-  boxplot <- ggpubr::ggboxplot(data, x = "freqBin", y = outcome, color = "brand",
+  boxplot <- ggpubr::ggboxplot(data, x = "bin", y = outcome, color = "brand",
                                xlab = "Frequency bin (Hertz)", ylab = label, 
                                 order = bins,
                                font.label = list(size = 8, color = "black")) +
@@ -404,7 +402,6 @@ rm(spec, i)
 ```
 
 ```{r Compute dominant frequency (domFreq) and mean power spectral density (meanPSD) for HA , include = FALSE}
-
 comparison_values_low <- list()
 for(spectrum in 1:length(raw_spectra$low)){ 
   comparison_values_low[[spectrum]] <- deriveComparisonValues(raw_spectra$low[[spectrum]], bins_low)
@@ -438,12 +435,10 @@ for (accelerometer in 1:length(comparison_values$low)) {
 }
 domFreq_ms_wide_low <- cbind(df_wide_low, domFreq_wide_low)
 colnames(domFreq_ms_wide_low) <- c("serialnumber", "brand", "sampling_frequency", "dynamic_range", 
-                               "bin1", "bin2", "bin3", "bin4", "bin5", "bin6", "bin7", "bin8", 
-                               "bin9", "bin10", "bin11", "bin12")
+                               "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12")
 meanPSD_ms_wide_low <- cbind(df_wide_low, meanPSD_wide_low)
 colnames(meanPSD_ms_wide_low) <- c("serialnumber", "brand", "sampling_frequency", "dynamic_range", 
-                               "bin1", "bin2", "bin3", "bin4", "bin5", "bin6", "bin7", "bin8", 
-                               "bin9", "bin10", "bin11", "bin12")
+                               "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12")
 rm(df_wide_low, id, domFreq_wide_low, meanPSD_wide_low, accelerometer)
 
 df_wide_high <- data.frame()
@@ -458,12 +453,10 @@ for (accelerometer in 1:length(comparison_values$high)) {
 }
 domFreq_ms_wide_high <- cbind(df_wide_high, domFreq_wide_high)
 colnames(domFreq_ms_wide_high) <- c("serialnumber", "brand", "sampling_frequency", "dynamic_range", 
-                               "bin1", "bin2", "bin3", "bin4", "bin5", "bin6", "bin7", "bin8", 
-                               "bin9", "bin10", "bin11", "bin12", "bin13")
+                               "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13")
 meanPSD_ms_wide_high <- cbind(df_wide_high, meanPSD_wide_high)
 colnames(meanPSD_ms_wide_high) <- c("serialnumber", "brand", "sampling_frequency", "dynamic_range", 
-                               "bin1", "bin2", "bin3", "bin4", "bin5", "bin6", "bin7", "bin8", 
-                               "bin9", "bin10", "bin11", "bin12", "bin13")
+                               "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13")
 rm(df_wide_high, id, domFreq_wide_high, meanPSD_wide_high, accelerometer, comparison_values, clean_data_high, clean_data_low)
 ```
 
@@ -472,25 +465,21 @@ rm(df_wide_high, id, domFreq_wide_high, meanPSD_wide_high, accelerometer, compar
 library(tidyverse)
 
 domFreq_long_low <- domFreq_ms_wide_low %>%
-  gather(key = "freqBin", value = "domFreq", bin1, bin2, bin3, bin4, bin5, bin6, 
-         bin7, bin8, bin9, bin10, bin11, bin12) %>%
-  rstatix::convert_as_factor(serialnumber, freqBin, brand, sampling_frequency, dynamic_range)
+  gather(key = "bin", value = "domFreq", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12") %>%
+  rstatix::convert_as_factor(serialnumber, bin, brand, sampling_frequency, dynamic_range)
 meanPSD_long_low <- meanPSD_ms_wide_low %>%
-  gather(key = "freqBin", value = "meanPSD", bin1, bin2, bin3, bin4, bin5, bin6, 
-         bin7, bin8, bin9, bin10, bin11, bin12) %>%
-  rstatix::convert_as_factor(serialnumber, freqBin, brand, sampling_frequency, dynamic_range)
+  gather(key = "bin", value = "meanPSD", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12") %>%
+  rstatix::convert_as_factor(serialnumber, bin, brand, sampling_frequency, dynamic_range)
 df_low <- merge(domFreq_long_low, meanPSD_long_low) # Join both data.frame objects to derive a single dataset
 rm(domFreq_long_low, domFreq_ms_wide_low, meanPSD_long_low, meanPSD_ms_wide_low)
 df_low <- df_low[order(df_low$serialnumber),]
 
 domFreq_long_high <- domFreq_ms_wide_high %>%
-  gather(key = "freqBin", value = "domFreq", bin1, bin2, bin3, bin4, bin5, bin6, 
-         bin7, bin8, bin9, bin10, bin11, bin12, bin13) %>%
-  rstatix::convert_as_factor(serialnumber, freqBin, brand, sampling_frequency, dynamic_range)
+  gather(key = "bin", value = "domFreq", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13") %>%
+  rstatix::convert_as_factor(serialnumber, bin, brand, sampling_frequency, dynamic_range)
 meanPSD_long_high <- meanPSD_ms_wide_high %>%
-  gather(key = "freqBin", value = "meanPSD", bin1, bin2, bin3, bin4, bin5, bin6, 
-         bin7, bin8, bin9, bin10, bin11, bin12, bin13) %>%
-  rstatix::convert_as_factor(serialnumber, freqBin, brand, sampling_frequency, dynamic_range)
+  gather(key = "bin", value = "meanPSD", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13") %>%
+  rstatix::convert_as_factor(serialnumber, bin, brand, sampling_frequency, dynamic_range)
 df_high <- merge(domFreq_long_high, meanPSD_long_high) # Join both data.frame objects to derive a single dataset
 rm(domFreq_long_high, domFreq_ms_wide_high, meanPSD_long_high, meanPSD_ms_wide_high)
 df_high <- df_high[order(df_high$serialnumber),]
@@ -524,7 +513,7 @@ bxp_psd_low_perc <- createBoxplot(df_long$low, bins_low, outcome = "meanPSD", ex
 gridExtra::grid.arrange(bxp_domfreq_low_perc, bxp_psd_low_perc, nrow=1) #arranges plots within grid
 g_perc <- gridExtra::arrangeGrob(bxp_domfreq_low_perc + ggplot2::theme(legend.position="none"),
                                 bxp_psd_low_perc + ggplot2::theme(legend.position="bottom"),
-                                nrow=2)#generates g_log
+                                nrow=2)#generates g_perc
 ggplot2::ggsave(file=paste0(datadir, "plots/boxplots_HA_LOW_percentage.pdf"), g_perc) #saves g_perc
 ```
 
@@ -542,38 +531,38 @@ plot(g_perc)
 ```
 
 ### Mixed model analyses
-This section presents the statistical comparison between the brand for the low sampling frequency experiment. Thee mixed models for mean power spectral density and dominant frequency with a random intercept for serial number (id) are presented separately.
+This section presents the statistical comparison between the brand for the low sampling frequency experiment. Thee mixed models for mean power spectral density and dominant frequency with a random intercept for serial number are presented separately.
 
 ```{r Mixed Model Analyses low sampling frequency experiment, include=FALSE}
 # Starting model: with random intercept for accelerometer id (to adjust for the repeated measurements of the accelerometer devices)
-meanPSD_intercept_id_low <- nlme::lme(meanPSD ~ brand, random = ~ 1|id, 
+meanPSD_intercept_id_low <- nlme::lme(meanPSD ~ brand, random = ~ 1|serialnumber, 
                                       method="ML", data = df_long$low)
-domFreq_intercept_id_low <- nlme::lme(domFreq ~ brand, random = ~ 1|id, 
+domFreq_intercept_id_low <- nlme::lme(domFreq ~ brand, random = ~ 1|serialnumber, 
                                       method="ML", data = df_long$low)
 
-# Add random intercept for freqBin (to adjust for the frequencies)
-meanPSD_intercept_freqbin_low <- nlme::lme(meanPSD ~ brand, random = list(~ 1|id, ~ 1|freqBin),
+# Add random intercept for frequency bin (to adjust for the frequencies)
+meanPSD_intercept_bin_low <- nlme::lme(meanPSD ~ brand, random = list(~ 1|serialnumber, ~ 1|bin),
                                            method="ML", data = df_long$low)
-domFreq_intercept_freqbin_low <- nlme::lme(domFreq ~ brand, random = list(~ 1|id, ~ 1|freqBin),
+domFreq_intercept_bin_low <- nlme::lme(domFreq ~ brand, random = list(~ 1|serialnumber, ~ 1|bin),
                                            method="ML", data = df_long$low)
 
-# Evaluate if adding a random intercept for freqBin is necessary
-evaluateMM(meanPSD_intercept_id_low, meanPSD_intercept_freqbin_low, type = "randomIntercept") #FALSE adding a random intercept for frequency bin to the model is not necessary
-evaluateMM(domFreq_intercept_id_low, domFreq_intercept_freqbin_low, type = "randomIntercept") #FALSE adding a random intercept for frequency bin to the model is not necessary
-rm(meanPSD_intercept_freqbin_low, domFreq_intercept_freqbin_low)
+# Evaluate if adding a random intercept for frequency bin is necessary
+evaluateMM(meanPSD_intercept_id_low, meanPSD_intercept_bin_low, type = "randomIntercept") #FALSE adding a random intercept for frequency bin to the model is not necessary
+evaluateMM(domFreq_intercept_id_low, domFreq_intercept_bin_low, type = "randomIntercept") #FALSE adding a random intercept for frequency bin to the model is not necessary
+rm(meanPSD_intercept_bin_low, domFreq_intercept_bin_low)
 ```
 
 #### Model assumption: normal distribution of residuals
 
 ```{r Mean PSD Model assumptions low sampling frequency experiment, echo=FALSE}
-ggpubr::ggqqplot(df_long$low, "meanPSD", facet.by = "freqBin", title = "QQ-plot mean power spectral density")
+ggpubr::ggqqplot(df_long$low, "meanPSD", facet.by = "bin", title = "QQ-plot mean power spectral density")
 residuals_meanPSD <- resid(meanPSD_intercept_id_low)
 #summary(residuals_meanPSD)
 hist(residuals_meanPSD)
 ```
 
 ```{r Dominant frequency Model assumptions low sampling frequency experiment, echo=FALSE}
-ggpubr::ggqqplot(df_long$low, "domFreq", facet.by = "freqBin", title = "QQ-plot dominant frequency")
+ggpubr::ggqqplot(df_long$low, "domFreq", facet.by = "bin", title = "QQ-plot dominant frequency")
 residuals_domFreq <- resid(domFreq_intercept_id_low)
 #summary(residuals_domFreq)
 hist(residuals_domFreq) # approximately normally distributed
@@ -588,21 +577,21 @@ getOutputMM(meanPSD_intercept_id_low)
 ##### Reference: MOX
 ```{r Report results for Mean PSD low sampling frequency experiment: MOX, echo=FALSE}
 df_long$low$brand <- relevel(df_long$low$brand, ref = 5) 
-meanPSD_intercept_id_low <- nlme::lme(meanPSD ~ brand, random = ~ 1|id, 
+meanPSD_intercept_id_low <- nlme::lme(meanPSD ~ brand, random = ~ 1|serialnumber, 
                                       method="ML", data = df_long$low)
 getOutputMM(meanPSD_intercept_id_low)
 ```
 ##### Reference: GENEActiv
 ```{r Report results for Mean PSD low sampling frequency experiment: GENEActiv, echo=FALSE}
 df_long$low$brand <- relevel(df_long$low$brand, ref = 5) 
-meanPSD_intercept_id_low <- nlme::lme(meanPSD ~ brand, random = ~ 1|id, 
+meanPSD_intercept_id_low <- nlme::lme(meanPSD ~ brand, random = ~ 1|serialnumber, 
                                       method="ML", data = df_long$low)
 getOutputMM(meanPSD_intercept_id_low)
 ```
 ##### Reference: Axivity
 ```{r Report results for Mean PSD low sampling frequency experiment: Axivity, echo=FALSE}
 df_long$low$brand <- relevel(df_long$low$brand, ref = 5) 
-meanPSD_intercept_id_low <- nlme::lme(meanPSD ~ brand, random = ~ 1|id, 
+meanPSD_intercept_id_low <- nlme::lme(meanPSD ~ brand, random = ~ 1|serialnumber, 
                                       method="ML", data = df_long$low)
 getOutputMM(meanPSD_intercept_id_low)
 ```
@@ -610,7 +599,7 @@ getOutputMM(meanPSD_intercept_id_low)
 ##### Reference: activPAL
 ```{r Report results for Mean PSD low sampling frequency experiment: activPAL, echo=FALSE}
 df_long$low$brand <- relevel(df_long$low$brand, ref = 5) 
-meanPSD_intercept_id_low <- nlme::lme(meanPSD ~ brand, random = ~ 1|id, 
+meanPSD_intercept_id_low <- nlme::lme(meanPSD ~ brand, random = ~ 1|serialnumber, 
                                       method="ML", data = df_long$low)
 getOutputMM(meanPSD_intercept_id_low)
 ```
@@ -619,21 +608,21 @@ getOutputMM(meanPSD_intercept_id_low)
 ##### Reference: ActiGraph
 ```{r Report results for Dominant frequency low sampling frequency experiment: ActiGraph, echo=FALSE}
 df_long$low$brand <- relevel(df_long$low$brand, ref = 5) 
-domFreq_intercept_id_low <- nlme::lme(domFreq ~ brand, random = ~ 1|id, 
+domFreq_intercept_id_low <- nlme::lme(domFreq ~ brand, random = ~ 1|serialnumber, 
                                       method="ML", data = df_long$low)
 getOutputMM(domFreq_intercept_id_low)
 ```
 ##### Reference: MOX
 ```{r Report results for Dominant frequency low sampling frequency experiment: MOX, echo=FALSE}
 df_long$low$brand <- relevel(df_long$low$brand, ref = 5) 
-domFreq_intercept_id_low <- nlme::lme(domFreq ~ brand, random = ~ 1|id, 
+domFreq_intercept_id_low <- nlme::lme(domFreq ~ brand, random = ~ 1|serialnumber, 
                                       method="ML", data = df_long$low)
 getOutputMM(domFreq_intercept_id_low)
 ```
 ##### Reference: GENEActiv
 ```{r Report results for Dominant frequency low sampling frequency experiment: GENEActiv, echo=FALSE}
 df_long$low$brand <- relevel(df_long$low$brand, ref = 5) 
-domFreq_intercept_id_low <- nlme::lme(domFreq ~ brand, random = ~ 1|id, 
+domFreq_intercept_id_low <- nlme::lme(domFreq ~ brand, random = ~ 1|serialnumber, 
                                       method="ML", data = df_long$low)
 getOutputMM(domFreq_intercept_id_low)
 ```
@@ -641,7 +630,7 @@ getOutputMM(domFreq_intercept_id_low)
 
 ```{r Report results for Dominant frequency low sampling frequency experiment: Axivity, echo=FALSE}
 df_long$low$brand <- relevel(df_long$low$brand, ref = 5) 
-domFreq_intercept_id_low <- nlme::lme(domFreq ~ brand, random = ~ 1|id, 
+domFreq_intercept_id_low <- nlme::lme(domFreq ~ brand, random = ~ 1|serialnumber, 
                                       method="ML", data = df_long$low)
 getOutputMM(domFreq_intercept_id_low)
 ```
@@ -649,7 +638,7 @@ getOutputMM(domFreq_intercept_id_low)
 
 ```{r Report results for Dominant frequency low sampling frequency experiment: activPAL, echo=FALSE}
 df_long$low$brand <- relevel(df_long$low$brand, ref = 5) 
-domFreq_intercept_id_low <- nlme::lme(domFreq ~ brand, random = ~ 1|id, 
+domFreq_intercept_id_low <- nlme::lme(domFreq ~ brand, random = ~ 1|serialnumber, 
                                       method="ML", data = df_long$low)
 getOutputMM(domFreq_intercept_id_low)
 ```
@@ -685,7 +674,7 @@ Boxplot
 plot(g)
 ```
 
-Boxplot with percentage deviation from bin means
+Boxplot deviating percentage from bin means
 
 ```{r Print log boxplot high sampling frequency experiment, echo=FALSE}
 plot(g_perc)
@@ -696,26 +685,26 @@ This section presents the statistical comparison between the brand for the high 
 
 ```{r Mixed Model Analyses high sampling frequency experiment, include=FALSE}
 # Starting model: with random intercept for accelerometer id (to adjust for the repeated measurements of the accelerometer devices)
-meanPSD_intercept_id_high <- nlme::lme(meanPSD ~ brand, random = ~ 1|id, 
+meanPSD_intercept_id_high <- nlme::lme(meanPSD ~ brand, random = ~ 1|serialnumber, 
                                        method="ML", data = df_long$high)
-domFreq_intercept_id_high <- nlme::lme(domFreq ~ brand, random = ~ 1|id, 
+domFreq_intercept_id_high <- nlme::lme(domFreq ~ brand, random = ~ 1|serialnumber, 
                                        method="ML", data = df_long$high)
 
-# Add random intercept for freqBin (to adjust for the frequencies)
-meanPSD_intercept_freqbin_high <- nlme::lme(meanPSD ~ brand, random = list(~ 1|id, ~ 1|freqBin), 
+# Add random intercept for bin (to adjust for the frequencies)
+meanPSD_intercept_bin_high <- nlme::lme(meanPSD ~ brand, random = list(~ 1|serialnumber, ~ 1|bin), 
                                             method="ML", data = df_long$high)
-domFreq_intercept_freqbin_high <- nlme::lme(domFreq ~ brand, random = list(~ 1|id, ~ 1|freqBin), 
+domFreq_intercept_bin_high <- nlme::lme(domFreq ~ brand, random = list(~ 1|serialnumber, ~ 1|bin), 
                                             method="ML", data = df_long$high)
 
-# Evaluate if adding a random intercept for freqBin is necessary
-evaluateMM(meanPSD_intercept_id_high, meanPSD_intercept_freqbin_high, type = "randomIntercept") #FALSE adding a random intercept for frequency bin to the model is not necessary
-evaluateMM(domFreq_intercept_id_high, domFreq_intercept_freqbin_high, type = "randomIntercept") #FALSE adding a random intercept for frequency bin to the model is not necessary
-rm(meanPSD_intercept_freqbin_high, domFreq_intercept_freqbin_high)
+# Evaluate if adding a random intercept for bin is necessary
+evaluateMM(meanPSD_intercept_id_high, meanPSD_intercept_bin_high, type = "randomIntercept") #FALSE adding a random intercept for frequency bin to the model is not necessary
+evaluateMM(domFreq_intercept_id_high, domFreq_intercept_bin_high, type = "randomIntercept") #FALSE adding a random intercept for frequency bin to the model is not necessary
+rm(meanPSD_intercept_bin_high, domFreq_intercept_bin_high)
 ```
 
 #### Model assumption: normal distributions of residuals
 ```{r Mean PSD Model assumptions high sampling frequency experiment, echo=FALSE}
-ggpubr::ggqqplot(df_long$high, "meanPSD", facet.by = "freqBin", 
+ggpubr::ggqqplot(df_long$high, "meanPSD", facet.by = "bin", 
                  title = "QQ-plot mean power spectral density")
 residuals_meanPSD <- resid(meanPSD_intercept_id_high)
 #summary(residuals_meanPSD)
@@ -723,7 +712,7 @@ hist(residuals_meanPSD)
 ```
 
 ```{r Dominant frequency Model assumptions high sampling frequency experiment, echo=FALSE}
-ggpubr::ggqqplot(df_long$high, "domFreq", facet.by = "freqBin", title = "QQ-plot dominant frequency")
+ggpubr::ggqqplot(df_long$high, "domFreq", facet.by = "bin", title = "QQ-plot dominant frequency")
 residuals_domFreq <- resid(domFreq_intercept_id_high)
 #summary(residuals_domFreq)
 hist(residuals_domFreq) # approximately normally distributed
@@ -738,7 +727,7 @@ getOutputMM(meanPSD_intercept_id_high)
 ##### Reference: Axivity
 ```{r Report results for Mean PSD high sampling frequency experiment: Axivity, echo=FALSE}
 df_long$high$brand <- relevel(df_long$high$brand, ref = 2) 
-meanPSD_intercept_id_high <- nlme::lme(meanPSD ~ brand, random = ~ 1|id, 
+meanPSD_intercept_id_high <- nlme::lme(meanPSD ~ brand, random = ~ 1|serialnumber, 
                                        method="ML", data = df_long$high)
 getOutputMM(meanPSD_intercept_id_high)
 ```
@@ -749,7 +738,7 @@ getOutputMM(meanPSD_intercept_id_high)
 
 ```{r Report results for Dominant frequency high sampling frequency experiment: Axivity, echo=FALSE}
 df_long$high$brand <- relevel(df_long$high$brand, ref = 2) 
-domFreq_intercept_id_high <- nlme::lme(domFreq ~ brand, random = ~ 1|id, 
+domFreq_intercept_id_high <- nlme::lme(domFreq ~ brand, random = ~ 1|serialnumber, 
                                        method="ML", data = df_long$high)
 getOutputMM(domFreq_intercept_id_high)
 ```
@@ -758,7 +747,7 @@ getOutputMM(domFreq_intercept_id_high)
 
 ```{r Report results for Dominant frequency high sampling frequency experiment: ActiGraph, echo=FALSE}
 df_long$high$brand <- relevel(df_long$high$brand, ref = 2) 
-domFreq_intercept_id_high <- nlme::lme(domFreq ~ brand, random = ~ 1|id, 
+domFreq_intercept_id_high <- nlme::lme(domFreq ~ brand, random = ~ 1|serialnumber, 
                                        method="ML", data = df_long$high)
 getOutputMM(domFreq_intercept_id_high)
 ```
