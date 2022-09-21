@@ -613,10 +613,17 @@ getOutputMM(meanPSD_intercept_id_low)
 
 ##### Model: meanPSD ~ brand + bin + brand*bin
 ###### Reference: ActiGraph, bin1
-```{r Report results for Mean PSD interaction low sampling frequency experiment: MOX, echo=FALSE}
+```{r Report results for Mean PSD interaction low sampling frequency experiment: ActiGraph, echo=FALSE}
 getOutputMM(meanPSD_intercept_id_interaction_low)
 ```
 
+###### Reference: MOX
+```{r Report results for Mean PSD interaction low sampling frequency experiment: ActiGraph, echo=FALSE}
+df_long$low$bin <- relevel(df_long$low$bin, ref = 2) 
+meanPSD_intercept_id_interaction_low <- nlme::lme(meanPSD ~ brand + bin + brand*bin, random = ~ 1|serialnumber, 
+                                      method="ML", data = df_long$low)
+getOutputMM(meanPSD_intercept_id_interaction_low)
+```
 
 #### Results Dominant Frequency
 ##### Model: domFreq ~ brand
