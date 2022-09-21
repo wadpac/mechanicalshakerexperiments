@@ -327,27 +327,22 @@ peaks_high <- derivePeaks(raw_spectra$high_mean, 100, XLIM, plot = TRUE)
 bins_high <- deriveBins(peaks_high, raw_spectra$high_mean, XLIM = c(0, 5), plot = TRUE) 
 ```
 ### Frequency spectrum plots
-This section presents the frequency spectrum plots of the device acceleration signals included in the analyses with the frequency bins indicated by red vertical lines.
-
-#### High sampling frequency experiment
-
-```{r Plot spectra high sampling frequency experiment, echo=FALSE}
-#load(paste0(datadir, "frequency_spectra.RData"))
-
-for (spec in 1:length(raw_spectra$high)) {
-  spectrum <- raw_spectra$high[[spec]]
-  title <- paste("Frequency spectrum plot: ", raw_spectra$specifications_high$label[[spec]])
-  plot(spectrum$specx, spectrum$specy, main = title, 
-       xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l") 
-  for(i in 1:length(shaking_frequencies)){
-    abline(v=shaking_frequencies[i], col = "red")
-    abline(v=shaking_frequencies[i], col = "red")
-  }  
-}
-rm(spec, title, spectrum, i)
-```
+This section presents the frequency spectrum plots of the device acceleration signals included in the analyses with the frequency bins indicated by red vertical lines overlayed in one and per signal separately.
 
 #### Low sampling frequency experiment
+```{r Overlay all spectra low sampling frequency experiment, echo=FALSE}
+plot <- plot(raw_spectra$low[[1]]$specx, raw_spectra$low[[1]]$specy, main = "Overlay all frequency spectra", 
+       xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l")
+for(i in 1:length(bins_low)){
+    plot <- plot + abline(v=bins_low[i], col = "red")
+  }  
+
+for (spec in 2:length(raw_spectra$low)) {
+  plot + lines(raw_spectra$low[[spec]]$specx, raw_spectra$low[[spec]]$specy, type = "l")
+  
+}
+rm(spec, i)
+```
 
 ```{r Plot spectra low sampling frequency experiment, echo=FALSE}
 for (spec in 1:length(raw_spectra$low)) {
@@ -355,28 +350,53 @@ for (spec in 1:length(raw_spectra$low)) {
   title <- paste("Frequency spectrum plot: ", raw_spectra$specifications_low$label[[spec]])
   plot(spectrum$specx, spectrum$specy, main = title, 
        xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l")
-  for(i in 1:length(shaking_frequencies)){
-    abline(v=shaking_frequencies[i], col = "red")
-    abline(v=shaking_frequencies[i], col = "red")
+  for(i in 1:length(bins_low)){
+    abline(v=bins_low[i], col = "red")
   }  
 }
 rm(spec, title, spectrum, i)
 ```
 
+#### High sampling frequency experiment
+```{r Overlay all spectra high sampling frequency experiment, echo=FALSE}
+plot <- plot(raw_spectra$high[[1]]$specx, raw_spectra$high[[1]]$specy, main = "Overlay all frequency spectra", 
+       xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l")
+for(i in 1:length(bins_high)){
+    plot <- plot + abline(v=bins_high[i], col = "red")
+  }  
+
+for (spec in 2:length(raw_spectra$high)) {
+  plot + lines(raw_spectra$high[[spec]]$specx, raw_spectra$high[[spec]]$specy, type = "l")
+  
+}
+rm(spec, i)
+```
+
+```{r Plot spectra high sampling frequency experiment, echo=FALSE}
+#load(paste0(datadir, "frequency_spectra.RData"))
+
+for (spec in 1:length(raw_spectra$high)) {
+  title <- paste("Frequency spectrum plot: ", raw_spectra$specifications_high$label[[spec]])
+  plot(raw_spectra$high[[spec]]$specx, raw_spectra$high[[spec]]$specy, main = title, 
+       xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l") 
+  for(i in 1:length(bins_high)){
+    abline(v=bins_high[i], col = "red")
+  }  
+}
+rm(spec, i)
+```
+
 ```{r Compute dominant frequency (domFreq) and mean power spectral density (meanPSD) for HA , include = FALSE}
-# Derive frequency bins from the cutoffs
-freqBins <- round(c(XLIM[1], shaking_frequencies, XLIM[2]), digits = 2)
-rm(rpm, shaking_frequencies)
 
 comparison_values_low <- list()
 for(spectrum in 1:length(raw_spectra$low)){ 
-  comparison_values_low[[spectrum]] <- deriveComparisonValues(raw_spectra$low[[spectrum]], freqBins)
+  comparison_values_low[[spectrum]] <- deriveComparisonValues(raw_spectra$low[[spectrum]], bins_low)
 }
 names(comparison_values_low) <- names(raw_spectra$low)
 
 comparison_values_high <- list()
 for(spectrum in 1:length(raw_spectra$high)){ 
-  comparison_values_high[[spectrum]] <- deriveComparisonValues(raw_spectra$high[[spectrum]], freqBins)
+  comparison_values_high[[spectrum]] <- deriveComparisonValues(raw_spectra$high[[spectrum]], bins_high)
 }
 names(comparison_values_high) <- names(raw_spectra$high)
 #cat("\nSaving data...")
@@ -401,10 +421,10 @@ for (accelerometer in 1:length(comparison_values$low)) {
 }
 domFreq_ms_wide_low <- cbind(df_wide_low, domFreq_wide_low)
 colnames(domFreq_ms_wide_low) <- c("id", "brand", "sampling_frequency", "dynamic_range", 
-                               "t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8")
+                               "t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9", "t10", "t11")
 meanPSD_ms_wide_low <- cbind(df_wide_low, meanPSD_wide_low)
 colnames(meanPSD_ms_wide_low) <- c("id", "brand", "sampling_frequency", "dynamic_range", 
-                               "t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8")
+                               "t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9", "t10", "t11")
 rm(df_wide_low, id, domFreq_wide_low, meanPSD_wide_low, accelerometer)
 
 df_wide_high <- data.frame()
@@ -419,10 +439,10 @@ for (accelerometer in 1:length(comparison_values$high)) {
 }
 domFreq_ms_wide_high <- cbind(df_wide_high, domFreq_wide_high)
 colnames(domFreq_ms_wide_high) <- c("id", "brand", "sampling_frequency", "dynamic_range", 
-                               "t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8")
+                               "t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9", "t10", "t11", "t12")
 meanPSD_ms_wide_high <- cbind(df_wide_high, meanPSD_wide_high)
 colnames(meanPSD_ms_wide_high) <- c("id", "brand", "sampling_frequency", "dynamic_range", 
-                               "t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8")
+                               "t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9", "t10", "t11", "t12")
 rm(df_wide_high, id, domFreq_wide_high, meanPSD_wide_high, accelerometer)
 ```
 
@@ -431,20 +451,20 @@ rm(df_wide_high, id, domFreq_wide_high, meanPSD_wide_high, accelerometer)
 library(tidyverse)
 
 domFreq_long_low <- domFreq_ms_wide_low %>%
-  gather(key = "freqBin", value = "domFreq", t0, t1, t2, t3, t4, t5, t6, t7, t8) %>%
+  gather(key = "freqBin", value = "domFreq", t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11) %>%
   rstatix::convert_as_factor(id, freqBin, brand, sampling_frequency, dynamic_range)
 meanPSD_long_low <- meanPSD_ms_wide_low %>%
-  gather(key = "freqBin", value = "meanPSD", t0, t1, t2, t3, t4, t5, t6, t7, t8) %>%
+  gather(key = "freqBin", value = "meanPSD", t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11) %>%
   rstatix::convert_as_factor(id, freqBin, brand, sampling_frequency, dynamic_range)
 df_low <- merge(domFreq_long_low, meanPSD_long_low) # Join both data.frame objects to derive a single dataset
 rm(domFreq_long_low, domFreq_ms_wide_low, meanPSD_long_low, meanPSD_ms_wide_low)
 df_low <- df_low[order(df_low$id),]
 
 domFreq_long_high <- domFreq_ms_wide_high %>%
-  gather(key = "freqBin", value = "domFreq", t0, t1, t2, t3, t4, t5, t6, t7, t8) %>%
+  gather(key = "freqBin", value = "domFreq", t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12) %>%
   rstatix::convert_as_factor(id, freqBin, brand, sampling_frequency, dynamic_range)
 meanPSD_long_high <- meanPSD_ms_wide_high %>%
-  gather(key = "freqBin", value = "meanPSD", t0, t1, t2, t3, t4, t5, t6, t7, t8) %>%
+  gather(key = "freqBin", value = "meanPSD", t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12) %>%
   rstatix::convert_as_factor(id, freqBin, brand, sampling_frequency, dynamic_range)
 df_high <- merge(domFreq_long_high, meanPSD_long_high) # Join both data.frame objects to derive a single dataset
 rm(domFreq_long_high, domFreq_ms_wide_high, meanPSD_long_high, meanPSD_ms_wide_high)
