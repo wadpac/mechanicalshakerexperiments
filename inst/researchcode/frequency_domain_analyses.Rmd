@@ -421,11 +421,13 @@ for (accelerometer in 1:length(comparison_values$low)) {
   meanPSD_wide_low <- rbind(meanPSD_wide_low, comparison_values$low[[accelerometer]]$meanPSD)
 }
 domFreq_ms_wide_low <- cbind(df_wide_low, domFreq_wide_low)
-colnames(domFreq_ms_wide_low) <- c("id", "brand", "sampling_frequency", "dynamic_range", 
-                               "t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9", "t10", "t11")
+colnames(domFreq_ms_wide_low) <- c("serialnumber", "brand", "sampling_frequency", "dynamic_range", 
+                               "bin1", "bin2", "bin3", "bin4", "bin5", "bin6", "bin7", "bin8", 
+                               "bin9", "bin10", "bin11", "bin12")
 meanPSD_ms_wide_low <- cbind(df_wide_low, meanPSD_wide_low)
-colnames(meanPSD_ms_wide_low) <- c("id", "brand", "sampling_frequency", "dynamic_range", 
-                               "t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9", "t10", "t11")
+colnames(meanPSD_ms_wide_low) <- c("serialnumber", "brand", "sampling_frequency", "dynamic_range", 
+                               "bin1", "bin2", "bin3", "bin4", "bin5", "bin6", "bin7", "bin8", 
+                               "bin9", "bin10", "bin11", "bin12")
 rm(df_wide_low, id, domFreq_wide_low, meanPSD_wide_low, accelerometer)
 
 df_wide_high <- data.frame()
@@ -439,11 +441,13 @@ for (accelerometer in 1:length(comparison_values$high)) {
   meanPSD_wide_high <- rbind(meanPSD_wide_high, comparison_values$high[[accelerometer]]$meanPSD)
 }
 domFreq_ms_wide_high <- cbind(df_wide_high, domFreq_wide_high)
-colnames(domFreq_ms_wide_high) <- c("id", "brand", "sampling_frequency", "dynamic_range", 
-                               "t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9", "t10", "t11", "t12")
+colnames(domFreq_ms_wide_high) <- c("serialnumber", "brand", "sampling_frequency", "dynamic_range", 
+                               "bin1", "bin2", "bin3", "bin4", "bin5", "bin6", "bin7", "bin8", 
+                               "bin9", "bin10", "bin11", "bin12", "bin13")
 meanPSD_ms_wide_high <- cbind(df_wide_high, meanPSD_wide_high)
-colnames(meanPSD_ms_wide_high) <- c("id", "brand", "sampling_frequency", "dynamic_range", 
-                               "t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9", "t10", "t11", "t12")
+colnames(meanPSD_ms_wide_high) <- c("serialnumber", "brand", "sampling_frequency", "dynamic_range", 
+                               "bin1", "bin2", "bin3", "bin4", "bin5", "bin6", "bin7", "bin8", 
+                               "bin9", "bin10", "bin11", "bin12", "bin13")
 rm(df_wide_high, id, domFreq_wide_high, meanPSD_wide_high, accelerometer)
 ```
 
@@ -452,24 +456,28 @@ rm(df_wide_high, id, domFreq_wide_high, meanPSD_wide_high, accelerometer)
 library(tidyverse)
 
 domFreq_long_low <- domFreq_ms_wide_low %>%
-  gather(key = "freqBin", value = "domFreq", t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11) %>%
-  rstatix::convert_as_factor(id, freqBin, brand, sampling_frequency, dynamic_range)
+  gather(key = "freqBin", value = "domFreq", bin1, bin2, bin3, bin4, bin5, bin6, 
+         bin7, bin8, bin9, bin10, bin11, bin12) %>%
+  rstatix::convert_as_factor(serialnumber, freqBin, brand, sampling_frequency, dynamic_range)
 meanPSD_long_low <- meanPSD_ms_wide_low %>%
-  gather(key = "freqBin", value = "meanPSD", t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11) %>%
-  rstatix::convert_as_factor(id, freqBin, brand, sampling_frequency, dynamic_range)
+  gather(key = "freqBin", value = "meanPSD", bin1, bin2, bin3, bin4, bin5, bin6, 
+         bin7, bin8, bin9, bin10, bin11, bin12) %>%
+  rstatix::convert_as_factor(serialnumber, freqBin, brand, sampling_frequency, dynamic_range)
 df_low <- merge(domFreq_long_low, meanPSD_long_low) # Join both data.frame objects to derive a single dataset
 rm(domFreq_long_low, domFreq_ms_wide_low, meanPSD_long_low, meanPSD_ms_wide_low)
-df_low <- df_low[order(df_low$id),]
+df_low <- df_low[order(df_low$serialnumber),]
 
 domFreq_long_high <- domFreq_ms_wide_high %>%
-  gather(key = "freqBin", value = "domFreq", t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12) %>%
-  rstatix::convert_as_factor(id, freqBin, brand, sampling_frequency, dynamic_range)
+  gather(key = "freqBin", value = "domFreq", bin1, bin2, bin3, bin4, bin5, bin6, 
+         bin7, bin8, bin9, bin10, bin11, bin12, bin13) %>%
+  rstatix::convert_as_factor(serialnumber, freqBin, brand, sampling_frequency, dynamic_range)
 meanPSD_long_high <- meanPSD_ms_wide_high %>%
-  gather(key = "freqBin", value = "meanPSD", t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12) %>%
-  rstatix::convert_as_factor(id, freqBin, brand, sampling_frequency, dynamic_range)
+  gather(key = "freqBin", value = "meanPSD", bin1, bin2, bin3, bin4, bin5, bin6, 
+         bin7, bin8, bin9, bin10, bin11, bin12, bin13) %>%
+  rstatix::convert_as_factor(serialnumber, freqBin, brand, sampling_frequency, dynamic_range)
 df_high <- merge(domFreq_long_high, meanPSD_long_high) # Join both data.frame objects to derive a single dataset
 rm(domFreq_long_high, domFreq_ms_wide_high, meanPSD_long_high, meanPSD_ms_wide_high)
-df_high <- df_high[order(df_high$id),]
+df_high <- df_high[order(df_high$serialnumber),]
 
 df_long <- list(low = df_low, high = df_high)
 #cat("\nSaving data...")
