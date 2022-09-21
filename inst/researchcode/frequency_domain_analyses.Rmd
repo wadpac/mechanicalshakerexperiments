@@ -316,17 +316,16 @@ We derived frequency peaks from the mean frequency spectra for both experiments 
 
 ### Derive frequency bins
 
-#### Low sampling experiment
+#### Low sampling frequency experiment
 ```{r Derive frequency bins low sampling frequency, echo=FALSE}
 peaks_low <- derivePeaks(raw_spectra$low_mean, 25, XLIM, plot = TRUE)
 bins_low <- deriveBins(peaks_low, raw_spectra$low_mean, XLIM = c(0, 5), plot = TRUE) 
 ```
-#### High sampling experiment
+#### High sampling frequency experiment
 ```{r Derive frequency bins high sampling frequency, echo=FALSE}
 peaks_high <- derivePeaks(raw_spectra$high_mean, 100, XLIM, plot = TRUE)
 bins_high <- deriveBins(peaks_high, raw_spectra$high_mean, XLIM = c(0, 5), plot = TRUE) 
 ```
-
 ### Frequency spectrum plots
 This section presents the frequency spectrum plots of the device acceleration signals included in the analyses with the frequency bins indicated by red vertical lines.
 
