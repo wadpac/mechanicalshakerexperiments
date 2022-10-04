@@ -182,15 +182,15 @@ deriveComparisonValues <- function(spectrum, freqBins){
 #' @param freqBins A vector that indicates the cut-offs for the freqency bins
 #' @param outcome String containing the type of the comparison value. One of c("domFreq", "meanPSD") 
 #' @param experiment String to indicate the experiment. One of c("low", "high") 
-#' @param percentage Boolean to indicate whether the values need to be plotted with respect to the frequency bin mean. One of c("TRUE", "FALSE") 
+#' @param relative Boolean to indicate whether the values need to be plotted relatively to the frequency bin mean. One of c("TRUE", "FALSE") 
 #' @return Boxplot between or within devices for the outcome (y-axis) per frequency bin (x-axis)
 #' @export
-createBoxplot <- function(data, freqBins, outcome = c("domFreq", "meanPSD"), experiment = c("low", "high"), percentage = c(TRUE, FALSE)){
-  if (outcome == "domFreq" & percentage == FALSE){
+createBoxplot <- function(data, freqBins, outcome = c("domFreq", "meanPSD"), experiment = c("low", "high"), relative = c(TRUE, FALSE)){
+  if (outcome == "domFreq" & relative == FALSE){
     label = "Dominant frequency (Hertz)"
-  } else if (outcome == "meanPSD" & percentage == FALSE){
+  } else if (outcome == "meanPSD" & relative == FALSE){
     label = "Mean power spectral density (g2/Hertz)"
-  } else if (outcome == "domFreq" & percentage == TRUE){
+  } else if (outcome == "domFreq" & relative == TRUE){
     label = "Deviation from mean bin dominant frequency (%)"
   } else {
     label = "Deviation from mean bin power spectral density (%)"
@@ -205,13 +205,17 @@ createBoxplot <- function(data, freqBins, outcome = c("domFreq", "meanPSD"), exp
     bin.labels <- c(bin.labels, paste(round(freqBins[bin-1], digits = 2), 
                                       round(freqBins[bin], digits = 2), sep = "-"))
   }
-  if(percentage == TRUE){
+  if(relative == TRUE){
+    bin.means <- aggregate(data[, c("domFreq", "meanPSD")], list(data$bin), mean)
     if(outcome == "domFreq"){
-      data <- transform(data, perc = ave(domFreq, bin.labels, FUN = prop.table)*100)
+        data <- transform(data, domFreq.binmean = ave(domFreq, bin.labels, FUN = mean))
+        data$rel <- (abs(data$domFreq - data$domFreq.binmean)/data$domFreq.binmean)*100
     } else{
-      data <- transform(data, perc = ave(meanPSD, bin.labels, FUN = prop.table)*100)
+        data <- transform(data, meanPSD.binmean = ave(meanPSD, bin.labels, FUN = mean))
+        data$rel <- (abs(data$meanPSD - data$meanPSD.binmean)/data$meanPSD.binmean)*100
+      #data <- transform(data, perc = ave(meanPSD, bin.labels, FUN = prop.table)*100)
     }
-    outcome = "perc"
+    outcome = "rel"
   }
   
   boxplot <- ggpubr::ggboxplot(data, x = "bin", y = outcome, color = "brand",
@@ -502,16 +506,16 @@ This section presents the boxplots for both outcomes (dominant frequency and mea
 ```{r Create boxplots low sampling frequency experiment, include=FALSE}
 #load(paste0(datadir, "domfreq_meanPSD_long.RData"))
 
-bxp_domfreq_low <- createBoxplot(df_long$low, bins_low, outcome = "domFreq", experiment = "low", percentage = FALSE)
-bxp_psd_low <- createBoxplot(df_long$low, bins_low, outcome = "meanPSD", experiment = "low", percentage = FALSE)
+bxp_domfreq_low <- createBoxplot(df_long$low, bins_low, outcome = "domFreq", experiment = "low", relative = FALSE)
+bxp_psd_low <- createBoxplot(df_long$low, bins_low, outcome = "meanPSD", experiment = "low", relative = FALSE)
 
 gridExtra::grid.arrange(bxp_domfreq_low, bxp_psd_low, nrow=1) #arranges plots within grid
 g <- gridExtra::arrangeGrob(bxp_domfreq_low + ggplot2::theme(legend.position="none"), 
                             bxp_psd_low + ggplot2::theme(legend.position="bottom"), nrow=2) #generates g 
 ggplot2::ggsave(file=paste0(datadir, "plots/boxplots_HA_LOW.pdf"), g) #saves g
 
-bxp_domfreq_low_perc <- createBoxplot(df_long$low, bins_low, outcome = "domFreq", experiment = "low", percentage = TRUE)
-bxp_psd_low_perc <- createBoxplot(df_long$low, bins_low, outcome = "meanPSD", experiment = "low", percentage = TRUE)
+bxp_domfreq_low_perc <- createBoxplot(df_long$low, bins_low, outcome = "domFreq", experiment = "low", relative = TRUE)
+bxp_psd_low_perc <- createBoxplot(df_long$low, bins_low, outcome = "meanPSD", experiment = "low", relative = TRUE)
 
 gridExtra::grid.arrange(bxp_domfreq_low_perc, bxp_psd_low_perc, nrow=1) #arranges plots within grid
 g_perc <- gridExtra::arrangeGrob(bxp_domfreq_low_perc + ggplot2::theme(legend.position="none"),
@@ -677,16 +681,16 @@ This section presents the boxplots for both outcomes (dominant frequency and mea
 
 ```{r Create boxplots high sampling frequency, include=FALSE}
 #load(paste0(datadir, "domfreq_meanPSD_ms_HA_dataset_long_hf.RData"))
-bxp_domfreq_high <- createBoxplot(df_long$high, bins_high, outcome = "domFreq", experiment = "high", percentage = FALSE)
-bxp_psd_high <- createBoxplot(df_long$high, bins_high, outcome = "meanPSD", experiment = "high", percentage = FALSE) 
+bxp_domfreq_high <- createBoxplot(df_long$high, bins_high, outcome = "domFreq", experiment = "high", relative = FALSE)
+bxp_psd_high <- createBoxplot(df_long$high, bins_high, outcome = "meanPSD", experiment = "high", relative = FALSE) 
 
 gridExtra::grid.arrange(bxp_domfreq_high, bxp_psd_high, nrow=1) #arranges plots within grid
 g <- gridExtra::arrangeGrob(bxp_domfreq_high + ggplot2::theme(legend.position="none"), 
                             bxp_psd_high + ggplot2::theme(legend.position="bottom"), nrow=2) #generates g
 ggplot2::ggsave(file=paste0(datadir, "plots/boxplots_HA_HIGH.pdf"), g) #saves g
 
-bxp_domfreq_high_perc <- createBoxplot(df_long$high, bins_high, outcome = "domFreq", experiment = "high", percentage = TRUE)
-bxp_psd_high_perc <- createBoxplot(df_long$high, bins_high, outcome = "meanPSD", experiment = "high", percentage = TRUE)
+bxp_domfreq_high_perc <- createBoxplot(df_long$high, bins_high, outcome = "domFreq", experiment = "high", relative = TRUE)
+bxp_psd_high_perc <- createBoxplot(df_long$high, bins_high, outcome = "meanPSD", experiment = "high", relative = TRUE)
 gridExtra::grid.arrange(bxp_domfreq_high_perc, bxp_psd_high_perc, 
                         nrow=1) #arranges plots within grid
 g_perc <- gridExtra::arrangeGrob(bxp_domfreq_high_perc + ggplot2::theme(legend.position="none"),
