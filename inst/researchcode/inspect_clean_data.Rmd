@@ -56,10 +56,15 @@ rm(index, data, specifications, ms_flat_HA)
 #' 
 #' @export
 #' 
-plotSignals <- function(directory, data){
+plotSignals <- function(directory, data, includeShakerConditionNULL = TRUE){
   plot_list <- list()
   for(signal in 1:length(data)) {
-    file_name <- paste0("time series: ", names(data)[signal])
+    if (includeShakerConditionNULL == TRUE){
+          file_name <- paste0("time series (include baseline): ", names(data)[signal])
+    }
+    else {
+          file_name <- paste0("time series: ", names(data)[signal])
+    }
     jpeg(paste(directory, paste0(file_name, ".jpeg"), sep = "plots/"), width=600, height=500, res=120) 
     p <- ggplot2::ggplot() +
       ggplot2::geom_point(data = data[[signal]], ggplot2::aes(x = time, y = HA), 
@@ -83,15 +88,20 @@ plotSignals <- function(directory, data){
 #' 
 #' @export
 #' 
-cleanSignals <- function(data) {
+cleanSignals <- function(data, includeShakerConditionNULL = TRUE) {
   cleaned_signals <- list()
   
   for(file in 1:length(data$data)){
     signal <- data$data[[file]]
-    #Step 1: Remove data on which the experiment was stopped (shaking frequency 0 and -1), otherwise noise around 0 Hz will be correlated with noise around 0 Hz
-    cleaned_signal <- signal[which(signal$shaking_frequency != "0" & signal$shaking_frequency != "-1"),]
+    #Step 1: Remove data on which the experiment was stopped (shaking frequency -1)
+    cleaned_signal <- signal[which(signal$shaking_frequency != "-1"),]
+
+     #Step 2: If the data will be used for the time domain, do not include the noise around 0 Hz as this will be correlated with noise around 0 Hz (includeShakerConditionNULL == FALSE). If it is used for the frequency domain, include this shaker condition (includeShakerConditionNULL == TRUE)
+    if(includeShakerConditionNULL == FALSE){
+      cleaned_signal <- cleaned_signal[which(cleaned_signal$shaking_frequency != "0"),]
+    }
     
-    #Step 2: If the experiment is the high sampling frequency experiment, remove the double data due to repeating the experiment.
+    #Step 3: If the experiment is the high sampling frequency experiment, remove the double data due to repeating the experiment.
     if(data$specifications$experiment[[file]] == "ms_hfcr"){
       tz = "Europe/Amsterdam"
       #Remove data where accelerometers_used in description-file was all_except_one_GENEActiv
@@ -237,25 +247,37 @@ rm(deviates)
 ```
 
 # Cleaning the data
-Remove the data for which the shaking frequency was null in order to avoid comparison of the signal noise. In addition we removed repeated measurements for some of the shaking frequencies because a device got loose during the high sampling frequency experiment.
+Remove the data for which the shaking frequency was null in order to avoid comparison of the signal noise during time domain analyses. This null shaker condition will be included for the frequency domain analyses. In addition we removed repeated measurements for some of the shaking frequencies because a device got loose during the high sampling frequency experiment.
 
 ```{r Clean the signals, include = FALSE}
-data_cleaned <- cleanSignals(ms_flat_HA_aP_excluded)
+data_cleaned_timeDomain <- cleanSignals(ms_flat_HA_aP_excluded, includeShakerConditionNULL = FALSE)
+data_cleaned_frequencyDomain <- cleanSignals(ms_flat_HA_aP_excluded, includeShakerConditionNULL = TRUE)
 rm(ms_flat_HA_aP_excluded)
 ```
 
 ## Cleaned signals
 ```{r Visual data inspection, include = FALSE}
 # Save a plot for each signal
-plots_clean <- plotSignals(datadir, data_cleaned$data)
+plots_clean_timeDomain <- plotSignals(datadir, data_cleaned_timeDomain$data, includeShakerConditionNULL = FALSE)
+plots_clean_frequencyDomain <- plotSignals(datadir, data_cleaned_frequencyDomain$data, includeShakerConditionNULL = TRUE)
 ```
 
-```{r Plot all signals, echo = FALSE}
+### Time domain signals
+```{r Plot all time domain signals, echo = FALSE}
 # Save a plot for each signal
-for(plot in 1:length(plots_clean)){
-  print(plots_clean[[plot]])
+for(plot in 1:length(plots_clean_timeDomain)){
+  print(plots_clean_timeDomain[[plot]])
 }
-rm(plot, plots_clean)
+rm(plot, plots_clean_timeDomain)
+```
+
+### Frequency domain signals
+```{r Plot all frequency domain signals, echo = FALSE}
+# Save a plot for each signal
+for(plot in 1:length(plots_clean_frequencyDomain)){
+  print(plots_clean_frequencyDomain[[plot]])
+}
+rm(plot, plots_clean_frequencyDomain)
 ```
 
 ## Amount of data
@@ -265,51 +287,87 @@ To ensure a fair comparison of the signals we checked if the recorded signals co
 The start and end times of the signals did not differ with more than 1 second. 
 
 ```{r Start and end time low sampling frequency experiment, include=FALSE}
-data_low <- data_cleaned$data[data_cleaned$specifications$experiment == "ms_lfcr"]
-specifications_low <- data_cleaned$specifications[data_cleaned$specifications$experiment == "ms_lfcr", ]
+data_low_timeDomain <- data_cleaned_timeDomain$data[data_cleaned_timeDomain$specifications$experiment == "ms_lfcr"]
+specifications_low_timeDomain <- data_cleaned_timeDomain$specifications[data_cleaned_timeDomain$specifications$experiment == "ms_lfcr", ]
+check_low_timeDomain <- checkStartEnd(data_low_timeDomain, threshold = 1, unit = "sec") #there are no devices for which the start or end times differ with more than 1 sec
 
-check_low <- checkStartEnd(data_low, threshold = 1, unit = "sec") #there are no devices for which the start or end times differ with more than 1 sec
+data_low_frequencyDomain <- data_cleaned_frequencyDomain$data[data_cleaned_frequencyDomain$specifications$experiment == "ms_lfcr"]
+specifications_low_frequencyDomain <- data_cleaned_frequencyDomain$specifications[data_cleaned_frequencyDomain$specifications$experiment == "ms_lfcr", ]
+check_low_frequencyDomain <- checkStartEnd(data_low_frequencyDomain, threshold = 1, unit = "sec") #there are no devices for which the start or end times differ with more than 1 sec
 
-clean_data_low <- list(data = data_low, specifications = specifications_low)
-rm(data_low, specifications_low)
+clean_data_low <- list(timeDomain = list(data = data_low_timeDomain, specifications = specifications_low_timeDomain), frequencyDomain = list(data = data_low_frequencyDomain, specifications = specifications_low_frequencyDomain))
+
+rm(data_low_timeDomain, specifications_low_timeDomain, data_low_frequencyDomain, specifications_low_frequencyDomain)
 ```
 #### Absolute start time differences (in seconds)
-```{r Low sampling experiment start times, echo=FALSE}
-print(as.data.frame(check_low$diff_start))
+Time domain
+```{r Low sampling experiment start times time domain, echo=FALSE}
+print(as.data.frame(check_low_timeDomain$diff_start))
+```
+Frequency domain
+```{r Low sampling experiment start times frequency domain, echo=FALSE}
+print(as.data.frame(check_low_frequencyDomain$diff_start))
 ```
 
 #### Absolute end time differences (in seconds)
-```{r Low sampling experiment end times, echo=FALSE}
-print(as.data.frame(check_low$diff_end))
-rm(check_low)
+Time domain
+```{r Low sampling experiment end times time domain, echo=FALSE}
+print(as.data.frame(check_low_timeDomain$diff_end))
+rm(check_low_timeDomain)
+```
+Frequency domain
+```{r Low sampling experiment end times frequency domain, echo=FALSE}
+print(as.data.frame(check_low_frequencyDomain$diff_end))
+rm(check_low_frequencyDomain)
 ```
 
 ### High sampling frequency experiment
 The start did not differ with more than 1 second, however, for MOX devices the end time difference was 31.99984 minutes. These devices quit recording earlier than the other devices, therefore, data of these four devices were excluded from further analyses.
 
 ```{r Start and end time high sampling frequency experiment, include=FALSE}
-data_high <- data_cleaned$data[data_cleaned$specifications$experiment == "ms_hfcr"]
-specifications_high <- data_cleaned$specifications[data_cleaned$specifications$experiment == "ms_hfcr", ]
+data_high_timeDomain <- data_cleaned_timeDomain$data[data_cleaned_timeDomain$specifications$experiment == "ms_hfcr"]
+specifications_high_timeDomain <- data_cleaned_timeDomain$specifications[data_cleaned_timeDomain$specifications$experiment == "ms_hfcr", ]
+check_high_timeDomain <- checkStartEnd(data_high_timeDomain, threshold = 1, unit = "sec") 
+print(as.data.frame(check_high_timeDomain$diff_end))
 
-check_high <- checkStartEnd(data_high, threshold = 1, unit = "sec") 
-print(as.data.frame(check_high$diff_end))
+data_high_frequencyDomain <- data_cleaned_frequencyDomain$data[data_cleaned_frequencyDomain$specifications$experiment == "ms_hfcr"]
+specifications_high_frequencyDomain <- data_cleaned_frequencyDomain$specifications[data_cleaned_frequencyDomain$specifications$experiment == "ms_hfcr", ]
+check_high_frequencyDomain <- checkStartEnd(data_high_frequencyDomain, threshold = 1, unit = "sec") 
+print(as.data.frame(check_high_frequencyDomain$diff_end))
 
 # For MOX devices, the time difference was 31.99984 mins
-data_high[check_high$names_end] <- NULL # All MOX devices quit early, so leave them out the high sampling frequency experiment comparisons
-specifications_high <- specifications_high[!specifications_high$label %in% check_high$names_end ,]
-clean_data_high <- list(data = data_high, specifications = specifications_high)
-rm(data_high, specifications_high)
+# All MOX devices quit early, so leave them out the high sampling frequency experiment comparisons
+data_high_timeDomain[check_high_timeDomain$names_end] <- NULL
+specifications_high_timeDomain <- specifications_high_timeDomain[!specifications_high_timeDomain$label %in% check_high_timeDomain$names_end ,]
+data_high_frequencyDomain[check_high_frequencyDomain$names_end] <- NULL
+specifications_high_frequencyDomain <- specifications_high_frequencyDomain[!specifications_high_frequencyDomain$label %in% check_high_frequencyDomain$names_end ,]
+
+
+clean_data_high <- list(timeDomain = list(data = data_high_timeDomain, specifications = specifications_high_timeDomain), frequencyDomain = list(data = data_high_frequencyDomain, specifications_high_frequencyDomain))
+
+
+rm(data_high_timeDomain, data_high_frequencyDomain, specifications_high_timeDomain, specifications_high_frequencyDomain, data_cleaned_frequencyDomain, data_cleaned_timeDomain)
 ```
 
 #### Absolute start time differences (in seconds)
-```{r High sampling experiment start times, echo=FALSE}
-print(as.data.frame(check_high$diff_start))
+Time domain
+```{r High sampling experiment time domain start times, echo=FALSE}
+print(as.data.frame(check_high_timeDomain$diff_start))
 ```
-
+Frequency domain
+```{r High sampling experiment frequency domain start times, echo=FALSE}
+print(as.data.frame(check_high_frequencyDomain$diff_start))
+```
 #### Absolute end time differences (in seconds)
-```{r High sampling experiment end times, echo=FALSE}
-print(as.data.frame(check_high$diff_end))
-rm(check_high)
+Time domain
+```{r High sampling experiment time domain end times, echo=FALSE}
+print(as.data.frame(check_high_timeDomain$diff_end))
+rm(check_high_timeDomain)
+```
+Frequency domain
+```{r High sampling experiment frequency domain end times, echo=FALSE}
+print(as.data.frame(check_high_frequencyDomain$diff_end))
+rm(check_high_frequencyDomain)
 ```
 
 ```{r Save the cleaned data, include=FALSE}
