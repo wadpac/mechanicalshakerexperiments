@@ -343,7 +343,7 @@ data_high_frequencyDomain[check_high_frequencyDomain$names_end] <- NULL
 specifications_high_frequencyDomain <- specifications_high_frequencyDomain[!specifications_high_frequencyDomain$label %in% check_high_frequencyDomain$names_end ,]
 
 
-clean_data_high <- list(timeDomain = list(data = data_high_timeDomain, specifications = specifications_high_timeDomain), frequencyDomain = list(data = data_high_frequencyDomain, specifications_high_frequencyDomain))
+clean_data_high <- list(timeDomain = list(data = data_high_timeDomain, specifications = specifications_high_timeDomain), frequencyDomain = list(data = data_high_frequencyDomain, specifications = specifications_high_frequencyDomain))
 
 
 rm(data_high_timeDomain, data_high_frequencyDomain, specifications_high_timeDomain, specifications_high_frequencyDomain, data_cleaned_frequencyDomain, data_cleaned_timeDomain)
