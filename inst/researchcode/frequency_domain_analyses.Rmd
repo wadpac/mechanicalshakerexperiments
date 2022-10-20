@@ -429,8 +429,8 @@ rm(spectrum, comparison_values_high, comparison_values_low)
 
 df_wide_low <- data.frame()
 id <- names(comparison_values$low)
-df_wide_low <- cbind(id, clean_data_low$specifications$brand, clean_data_low$specifications$sampling_frequency,
-                 clean_data_low$specifications$dynamic_range)
+df_wide_low <- cbind(id, clean_data_low$frequencyDomain$specifications$brand, clean_data_low$frequencyDomain$specifications$sampling_frequency,
+                 clean_data_low$frequencyDomain$specifications$dynamic_range)
 domFreq_wide_low <- data.frame() 
 meanPSD_wide_low <- data.frame()
 for (accelerometer in 1:length(comparison_values$low)) {
@@ -447,8 +447,8 @@ rm(df_wide_low, id, domFreq_wide_low, meanPSD_wide_low, accelerometer)
 
 df_wide_high <- data.frame()
 id <- names(comparison_values$high)
-df_wide_high <- cbind(id, clean_data_high$specifications$brand, clean_data_high$specifications$sampling_frequency,
-                 clean_data_high$specifications$dynamic_range)
+df_wide_high <- cbind(id, clean_data_high$frequencyDomain$specifications$brand, clean_data_high$frequencyDomain$specifications$sampling_frequency,
+                 clean_data_high$frequencyDomain$specifications$dynamic_range)
 domFreq_wide_high <- data.frame() 
 meanPSD_wide_high <- data.frame()
 for (accelerometer in 1:length(comparison_values$high)) {
