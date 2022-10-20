@@ -233,38 +233,6 @@ createBoxplot <- function(data, freqBins, outcome = c("domFreq", "meanPSD"), exp
   return(boxplot)
 }
 
-#' evaluateMM
-#'
-#' @description 'evaluateMM' function to indicate if the likelihood ratio test was significant
-#'
-#' @param model1 Model object with the least parameters
-#' @param model2 Model object with the most parameters
-#' @param type String containing the addition to the model. One of c("randomIntercept", "randomSlope") 
-#' @return Boolean: \item{TRUE}{The addition of a random intercept/slope is necessary} \item{FALSE}{The addition of a random intercept/slope is not necessary}
-#' @export
-evaluateMM <- function(model1, model2, type = c("randomIntercept", "randomSlope")){
-  logLikDiff <- (-2*(logLik(model1))) - (-2*logLik(model2))
-  if(type == "randomIntercept"){
-    return(logLikDiff > 3.84)
-  }
-  else{ 
-    return(logLikDiff > 5.99)
-  }
-}
-
-#' getOutputMM
-#'
-#' @description 'getOutputMM' function print the model output
-#'
-#' @param finalModel Model object for which the output will be printed
-#' @return Printed model output including fixed and random effect estimates
-#' @export
-getOutputMM <- function(finalModel) {
-  print(summary(finalModel)) #fixed effect estimates
-  lme4::VarCorr(finalModel) #random effect estimates
-}
-
-
 #' calculateContrasts
 #'
 #' @description 'calculateContrasts' function prints the contrasts for the differences between brands for each bin
@@ -587,7 +555,7 @@ summary(meanPSD_interaction_id_low)
 vcov(meanPSD_interaction_id_low)
 ```
 
-##### Pairwise comaprisons
+##### Pairwise comparisons
 ```{r Calculate contrasts model meanPSD for low sampling frequency experiment, echo=FALSE}
 calculateContrasts(meanPSD_interaction_id_low, df_long$low)
 ```
@@ -614,7 +582,7 @@ summary(domFreq_interaction_id_low)
 vcov(domFreq_interaction_id_low)
 ```
 
-##### Pairwise comaprisons
+##### Pairwise comparisons
 ```{r Calculate contrasts model domFreq for low sampling frequency experiment, echo=FALSE}
 calculateContrasts(domFreq_interaction_id_low, df_long$low)
 ```
@@ -683,7 +651,7 @@ summary(meanPSD_interaction_id_high)
 vcov(meanPSD_interaction_id_high)
 ```
 
-###### Pairwise comaprisons
+###### Pairwise comparisons
 ```{r Calculate contrasts model meanPSD for high sampling frequency experiment, echo=FALSE}
 calculateContrasts(meanPSD_interaction_id_high, df_long$high)
 ```
@@ -710,7 +678,7 @@ summary(domFreq_interaction_id_high)
 vcov(domFreq_interaction_id_high)
 ```
 
-##### Pairwise comaprisons
+##### Pairwise comparisons
 ```{r Calculate contrasts model domFreq for high sampling frequency experiment, echo=FALSE}
 calculateContrasts(domFreq_interaction_id_high, df_long$high)
 ```
