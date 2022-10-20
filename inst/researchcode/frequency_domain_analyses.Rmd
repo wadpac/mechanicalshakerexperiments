@@ -565,73 +565,56 @@ plot(meanpsd_low)
 ### Mixed model analyses
 This section presents the statistical comparison between the brand for the low sampling frequency experiment. Thee mixed models for mean power spectral density and dominant frequency with a random intercept for serial number are presented separately.
 
-```{r Mixed Model Analyses low sampling frequency experiment, include=FALSE}
-#Check how to rewrite the evaluation for adding a random intercept for frequency bin in terms of Wessel's code
-
-# Starting model: with random intercept for accelerometer id (to adjust for the repeated measurements of the accelerometer devices)
-meanPSD_intercept_id_low <- nlme::lme(meanPSD ~ brand + brand*bin, random = ~ 1|serialnumber, 
-                                      method="ML", data = df_long$low)
-domFreq_intercept_id_low <- nlme::lme(domFreq ~ brand  + brand*bin, random = ~ 1|serialnumber, 
-                                      method="ML", data = df_long$low)
-
-# Add random intercept for frequency bin (to adjust for the frequencies)
-meanPSD_intercept_bin_low <- nlme::lme(meanPSD ~ brand + brand*bin, random = list(~ 1|serialnumber, ~ 1|bin),
-                                           method="ML", data = df_long$low)
-domFreq_intercept_bin_low <- nlme::lme(domFreq ~ brand + brand*bin, random = list(~ 1|serialnumber, ~ 1|bin),
-                                           method="ML", data = df_long$low)
+#### Model: meanPSD ~ brand + bin + brand*bin
+```{r Fit model meanPSD for low sampling frequency experiment, echo=FALSE}
+meanPSD_interaction_id_low <- lme4::lmer(meanPSD ~ 0 + bin + brand + bin*brand + (1 | serialnumber), data = df_long$low)
 
 # Evaluate if adding a random intercept for frequency bin is necessary
-evaluateMM(meanPSD_intercept_id_low, meanPSD_intercept_bin_low, type = "randomIntercept") #FALSE adding a random intercept for frequency bin to the model is not necessary
-evaluateMM(domFreq_intercept_id_low, domFreq_intercept_bin_low, type = "randomIntercept") #FALSE adding a random intercept for frequency bin to the model is not necessary
-rm(meanPSD_intercept_bin_low, domFreq_intercept_bin_low)
-
-# Do brands differ in dominant frequency or density depending on the movement frequency (add interaction between brand and bin)
-meanPSD_intercept_id_interaction_low <- nlme::lme(meanPSD ~ brand + bin + brand * bin, random = ~ 1|serialnumber, 
-                                      method="ML", data = df_long$low)
-domFreq_intercept_id_interaction_low <- nlme::lme(domFreq ~ brand + bin + brand * bin, random = ~ 1|serialnumber, 
-                                      method="ML", data = df_long$low)
+meanPSD_interaction_id_bin_low <- lme4::lmer(meanPSD ~ 0 + bin + brand + bin*brand + (1 | serialnumber) + (1 | bin), data = df_long$low)
+anova(meanPSD_interaction_id_low, meanPSD_interaction_id_bin_low) # This is not necessary, so use simplest model
 ```
 
-#### Model assumption: normal distribution of residuals
-
+##### Model assumption: normal distribution of residuals
 ```{r Mean PSD Model assumptions low sampling frequency experiment, echo=FALSE}
 ggpubr::ggqqplot(df_long$low, "meanPSD", facet.by = "bin", title = "QQ-plot mean power spectral density")
-residuals_meanPSD <- resid(meanPSD_intercept_id_low)
+residuals_meanPSD <- resid(meanPSD_interaction_id_low)
 #summary(residuals_meanPSD)
 hist(residuals_meanPSD)
 ```
-
-```{r Dominant frequency Model assumptions low sampling frequency experiment, echo=FALSE}
-ggpubr::ggqqplot(df_long$low, "domFreq", facet.by = "bin", title = "QQ-plot dominant frequency")
-residuals_domFreq <- resid(domFreq_intercept_id_low)
-#summary(residuals_domFreq)
-hist(residuals_domFreq) # approximately normally distributed
-```
-
-#### Results Mean Power Spectral Density
-
-##### Model: meanPSD ~ brand + bin + brand*bin
-```{r Fit model meanPSD for low sampling frequency experiment, echo=FALSE}
-meanPSD_interaction_id_low <- lme4::lmer(meanPSD ~ 0 + bin + brand + bin*brand + (1 | serialnumber), data = df_long$low)
+##### Model summary
+```{r Model summary meanPSD low sampling frequency experiment, echo=FALSE}
 summary(meanPSD_interaction_id_low)
 vcov(meanPSD_interaction_id_low)
 ```
 
-###### Pairwise comaprisons
+##### Pairwise comaprisons
 ```{r Calculate contrasts model meanPSD for low sampling frequency experiment, echo=FALSE}
 calculateContrasts(meanPSD_interaction_id_low, df_long$low)
 ```
 
-#### Results Dominant Frequency
-
-##### Model: domFreq ~ brand + bin + brand*bin
+#### Model: domFreq ~ brand + bin + brand*bin
 ```{r Fit model domFreq for low sampling frequency experiment, echo=FALSE}
 domFreq_interaction_id_low <- lme4::lmer(domFreq ~ 0 + bin + brand + bin*brand + (1 | serialnumber), data = df_long$low)
+
+# Evaluate if adding a random intercept for frequency bin is necessary
+domFreq_interaction_id__bin_low <- lme4::lmer(domFreq ~ 0 + bin + brand + bin*brand + (1 | serialnumber) + (1 | bin), data = df_long$low)
+anova(domFreq_interaction_id_low, domFreq_interaction_id__bin_low) # This is not necessary, so use simplest model
+```
+
+##### Model assumption: normal distribution of residuals
+```{r Dominant frequency Model assumptions low sampling frequency experiment, echo=FALSE}
+ggpubr::ggqqplot(df_long$low, "domFreq", facet.by = "bin", title = "QQ-plot dominant frequency")
+residuals_domFreq <- resid(domFreq_interaction_id_low)
+#summary(residuals_domFreq)
+hist(residuals_domFreq) # approximately normally distributed
+```
+##### Model summary
+```{r Model summary domFreq low sampling frequency experiment, echo=FALSE}
 summary(domFreq_interaction_id_low)
 vcov(domFreq_interaction_id_low)
 ```
 
-###### Pairwise comaprisons
+##### Pairwise comaprisons
 ```{r Calculate contrasts model domFreq for low sampling frequency experiment, echo=FALSE}
 calculateContrasts(domFreq_interaction_id_low, df_long$low)
 ```
@@ -676,54 +659,26 @@ plot(meanpsd_high)
 ### Mixed model analyses
 This section presents the statistical comparison between the brand for the high sampling frequency experiment. Thee mixed models for mean power spectral density and dominant frequency with a random intercept for serial number (id) are presented separately.
 
-```{r Mixed Model Analyses high sampling frequency experiment, include=FALSE}
-#Check how to rewrite the evaluation for adding a random intercept for frequency bin in terms of Wessel's code
+#### Model: meanPSD ~ brand + bin + brand*bin
+```{r Fit model meanPSD for high sampling frequency experiment, echo=FALSE}
+meanPSD_interaction_id_high <- lme4::lmer(meanPSD ~ 0 + bin + brand + bin*brand + (1 | serialnumber), data = df_long$high)
 
-# Starting model: with random intercept for accelerometer id (to adjust for the repeated measurements of the accelerometer devices)
-meanPSD_intercept_id_high <- nlme::lme(meanPSD ~ brand, random = ~ 1|serialnumber, 
-                                       method="ML", data = df_long$high)
-domFreq_intercept_id_high <- nlme::lme(domFreq ~ brand, random = ~ 1|serialnumber, 
-                                       method="ML", data = df_long$high)
-
-# Add random intercept for bin (to adjust for the frequencies)
-meanPSD_intercept_bin_high <- nlme::lme(meanPSD ~ brand, random = list(~ 1|serialnumber, ~ 1|bin), 
-                                            method="ML", data = df_long$high)
-domFreq_intercept_bin_high <- nlme::lme(domFreq ~ brand, random = list(~ 1|serialnumber, ~ 1|bin), 
-                                            method="ML", data = df_long$high)
-
-# Evaluate if adding a random intercept for bin is necessary
-evaluateMM(meanPSD_intercept_id_high, meanPSD_intercept_bin_high, type = "randomIntercept") #FALSE adding a random intercept for frequency bin to the model is not necessary
-evaluateMM(domFreq_intercept_id_high, domFreq_intercept_bin_high, type = "randomIntercept") #FALSE adding a random intercept for frequency bin to the model is not necessary
-rm(meanPSD_intercept_bin_high, domFreq_intercept_bin_high)
-
-# Do brands differ in dominant frequency or density depending on the movement frequency (add interaction between brand and bin)
-meanPSD_intercept_id_interaction_high <- nlme::lme(meanPSD ~ brand + bin + brand * bin, random = ~ 1|serialnumber, 
-                                      method="ML", data = df_long$high)
-domFreq_intercept_id_interaction_high <- nlme::lme(domFreq ~ brand + bin + brand * bin, random = ~ 1|serialnumber, 
-                                      method="ML", data = df_long$high)
+# Evaluate if adding a random intercept for frequency bin is necessary
+meanPSD_interaction_id_bin_high <- lme4::lmer(meanPSD ~ 0 + bin + brand + bin*brand + (1 | serialnumber) + (1 | bin), data = df_long$high)
+anova(meanPSD_interaction_id_high, meanPSD_interaction_id_bin_high) # This is not necessary, so use simplest model
 ```
 
-#### Model assumption: normal distributions of residuals
+##### Model assumption: normal distributions of residuals
 ```{r Mean PSD Model assumptions high sampling frequency experiment, echo=FALSE}
 ggpubr::ggqqplot(df_long$high, "meanPSD", facet.by = "bin", 
                  title = "QQ-plot mean power spectral density")
-residuals_meanPSD <- resid(meanPSD_intercept_id_high)
+residuals_meanPSD <- resid(meanPSD_interaction_id_high)
 #summary(residuals_meanPSD)
 hist(residuals_meanPSD)
 ```
 
-```{r Dominant frequency Model assumptions high sampling frequency experiment, echo=FALSE}
-ggpubr::ggqqplot(df_long$high, "domFreq", facet.by = "bin", title = "QQ-plot dominant frequency")
-residuals_domFreq <- resid(domFreq_intercept_id_high)
-#summary(residuals_domFreq)
-hist(residuals_domFreq) # approximately normally distributed
-```
-
-#### Results Mean Power Spectral Density
-
-##### Model: meanPSD ~ brand + bin + brand*bin
-```{r Fit model meanPSD for high sampling frequency experiment, echo=FALSE}
-meanPSD_interaction_id_high <- lme4::lmer(meanPSD ~ 0 + bin + brand + bin*brand + (1 | serialnumber), data = df_long$high)
+##### Model summary
+```{r Model summary meanPSD high sampling frequency experiment, echo=FALSE}
 summary(meanPSD_interaction_id_high)
 vcov(meanPSD_interaction_id_high)
 ```
@@ -733,20 +688,32 @@ vcov(meanPSD_interaction_id_high)
 calculateContrasts(meanPSD_interaction_id_high, df_long$high)
 ```
 
-#### Results Dominant Frequency
 
-##### Model: domFreq ~ brand + bin + brand*bin
+#### Model: domFreq ~ brand + bin + brand*bin
 ```{r Fit model domFreq for high sampling frequency experiment, echo=FALSE}
 domFreq_interaction_id_high <- lme4::lmer(domFreq ~ 0 + bin + brand + bin*brand + (1 | serialnumber), data = df_long$high)
+
+# Evaluate if adding a random intercept for frequency bin is necessary
+domFreq_interaction_id_bin_high <- lme4::lmer(domFreq ~ 0 + bin + brand + bin*brand + (1 | serialnumber) + (1 | bin), data = df_long$high)
+anova(domFreq_interaction_id_high, domFreq_interaction_id_bin_high) # This is not necessary, so use simplest model
+```
+##### Model assumption: normal distributions of residuals
+```{r Dominant frequency Model assumptions high sampling frequency experiment, echo=FALSE}
+ggpubr::ggqqplot(df_long$high, "domFreq", facet.by = "bin", title = "QQ-plot dominant frequency")
+residuals_domFreq <- resid(domFreq_interaction_id_high)
+#summary(residuals_domFreq)
+hist(residuals_domFreq) # approximately normally distributed
+```
+##### Model summary
+```{r Model summary domFreq high sampling frequency experiment, echo=FALSE}
 summary(domFreq_interaction_id_high)
 vcov(domFreq_interaction_id_high)
 ```
 
-###### Pairwise comaprisons
+##### Pairwise comaprisons
 ```{r Calculate contrasts model domFreq for high sampling frequency experiment, echo=FALSE}
 calculateContrasts(domFreq_interaction_id_high, df_long$high)
 ```
-
 
 ```{r Create boxplot mean power spectral density, include=FALSE}
 gridExtra::grid.arrange(bxp_psd_low, bxp_psd_high, nrow=1) #arranges plots within grid
