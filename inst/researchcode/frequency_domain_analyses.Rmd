@@ -263,6 +263,35 @@ getOutputMM <- function(finalModel) {
   print(summary(finalModel)) #fixed effect estimates
   lme4::VarCorr(finalModel) #random effect estimates
 }
+
+
+#' calculateContrasts
+#'
+#' @description 'calculateContrasts' function prints the contrasts for the differences between brands for each bin
+#'
+#' @param model Model object for which the output will be printed
+#' @param data Data.frame object that includes the comparison values 
+#' @return Prints pairwise comparisons
+#' @export
+calculateContrasts <- function(model, data){
+  #Step 1: Compute estimated marginal means for the desired fixed effects
+  emmRes <- emmeans::emmeans(model, comparison="pairwise", 
+                                         specs= ~ bin*brand, adjust="sidak", data = data)
+  #Step 2: Show pairwise contrasts for the fixed effects
+  ct <- emmeans::contrast(emmRes, "pairwise")
+
+  #Step 3: Focus on differences between brands in bins
+  ct.df <- as.data.frame(ct)
+
+  focusOfInterest <- c()
+  check <- strsplit(ct.df$contrast, " ")
+  for (row in 1:nrow(ct.df)) {
+    focusOfInterest <- c(focusOfInterest, (check[[row]][1] == check[[row]][4] 
+                                           & check[[row]][2] !=   check[[row]][5])) #focus on rows where bin is the same, but the brand differs.
+  }
+  return(print(ct.df[focusOfInterest,]))
+}
+
 ```
 
 # Frequency spectra
@@ -537,16 +566,18 @@ plot(meanpsd_low)
 This section presents the statistical comparison between the brand for the low sampling frequency experiment. Thee mixed models for mean power spectral density and dominant frequency with a random intercept for serial number are presented separately.
 
 ```{r Mixed Model Analyses low sampling frequency experiment, include=FALSE}
+#Check how to rewrite the evaluation for adding a random intercept for frequency bin in terms of Wessel's code
+
 # Starting model: with random intercept for accelerometer id (to adjust for the repeated measurements of the accelerometer devices)
-meanPSD_intercept_id_low <- nlme::lme(meanPSD ~ brand, random = ~ 1|serialnumber, 
+meanPSD_intercept_id_low <- nlme::lme(meanPSD ~ brand + brand*bin, random = ~ 1|serialnumber, 
                                       method="ML", data = df_long$low)
-domFreq_intercept_id_low <- nlme::lme(domFreq ~ brand, random = ~ 1|serialnumber, 
+domFreq_intercept_id_low <- nlme::lme(domFreq ~ brand  + brand*bin, random = ~ 1|serialnumber, 
                                       method="ML", data = df_long$low)
 
 # Add random intercept for frequency bin (to adjust for the frequencies)
-meanPSD_intercept_bin_low <- nlme::lme(meanPSD ~ brand, random = list(~ 1|serialnumber, ~ 1|bin),
+meanPSD_intercept_bin_low <- nlme::lme(meanPSD ~ brand + brand*bin, random = list(~ 1|serialnumber, ~ 1|bin),
                                            method="ML", data = df_long$low)
-domFreq_intercept_bin_low <- nlme::lme(domFreq ~ brand, random = list(~ 1|serialnumber, ~ 1|bin),
+domFreq_intercept_bin_low <- nlme::lme(domFreq ~ brand + brand*bin, random = list(~ 1|serialnumber, ~ 1|bin),
                                            method="ML", data = df_long$low)
 
 # Evaluate if adding a random intercept for frequency bin is necessary
@@ -579,98 +610,30 @@ hist(residuals_domFreq) # approximately normally distributed
 
 #### Results Mean Power Spectral Density
 
-##### Model: meanPSD ~ brand
-###### Reference: ActiGraph 
-```{r Report results for Mean PSD low sampling frequency experiment: ActiGraph, echo=FALSE}
-getOutputMM(meanPSD_intercept_id_low)
-```
-
-###### Reference: MOX
-```{r Report results for Mean PSD low sampling frequency experiment: MOX, echo=FALSE}
-df_long$low$brand <- relevel(df_long$low$brand, ref = 5) 
-meanPSD_intercept_id_low <- nlme::lme(meanPSD ~ brand, random = ~ 1|serialnumber, 
-                                      method="ML", data = df_long$low)
-getOutputMM(meanPSD_intercept_id_low)
-```
-###### Reference: GENEActiv
-```{r Report results for Mean PSD low sampling frequency experiment: GENEActiv, echo=FALSE}
-df_long$low$brand <- relevel(df_long$low$brand, ref = 5) 
-meanPSD_intercept_id_low <- nlme::lme(meanPSD ~ brand, random = ~ 1|serialnumber, 
-                                      method="ML", data = df_long$low)
-getOutputMM(meanPSD_intercept_id_low)
-```
-###### Reference: Axivity
-```{r Report results for Mean PSD low sampling frequency experiment: Axivity, echo=FALSE}
-df_long$low$brand <- relevel(df_long$low$brand, ref = 5) 
-meanPSD_intercept_id_low <- nlme::lme(meanPSD ~ brand, random = ~ 1|serialnumber, 
-                                      method="ML", data = df_long$low)
-getOutputMM(meanPSD_intercept_id_low)
-```
-###### Reference: activPAL
-```{r Report results for Mean PSD low sampling frequency experiment: activPAL, echo=FALSE}
-df_long$low$brand <- relevel(df_long$low$brand, ref = 5) 
-meanPSD_intercept_id_low <- nlme::lme(meanPSD ~ brand, random = ~ 1|serialnumber, 
-                                      method="ML", data = df_long$low)
-getOutputMM(meanPSD_intercept_id_low)
-```
-
 ##### Model: meanPSD ~ brand + bin + brand*bin
-###### Reference: ActiGraph, bin1
-```{r Report results for Mean PSD interaction low sampling frequency experiment: ActiGraph, echo=FALSE}
-getOutputMM(meanPSD_intercept_id_interaction_low)
+```{r Fit model meanPSD for low sampling frequency experiment, echo=FALSE}
+meanPSD_interaction_id_low <- lme4::lmer(meanPSD ~ 0 + bin + brand + bin*brand + (1 | serialnumber), data = df_long$low)
+summary(meanPSD_interaction_id_low)
+vcov(meanPSD_interaction_id_low)
 ```
 
-###### Reference: MOX
-```{r Report results for Mean PSD interaction low sampling frequency experiment: MOX, echo=FALSE}
-df_long$low$bin <- relevel(df_long$low$bin, ref = 2) 
-meanPSD_intercept_id_interaction_low <- nlme::lme(meanPSD ~ brand + bin + brand*bin, random = ~ 1|serialnumber, 
-                                      method="ML", data = df_long$low)
-getOutputMM(meanPSD_intercept_id_interaction_low)
+###### Pairwise comaprisons
+```{r Calculate contrasts model meanPSD for low sampling frequency experiment, echo=FALSE}
+calculateContrasts(meanPSD_interaction_id_low, df_long$low)
 ```
 
 #### Results Dominant Frequency
-##### Model: domFreq ~ brand
-###### Reference: ActiGraph
-```{r Report results for Dominant frequency low sampling frequency experiment: ActiGraph, echo=FALSE}
-df_long$low$brand <- relevel(df_long$low$brand, ref = 5) 
-domFreq_intercept_id_low <- nlme::lme(domFreq ~ brand, random = ~ 1|serialnumber, 
-                                      method="ML", data = df_long$low)
-getOutputMM(domFreq_intercept_id_low)
-```
-###### Reference: MOX
-```{r Report results for Dominant frequency low sampling frequency experiment: MOX, echo=FALSE}
-df_long$low$brand <- relevel(df_long$low$brand, ref = 5) 
-domFreq_intercept_id_low <- nlme::lme(domFreq ~ brand, random = ~ 1|serialnumber, 
-                                      method="ML", data = df_long$low)
-getOutputMM(domFreq_intercept_id_low)
-```
-###### Reference: GENEActiv
-```{r Report results for Dominant frequency low sampling frequency experiment: GENEActiv, echo=FALSE}
-df_long$low$brand <- relevel(df_long$low$brand, ref = 5) 
-domFreq_intercept_id_low <- nlme::lme(domFreq ~ brand, random = ~ 1|serialnumber, 
-                                      method="ML", data = df_long$low)
-getOutputMM(domFreq_intercept_id_low)
-```
-###### Reference: Axivity
 
-```{r Report results for Dominant frequency low sampling frequency experiment: Axivity, echo=FALSE}
-df_long$low$brand <- relevel(df_long$low$brand, ref = 5) 
-domFreq_intercept_id_low <- nlme::lme(domFreq ~ brand, random = ~ 1|serialnumber, 
-                                      method="ML", data = df_long$low)
-getOutputMM(domFreq_intercept_id_low)
-```
-###### Reference: activPAL
-
-```{r Report results for Dominant frequency low sampling frequency experiment: activPAL, echo=FALSE}
-df_long$low$brand <- relevel(df_long$low$brand, ref = 5) 
-domFreq_intercept_id_low <- nlme::lme(domFreq ~ brand, random = ~ 1|serialnumber, 
-                                      method="ML", data = df_long$low)
-getOutputMM(domFreq_intercept_id_low)
-```
 ##### Model: domFreq ~ brand + bin + brand*bin
-###### Reference: ActiGraph, bin1
-```{r Report results for domintant frequency interaction low sampling frequency experiment: ActiGraph, echo=FALSE}
-getOutputMM(domFreq_intercept_id_interaction_low)
+```{r Fit model domFreq for low sampling frequency experiment, echo=FALSE}
+domFreq_interaction_id_low <- lme4::lmer(domFreq ~ 0 + bin + brand + bin*brand + (1 | serialnumber), data = df_long$low)
+summary(domFreq_interaction_id_low)
+vcov(domFreq_interaction_id_low)
+```
+
+###### Pairwise comaprisons
+```{r Calculate contrasts model domFreq for low sampling frequency experiment, echo=FALSE}
+calculateContrasts(domFreq_interaction_id_low, df_long$low)
 ```
 
 ## High sampling frequency experiment
@@ -714,6 +677,8 @@ plot(meanpsd_high)
 This section presents the statistical comparison between the brand for the high sampling frequency experiment. Thee mixed models for mean power spectral density and dominant frequency with a random intercept for serial number (id) are presented separately.
 
 ```{r Mixed Model Analyses high sampling frequency experiment, include=FALSE}
+#Check how to rewrite the evaluation for adding a random intercept for frequency bin in terms of Wessel's code
+
 # Starting model: with random intercept for accelerometer id (to adjust for the repeated measurements of the accelerometer devices)
 meanPSD_intercept_id_high <- nlme::lme(meanPSD ~ brand, random = ~ 1|serialnumber, 
                                        method="ML", data = df_long$high)
@@ -756,49 +721,32 @@ hist(residuals_domFreq) # approximately normally distributed
 
 #### Results Mean Power Spectral Density
 
-##### Model: meanPSD ~ brand
-###### Reference: ActiGraph
-```{r Report results for Mean PSD high sampling frequency experiment: ActiGraph, echo=FALSE}
-getOutputMM(meanPSD_intercept_id_high)
-```
-###### Reference: Axivity
-```{r Report results for Mean PSD high sampling frequency experiment: Axivity, echo=FALSE}
-df_long$high$brand <- relevel(df_long$high$brand, ref = 2) 
-meanPSD_intercept_id_high <- nlme::lme(meanPSD ~ brand, random = ~ 1|serialnumber, 
-                                       method="ML", data = df_long$high)
-getOutputMM(meanPSD_intercept_id_high)
-```
 ##### Model: meanPSD ~ brand + bin + brand*bin
-###### Reference: Axivity, bin1
-```{r Report results for Mean PSD interaction high sampling frequency experiment: Axivity, echo=FALSE}
-getOutputMM(meanPSD_intercept_id_interaction_high)
+```{r Fit model meanPSD for high sampling frequency experiment, echo=FALSE}
+meanPSD_interaction_id_high <- lme4::lmer(meanPSD ~ 0 + bin + brand + bin*brand + (1 | serialnumber), data = df_long$high)
+summary(meanPSD_interaction_id_high)
+vcov(meanPSD_interaction_id_high)
+```
+
+###### Pairwise comaprisons
+```{r Calculate contrasts model meanPSD for high sampling frequency experiment, echo=FALSE}
+calculateContrasts(meanPSD_interaction_id_high, df_long$high)
 ```
 
 #### Results Dominant Frequency
 
-##### Model: domFreq ~ brand
-###### Reference: ActiGraph
-
-```{r Report results for Dominant frequency high sampling frequency experiment: ActiGraph, echo=FALSE}
-df_long$high$brand <- relevel(df_long$high$brand, ref = 2) 
-domFreq_intercept_id_high <- nlme::lme(domFreq ~ brand, random = ~ 1|serialnumber, 
-                                       method="ML", data = df_long$high)
-getOutputMM(domFreq_intercept_id_high)
-```
-
-##### Reference: Axivity
-
-```{r Report results for Dominant frequency high sampling frequency experiment: Axivity, echo=FALSE}
-df_long$high$brand <- relevel(df_long$high$brand, ref = 2) 
-domFreq_intercept_id_high <- nlme::lme(domFreq ~ brand, random = ~ 1|serialnumber, 
-                                       method="ML", data = df_long$high)
-getOutputMM(domFreq_intercept_id_high)
-```
 ##### Model: domFreq ~ brand + bin + brand*bin
-###### Reference: Axivity, bin1
-```{r Report results for dominant frequency interaction high sampling frequency experiment: Axivity, echo=FALSE}
-getOutputMM(domFreq_intercept_id_interaction_high)
+```{r Fit model domFreq for high sampling frequency experiment, echo=FALSE}
+domFreq_interaction_id_high <- lme4::lmer(domFreq ~ 0 + bin + brand + bin*brand + (1 | serialnumber), data = df_long$high)
+summary(domFreq_interaction_id_high)
+vcov(domFreq_interaction_id_high)
 ```
+
+###### Pairwise comaprisons
+```{r Calculate contrasts model domFreq for high sampling frequency experiment, echo=FALSE}
+calculateContrasts(domFreq_interaction_id_high, df_long$high)
+```
+
 
 ```{r Create boxplot mean power spectral density, include=FALSE}
 gridExtra::grid.arrange(bxp_psd_low, bxp_psd_high, nrow=1) #arranges plots within grid
