@@ -233,38 +233,6 @@ createBoxplot <- function(data, freqBins, outcome = c("domFreq", "meanPSD"), exp
   return(boxplot)
 }
 
-#' evaluateMM
-#'
-#' @description 'evaluateMM' function to indicate if the likelihood ratio test was significant
-#'
-#' @param model1 Model object with the least parameters
-#' @param model2 Model object with the most parameters
-#' @param type String containing the addition to the model. One of c("randomIntercept", "randomSlope") 
-#' @return Boolean: \item{TRUE}{The addition of a random intercept/slope is necessary} \item{FALSE}{The addition of a random intercept/slope is not necessary}
-#' @export
-evaluateMM <- function(model1, model2, type = c("randomIntercept", "randomSlope")){
-  logLikDiff <- (-2*(logLik(model1))) - (-2*logLik(model2))
-  if(type == "randomIntercept"){
-    return(logLikDiff > 3.84)
-  }
-  else{ 
-    return(logLikDiff > 5.99)
-  }
-}
-
-#' getOutputMM
-#'
-#' @description 'getOutputMM' function print the model output
-#'
-#' @param finalModel Model object for which the output will be printed
-#' @return Printed model output including fixed and random effect estimates
-#' @export
-getOutputMM <- function(finalModel) {
-  print(summary(finalModel)) #fixed effect estimates
-  lme4::VarCorr(finalModel) #random effect estimates
-}
-
-
 #' calculateContrasts
 #'
 #' @description 'calculateContrasts' function prints the contrasts for the differences between brands for each bin
@@ -296,7 +264,7 @@ calculateContrasts <- function(model, data){
 
 # Frequency spectra
 
-This section presents frequency spectra derived from the raw acceleration signals for both experiments. We used the mean frequency spectra to the derive frequency bins for both experiments, over which aggregated outcome values (i.e., dominant frequency and mean power spectral density) were calculated for statistical comparison between brands.
+This section presents frequency spectra derived from the raw acceleration signals for both experiments separately. Additionaly, we used the mean frequency spectrum to the derive frequency bins for both experiments, over which aggregated outcome values (i.e., dominant frequency and mean power spectral density) were calculated for statistical comparison between brands.
 
 ```{r Settings for frequency spectra, include=FALSE}
 # Plot parameters
@@ -307,7 +275,7 @@ XLIM = c(0, 5) # Limit frequency content to 5 Hz (as 250 rpm / 60 = 4.1667 Hz is
 ```
 
 ## Mean frequency spectra
-This section presents the mean frequency spectra for both experiments separately.
+
 ### Low sampling frequency experiment
 
 ```{r Derive frequency spectra low sampling frequency experiment, echo=FALSE}
@@ -359,25 +327,23 @@ save(raw_spectra, file = paste0(datadir, "frequency_spectra.RData"))
 rm(raw.spectra_high, raw.spectra_low, HA, sampling_frequency, mean.freqspec_high, mean.freqspec_low)
 ```
 
-## Frequency bins
+## Derive frequency bins
 We detected the frequency peaks in the mean frequency spectra both experiments separately, and derived the frequencies in Hertz associated with these peaks. We divided these frequencies by two to derive the frequency cut-offs for the bins to ensure the peaks fell within these bins. Aggregated outcome values (i.e., dominant frequency and mean power spectral density) were calculated over the frequency bins for statistical comparison between brands.
 
-### Derive frequency bins
-
-#### Low sampling frequency experiment
+### Low sampling frequency experiment
 ```{r Derive frequency bins low sampling frequency, echo=FALSE}
 peaks_low <- derivePeaks(raw_spectra$low_mean, 25, XLIM, plot = TRUE)
 bins_low <- deriveBins(peaks_low, raw_spectra$low_mean, XLIM = c(0, 5), plot = TRUE) 
 ```
-#### High sampling frequency experiment
+### High sampling frequency experiment
 ```{r Derive frequency bins high sampling frequency, echo=FALSE}
 peaks_high <- derivePeaks(raw_spectra$high_mean, 100, XLIM, plot = TRUE)
 bins_high <- deriveBins(peaks_high, raw_spectra$high_mean, XLIM = c(0, 5), plot = TRUE) 
 ```
-### Frequency spectrum plots
-This section presents the frequency spectrum plots of the overlayed device acceleration signals and for all signals separately, where the frequency bins are indicated by red vertical lines.
+## Frequency spectrum plots
+This section presents the frequency spectrum plots, all device acceleration signals overlayed in one plot and for all signals separately, where the frequency bins are indicated by red vertical lines.
 
-#### Low sampling frequency experiment
+### Low sampling frequency experiment
 ```{r Overlay all spectra low sampling frequency experiment, echo=FALSE}
 plot <- plot(raw_spectra$low[[1]]$specx, raw_spectra$low[[1]]$specy, main = "Overlay all frequency spectra", 
        xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l")
@@ -405,7 +371,7 @@ for (spec in 1:length(raw_spectra$low)) {
 rm(spec, title, spectrum, i)
 ```
 
-#### High sampling frequency experiment
+### High sampling frequency experiment
 ```{r Overlay all spectra high sampling frequency experiment, echo=FALSE}
 plot <- plot(raw_spectra$high[[1]]$specx, raw_spectra$high[[1]]$specy, main = "Overlay all frequency spectra", 
        xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l")
@@ -523,26 +489,45 @@ save(df_long, file = paste0(datadir, "domfreq_meanPSD_long.RData"))
 rm(df_high, df_low)
 ```
 
-# Statistical comparison
+# Statistical comparison: Mixed model analyses
 
 This section presents the statistical comparison of the frequency spectra in terms of the aggregated dominant frequency and mean power spectral density for each frequency bin per sampling frequency experiment.
 
 ## Low sampling frequency experiment
+This section presents the statistical comparison between the brand for the low sampling frequency experiment. The mixed models for the two outcomes mean power spectral density and dominant frequency are presented separately.
 
-### Boxplots
-This section presents the boxplots for both outcomes (dominant frequency and mean power spectral density) for the low sampling frequency experiment.
+### Model: meanPSD ~ brand + bin + brand*bin
+```{r Fit model meanPSD for low sampling frequency experiment, echo=FALSE}
+meanPSD_interaction_id_low <- lme4::lmer(meanPSD ~ 0 + bin + brand + bin*brand + (1 | serialnumber), data = df_long$low)
 
-```{r Create boxplots low sampling frequency experiment, include=FALSE}
+# Evaluate if adding a random intercept for frequency bin is necessary
+meanPSD_interaction_id_bin_low <- lme4::lmer(meanPSD ~ 0 + bin + brand + bin*brand + (1 | serialnumber) + (1 | bin), data = df_long$low)
+anova(meanPSD_interaction_id_low, meanPSD_interaction_id_bin_low) # This is not necessary, so use simplest model
+```
+
+#### Model assumption: normal distribution of residuals
+```{r Mean PSD Model assumptions low sampling frequency experiment, echo=FALSE}
+ggpubr::ggqqplot(df_long$low, "meanPSD", facet.by = "bin", title = "QQ-plot mean power spectral density")
+residuals_meanPSD <- resid(meanPSD_interaction_id_low)
+#summary(residuals_meanPSD)
+hist(residuals_meanPSD)
+```
+#### Model summary
+```{r Model summary meanPSD low sampling frequency experiment, echo=FALSE}
+summary(meanPSD_interaction_id_low)
+vcov(meanPSD_interaction_id_low)
+```
+
+#### Pairwise comparisons
+```{r Calculate contrasts model meanPSD for low sampling frequency experiment, echo=FALSE}
+calculateContrasts(meanPSD_interaction_id_low, df_long$low)
+```
+
+#### Boxplot
+This section presents a boxplot to illustrate differences in mean power spectral density between brands per bin for the low sampling frequency experiment.
+
+```{r Create boxplot meanPSD low sampling frequency experiment, include=FALSE}
 #load(paste0(datadir, "domfreq_meanPSD_long.RData"))
-
-bxp_domfreq_low <- createBoxplot(df_long$low, bins_low, outcome = "domFreq", experiment = "low", relative = FALSE)
-bxp_domfreq_low_perc <- createBoxplot(df_long$low, bins_low, outcome = "domFreq", experiment = "low", relative = TRUE)
-
-gridExtra::grid.arrange(bxp_domfreq_low, bxp_domfreq_low_perc, nrow=1) #arranges plots within grid
-domfreq_low <- gridExtra::arrangeGrob(bxp_domfreq_low + ggplot2::theme(legend.position="none"), 
-                            bxp_domfreq_low_perc + ggplot2::theme(legend.position="bottom"), nrow=2) #generates domfreq_low 
-ggplot2::ggsave(file=paste0(datadir, "plots/boxplots_dominant-frequency_LOW.pdf"), domfreq_low) #saves domfreq_low
-
 bxp_psd_low <- createBoxplot(df_long$low, bins_low, outcome = "meanPSD", experiment = "low", relative = FALSE)
 bxp_psd_low_perc <- createBoxplot(df_long$low, bins_low, outcome = "meanPSD", experiment = "low", relative = TRUE)
 
@@ -552,47 +537,11 @@ meanpsd_low <- gridExtra::arrangeGrob(bxp_psd_low + ggplot2::theme(legend.positi
 ggplot2::ggsave(file=paste0(datadir, "plots/boxplots_meanpsd_LOW.pdf"), meanpsd_low) #saves meanpsd_low
 ```
 
-Boxplot dominant frequency
-```{r Print boxplot for dominant frequency low sampling frequency experiment, echo=FALSE}
-plot(domfreq_low)
-```
-
-Boxplot for mean power spectral density
 ```{r Print boxplot for mean power spectral density low sampling frequency experiment, echo=FALSE}
 plot(meanpsd_low)
 ```
 
-### Mixed model analyses
-This section presents the statistical comparison between the brand for the low sampling frequency experiment. Thee mixed models for mean power spectral density and dominant frequency with a random intercept for serial number are presented separately.
-
-#### Model: meanPSD ~ brand + bin + brand*bin
-```{r Fit model meanPSD for low sampling frequency experiment, echo=FALSE}
-meanPSD_interaction_id_low <- lme4::lmer(meanPSD ~ 0 + bin + brand + bin*brand + (1 | serialnumber), data = df_long$low)
-
-# Evaluate if adding a random intercept for frequency bin is necessary
-meanPSD_interaction_id_bin_low <- lme4::lmer(meanPSD ~ 0 + bin + brand + bin*brand + (1 | serialnumber) + (1 | bin), data = df_long$low)
-anova(meanPSD_interaction_id_low, meanPSD_interaction_id_bin_low) # This is not necessary, so use simplest model
-```
-
-##### Model assumption: normal distribution of residuals
-```{r Mean PSD Model assumptions low sampling frequency experiment, echo=FALSE}
-ggpubr::ggqqplot(df_long$low, "meanPSD", facet.by = "bin", title = "QQ-plot mean power spectral density")
-residuals_meanPSD <- resid(meanPSD_interaction_id_low)
-#summary(residuals_meanPSD)
-hist(residuals_meanPSD)
-```
-##### Model summary
-```{r Model summary meanPSD low sampling frequency experiment, echo=FALSE}
-summary(meanPSD_interaction_id_low)
-vcov(meanPSD_interaction_id_low)
-```
-
-##### Pairwise comaprisons
-```{r Calculate contrasts model meanPSD for low sampling frequency experiment, echo=FALSE}
-calculateContrasts(meanPSD_interaction_id_low, df_long$low)
-```
-
-#### Model: domFreq ~ brand + bin + brand*bin
+### Model: domFreq ~ brand + bin + brand*bin
 ```{r Fit model domFreq for low sampling frequency experiment, echo=FALSE}
 domFreq_interaction_id_low <- lme4::lmer(domFreq ~ 0 + bin + brand + bin*brand + (1 | serialnumber), data = df_long$low)
 
@@ -601,39 +550,79 @@ domFreq_interaction_id__bin_low <- lme4::lmer(domFreq ~ 0 + bin + brand + bin*br
 anova(domFreq_interaction_id_low, domFreq_interaction_id__bin_low) # This is not necessary, so use simplest model
 ```
 
-##### Model assumption: normal distribution of residuals
+#### Model assumption: normal distribution of residuals
 ```{r Dominant frequency Model assumptions low sampling frequency experiment, echo=FALSE}
 ggpubr::ggqqplot(df_long$low, "domFreq", facet.by = "bin", title = "QQ-plot dominant frequency")
 residuals_domFreq <- resid(domFreq_interaction_id_low)
 #summary(residuals_domFreq)
 hist(residuals_domFreq) # approximately normally distributed
 ```
-##### Model summary
+#### Model summary
 ```{r Model summary domFreq low sampling frequency experiment, echo=FALSE}
 summary(domFreq_interaction_id_low)
 vcov(domFreq_interaction_id_low)
 ```
 
-##### Pairwise comaprisons
+#### Pairwise comparisons
 ```{r Calculate contrasts model domFreq for low sampling frequency experiment, echo=FALSE}
 calculateContrasts(domFreq_interaction_id_low, df_long$low)
 ```
 
+#### Boxplot
+This section presents a boxplot to illustrate differences in dominant frequency between brands per bin for the low sampling frequency experiment.
+
+```{r Create boxplot domFreq low sampling frequency experiment, include=FALSE}
+#load(paste0(datadir, "domfreq_meanPSD_long.RData"))
+
+bxp_domfreq_low <- createBoxplot(df_long$low, bins_low, outcome = "domFreq", experiment = "low", relative = FALSE)
+bxp_domfreq_low_perc <- createBoxplot(df_long$low, bins_low, outcome = "domFreq", experiment = "low", relative = TRUE)
+
+gridExtra::grid.arrange(bxp_domfreq_low, bxp_domfreq_low_perc, nrow=1) #arranges plots within grid
+domfreq_low <- gridExtra::arrangeGrob(bxp_domfreq_low + ggplot2::theme(legend.position="none"), 
+                            bxp_domfreq_low_perc + ggplot2::theme(legend.position="bottom"), nrow=2) #generates domfreq_low 
+ggplot2::ggsave(file=paste0(datadir, "plots/boxplots_dominant-frequency_LOW.pdf"), domfreq_low) #saves domfreq_low
+```
+
+```{r Print boxplot for dominant frequency low sampling frequency experiment, echo=FALSE}
+plot(domfreq_low)
+```
+
 ## High sampling frequency experiment
+This section presents the statistical comparison between the brand for the high sampling frequency experiment. The mixed models for the two outcomes mean power spectral density and dominant frequency are presented separately.
 
-### Boxplots
-This section presents the boxplots for both outcomes (dominant frequency and mean power spectral density) for the high sampling frequency experiment.
+### Model: meanPSD ~ brand + bin + brand*bin
+```{r Fit model meanPSD for high sampling frequency experiment, echo=FALSE}
+meanPSD_interaction_id_high <- lme4::lmer(meanPSD ~ 0 + bin + brand + bin*brand + (1 | serialnumber), data = df_long$high)
 
-```{r Create boxplots high sampling frequency, include=FALSE}
+# Evaluate if adding a random intercept for frequency bin is necessary
+meanPSD_interaction_id_bin_high <- lme4::lmer(meanPSD ~ 0 + bin + brand + bin*brand + (1 | serialnumber) + (1 | bin), data = df_long$high)
+anova(meanPSD_interaction_id_high, meanPSD_interaction_id_bin_high) # This is not necessary, so use simplest model
+```
+
+#### Model assumption: normal distributions of residuals
+```{r Mean PSD Model assumptions high sampling frequency experiment, echo=FALSE}
+ggpubr::ggqqplot(df_long$high, "meanPSD", facet.by = "bin", 
+                 title = "QQ-plot mean power spectral density")
+residuals_meanPSD <- resid(meanPSD_interaction_id_high)
+#summary(residuals_meanPSD)
+hist(residuals_meanPSD)
+```
+
+#### Model summary
+```{r Model summary meanPSD high sampling frequency experiment, echo=FALSE}
+summary(meanPSD_interaction_id_high)
+vcov(meanPSD_interaction_id_high)
+```
+
+#### Pairwise comparisons
+```{r Calculate contrasts model meanPSD for high sampling frequency experiment, echo=FALSE}
+calculateContrasts(meanPSD_interaction_id_high, df_long$high)
+```
+
+#### Boxplot
+This section presents a boxplot to illustrate differences in mean power spectral density between brands per bin for the high sampling frequency experiment.
+```{r Create boxplot mean PSD high sampling frequency, include=FALSE}
 #load(paste0(datadir, "domfreq_meanPSD_ms_HA_dataset_long_hf.RData"))
-bxp_domfreq_high <- createBoxplot(df_long$high, bins_high, outcome = "domFreq", experiment = "high", relative = FALSE)
-bxp_domfreq_high_perc <- createBoxplot(df_long$high, bins_high, outcome = "domFreq", experiment = "high", relative = TRUE)
-
-gridExtra::grid.arrange(bxp_domfreq_high, bxp_domfreq_high_perc, nrow=1) #arranges plots within grid
-domfreq_high <- gridExtra::arrangeGrob(bxp_domfreq_high + ggplot2::theme(legend.position="none"), 
-                            bxp_domfreq_high_perc + ggplot2::theme(legend.position="bottom"), nrow=2) #generates domfreq_high
-ggplot2::ggsave(file=paste0(datadir, "plots/boxplots_dominant-frequency_HIGH.pdf"), domfreq_high) #saves domfreq_high
-
 bxp_psd_high <- createBoxplot(df_long$high, bins_high, outcome = "meanPSD", experiment = "high", relative = FALSE) 
 bxp_psd_high_perc <- createBoxplot(df_long$high, bins_high, outcome = "meanPSD", experiment = "high", relative = TRUE)
 
@@ -644,52 +633,11 @@ meanpsd_high <- gridExtra::arrangeGrob(bxp_psd_high + ggplot2::theme(legend.posi
 ggplot2::ggsave(file=paste0(datadir, "plots/boxplots_meanpsd_HIGH_.pdf"), meanpsd_high) #saves meanpsd_high
 ```
 
-Boxplot dominant frequency
-
-```{r Print boxplot for dominant frequency high sampling frequency experiment, echo=FALSE}
-plot(domfreq_high)
-```
-
-Boxplot mean power spectral density
-
 ```{r Print boxplot for mean power spectral density high sampling frequency experiment, echo=FALSE}
 plot(meanpsd_high)
 ```
 
-### Mixed model analyses
-This section presents the statistical comparison between the brand for the high sampling frequency experiment. Thee mixed models for mean power spectral density and dominant frequency with a random intercept for serial number (id) are presented separately.
-
-#### Model: meanPSD ~ brand + bin + brand*bin
-```{r Fit model meanPSD for high sampling frequency experiment, echo=FALSE}
-meanPSD_interaction_id_high <- lme4::lmer(meanPSD ~ 0 + bin + brand + bin*brand + (1 | serialnumber), data = df_long$high)
-
-# Evaluate if adding a random intercept for frequency bin is necessary
-meanPSD_interaction_id_bin_high <- lme4::lmer(meanPSD ~ 0 + bin + brand + bin*brand + (1 | serialnumber) + (1 | bin), data = df_long$high)
-anova(meanPSD_interaction_id_high, meanPSD_interaction_id_bin_high) # This is not necessary, so use simplest model
-```
-
-##### Model assumption: normal distributions of residuals
-```{r Mean PSD Model assumptions high sampling frequency experiment, echo=FALSE}
-ggpubr::ggqqplot(df_long$high, "meanPSD", facet.by = "bin", 
-                 title = "QQ-plot mean power spectral density")
-residuals_meanPSD <- resid(meanPSD_interaction_id_high)
-#summary(residuals_meanPSD)
-hist(residuals_meanPSD)
-```
-
-##### Model summary
-```{r Model summary meanPSD high sampling frequency experiment, echo=FALSE}
-summary(meanPSD_interaction_id_high)
-vcov(meanPSD_interaction_id_high)
-```
-
-###### Pairwise comaprisons
-```{r Calculate contrasts model meanPSD for high sampling frequency experiment, echo=FALSE}
-calculateContrasts(meanPSD_interaction_id_high, df_long$high)
-```
-
-
-#### Model: domFreq ~ brand + bin + brand*bin
+### Model: domFreq ~ brand + bin + brand*bin
 ```{r Fit model domFreq for high sampling frequency experiment, echo=FALSE}
 domFreq_interaction_id_high <- lme4::lmer(domFreq ~ 0 + bin + brand + bin*brand + (1 | serialnumber), data = df_long$high)
 
@@ -697,23 +645,42 @@ domFreq_interaction_id_high <- lme4::lmer(domFreq ~ 0 + bin + brand + bin*brand 
 domFreq_interaction_id_bin_high <- lme4::lmer(domFreq ~ 0 + bin + brand + bin*brand + (1 | serialnumber) + (1 | bin), data = df_long$high)
 anova(domFreq_interaction_id_high, domFreq_interaction_id_bin_high) # This is not necessary, so use simplest model
 ```
-##### Model assumption: normal distributions of residuals
+#### Model assumption: normal distributions of residuals
 ```{r Dominant frequency Model assumptions high sampling frequency experiment, echo=FALSE}
 ggpubr::ggqqplot(df_long$high, "domFreq", facet.by = "bin", title = "QQ-plot dominant frequency")
 residuals_domFreq <- resid(domFreq_interaction_id_high)
 #summary(residuals_domFreq)
 hist(residuals_domFreq) # approximately normally distributed
 ```
-##### Model summary
+#### Model summary
 ```{r Model summary domFreq high sampling frequency experiment, echo=FALSE}
 summary(domFreq_interaction_id_high)
 vcov(domFreq_interaction_id_high)
 ```
 
-##### Pairwise comaprisons
+#### Pairwise comparisons
 ```{r Calculate contrasts model domFreq for high sampling frequency experiment, echo=FALSE}
 calculateContrasts(domFreq_interaction_id_high, df_long$high)
 ```
+
+#### Boxplot
+This section presents a boxplot to illustrate differences in dominant frequency between brands per bin for the high sampling frequency experiment.
+
+```{r Create boxplot domFreq high sampling frequency, include=FALSE}
+#load(paste0(datadir, "domfreq_meanPSD_ms_HA_dataset_long_hf.RData"))
+bxp_domfreq_high <- createBoxplot(df_long$high, bins_high, outcome = "domFreq", experiment = "high", relative = FALSE)
+bxp_domfreq_high_perc <- createBoxplot(df_long$high, bins_high, outcome = "domFreq", experiment = "high", relative = TRUE)
+
+gridExtra::grid.arrange(bxp_domfreq_high, bxp_domfreq_high_perc, nrow=1) #arranges plots within grid
+domfreq_high <- gridExtra::arrangeGrob(bxp_domfreq_high + ggplot2::theme(legend.position="none"), 
+                            bxp_domfreq_high_perc + ggplot2::theme(legend.position="bottom"), nrow=2) #generates domfreq_high
+ggplot2::ggsave(file=paste0(datadir, "plots/boxplots_dominant-frequency_HIGH.pdf"), domfreq_high) #saves domfreq_high
+```
+
+```{r Print boxplot for dominant frequency high sampling frequency experiment, echo=FALSE}
+plot(domfreq_high)
+```
+
 
 ```{r Create boxplot mean power spectral density, include=FALSE}
 gridExtra::grid.arrange(bxp_psd_low, bxp_psd_high, nrow=1) #arranges plots within grid
