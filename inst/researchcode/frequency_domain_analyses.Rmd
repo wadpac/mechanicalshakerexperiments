@@ -285,14 +285,14 @@ This section presents the mean frequency spectra for both experiments separately
 # DERIVE RAW FREQUENCY SPECTRA (for visual inspection and save data for further analysis)
 raw.spectra_low <- list() 
 
-for (file in 1:length(clean_data_low$data)) { # for all accelerometer files
-  sampling_frequency <- as.numeric(clean_data_low$specifications$sampling_frequency[file])  
-  HA <- clean_data_low$data[[file]]$HA #for horizontal axis
-  rawSpectrum <- deriveSpectrum(HA, sampling_frequency, file_name = names(clean_data_low$data)[[file]])
+for (file in 1:length(clean_data_low$frequencyDomain$data)) { # for all accelerometer files
+  sampling_frequency <- as.numeric(clean_data_low$frequencyDomain$specifications$sampling_frequency[file])  
+  HA <- clean_data_low$frequencyDomain$data[[file]]$HA #for horizontal axis
+  rawSpectrum <- deriveSpectrum(HA, sampling_frequency, file_name = names(clean_data_low$frequencyDomain$data)[[file]])
   raw.spectra_low[[file]] <- rawSpectrum
 }
 rm(rawSpectrum, file)
-names(raw.spectra_low) <- clean_data_low$specifications$label  
+names(raw.spectra_low) <- clean_data_low$frequencyDomain$specifications$label  
 
 mean.freqspec_low <- deriveMeanSpectrum(raw.spectra_low)
 ```
@@ -307,14 +307,14 @@ plot(mean.freqspec_low$x, mean.freqspec_low$y, xlab = xlabel, ylab = ylabel, typ
 # DERIVE RAW FREQUENCY SPECTRA (for visual inspection and save data for further analysis)
 raw.spectra_high <- list() 
 
-for (file in 1:length(clean_data_high$data)) { # for all accelerometer files
-  sampling_frequency <- as.numeric(clean_data_high$specifications$sampling_frequency[file])  
-  HA <- clean_data_high$data[[file]]$HA #for horizontal axis
-  rawSpectrum <- deriveSpectrum(HA, sampling_frequency, file_name = names(clean_data_high$data)[[file]])
+for (file in 1:length(clean_data_high$frequencyDomain$data)) { # for all accelerometer files
+  sampling_frequency <- as.numeric(clean_data_high$frequencyDomain$specifications$sampling_frequency[file])  
+  HA <- clean_data_high$frequencyDomain$data[[file]]$HA #for horizontal axis
+  rawSpectrum <- deriveSpectrum(HA, sampling_frequency, file_name = names(clean_data_high$frequencyDomain$data)[[file]])
   raw.spectra_high[[file]] <- rawSpectrum
 }
 rm(rawSpectrum, file)
-names(raw.spectra_high) <- clean_data_high$specifications$label
+names(raw.spectra_high) <- clean_data_high$frequencyDomain$specifications$label
 
 mean.freqspec_high <- deriveMeanSpectrum(raw.spectra_high)
 ```
@@ -324,8 +324,8 @@ plot(mean.freqspec_high$x, mean.freqspec_high$y, xlab = xlabel, ylab = ylabel, t
 ```
 
 ```{r Save raw spectra, include=FALSE}
-raw_spectra <- list(high = raw.spectra_high, high_mean = mean.freqspec_high, specifications_high = clean_data_high$specifications,
-                    low = raw.spectra_low, low_mean = mean.freqspec_low, specifications_low = clean_data_low$specifications) # Save derived raw spectra for HA in one list
+raw_spectra <- list(high = raw.spectra_high, high_mean = mean.freqspec_high, specifications_high = clean_data_high$frequencyDomain$specifications,
+                    low = raw.spectra_low, low_mean = mean.freqspec_low, specifications_low = clean_data_low$frequencyDomain$specifications) # Save derived raw spectra for HA in one list
 save(raw_spectra, file = paste0(datadir, "frequency_spectra.RData"))
 rm(raw.spectra_high, raw.spectra_low, HA, sampling_frequency, mean.freqspec_high, mean.freqspec_low)
 ```
