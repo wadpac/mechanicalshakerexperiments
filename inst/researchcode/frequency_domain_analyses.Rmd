@@ -259,12 +259,13 @@ calculateContrasts <- function(model, data){
   }
   return(print(ct.df[focusOfInterest,]))
 }
-
 ```
 
 # Frequency spectra
 
-This section presents frequency spectra derived from the raw acceleration signals for both experiments separately. Additionaly, we used the mean frequency spectrum to the derive frequency bins for both experiments, over which aggregated outcome values (i.e., dominant frequency and mean power spectral density) were calculated for statistical comparison between brands.
+We derived frequency spectra separately for both experiments from raw acceleration signals using Fourier transformation. 
+We then used the mean of the frequency spectra to the derive frequency bins, over which aggregated outcome values (i.e., dominant frequency and mean power spectral density) were calculated for statistical comparison between brands. This was done by detecting the frequency peaks in the mean frequency spectra, and deriving the frequencies in Hertz associated with these peaks. We divided these frequencies by two to derive the frequency cut-offs for the bins to ensure the peaks fell within these bins. Aggregated outcome values (i.e., dominant frequency and mean power spectral density) were calculated over the frequency bins for statistical comparison between brands.
+To ensure the peaks of the frequency spectra fell within these frequency bins, we plotted all acceleration signals overlayed in one plot and separately for all signals, with red vertical lines indicating the boundaries of the derived bins.
 
 ```{r Settings for frequency spectra, include=FALSE}
 # Plot parameters
@@ -273,10 +274,6 @@ xlabel = "Frequency (Hertz)"
 ylabel = "Spectral Density (g2/Hertz)"
 XLIM = c(0, 5) # Limit frequency content to 5 Hz (as 250 rpm / 60 = 4.1667 Hz is the expected max)
 ```
-
-## Mean frequency spectra
-
-### Low sampling frequency experiment
 
 ```{r Derive frequency spectra low sampling frequency experiment, echo=FALSE}
 # DERIVE RAW FREQUENCY SPECTRA (for visual inspection and save data for further analysis)
@@ -294,12 +291,6 @@ names(raw.spectra_low) <- clean_data_low$frequencyDomain$specifications$label
 mean.freqspec_low <- deriveMeanSpectrum(raw.spectra_low)
 ```
 
-```{r Plot mean frequency spectrum low sampling frequency, echo=FALSE}
-plot(mean.freqspec_low$x, mean.freqspec_low$y, xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l", main = "Mean frequency spectrum low sampling frequency experiment")
-```
-
-### High sampling frequency experiment
-
 ```{r Derive frequency spectra high sampling frequency experiment, echo=FALSE}
 # DERIVE RAW FREQUENCY SPECTRA (for visual inspection and save data for further analysis)
 raw.spectra_high <- list() 
@@ -316,34 +307,32 @@ names(raw.spectra_high) <- clean_data_high$frequencyDomain$specifications$label
 mean.freqspec_high <- deriveMeanSpectrum(raw.spectra_high)
 ```
 
-```{r Plot mean frequency spectrum high sampling frequency, echo=FALSE}
-plot(mean.freqspec_high$x, mean.freqspec_high$y, xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l", main = "Mean frequency spectrum high sampling frequency experiment")
-```
-
 ```{r Save raw spectra, include=FALSE}
 raw_spectra <- list(high = raw.spectra_high, high_mean = mean.freqspec_high, specifications_high = clean_data_high$frequencyDomain$specifications,
                     low = raw.spectra_low, low_mean = mean.freqspec_low, specifications_low = clean_data_low$frequencyDomain$specifications) # Save derived raw spectra for HA in one list
 save(raw_spectra, file = paste0(datadir, "frequency_spectra.RData"))
-rm(raw.spectra_high, raw.spectra_low, HA, sampling_frequency, mean.freqspec_high, mean.freqspec_low)
+rm(raw.spectra_high, raw.spectra_low, HA, sampling_frequency)
 ```
 
-## Derive frequency bins
-We detected the frequency peaks in the mean frequency spectra both experiments separately, and derived the frequencies in Hertz associated with these peaks. We divided these frequencies by two to derive the frequency cut-offs for the bins to ensure the peaks fell within these bins. Aggregated outcome values (i.e., dominant frequency and mean power spectral density) were calculated over the frequency bins for statistical comparison between brands.
+## Low sampling frequency experiment
 
-### Low sampling frequency experiment
+### Mean frequency spectra
+
+```{r Plot mean frequency spectrum low sampling frequency, echo=FALSE}
+plot(mean.freqspec_low$x, mean.freqspec_low$y, xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l", main = "Mean frequency spectrum low sampling frequency experiment")
+rm(mean.freqspec_low)
+```
+
+### Derive frequency bins
 ```{r Derive frequency bins low sampling frequency, echo=FALSE}
 peaks_low <- derivePeaks(raw_spectra$low_mean, 25, XLIM, plot = TRUE)
 bins_low <- deriveBins(peaks_low, raw_spectra$low_mean, XLIM = c(0, 5), plot = TRUE) 
 ```
-### High sampling frequency experiment
-```{r Derive frequency bins high sampling frequency, echo=FALSE}
-peaks_high <- derivePeaks(raw_spectra$high_mean, 100, XLIM, plot = TRUE)
-bins_high <- deriveBins(peaks_high, raw_spectra$high_mean, XLIM = c(0, 5), plot = TRUE) 
-```
-## Frequency spectrum plots
-This section presents the frequency spectrum plots, all device acceleration signals overlayed in one plot and for all signals separately, where the frequency bins are indicated by red vertical lines.
 
-### Low sampling frequency experiment
+### Frequency spectrum plots
+
+#### Overlay all frequency spectra
+
 ```{r Overlay all spectra low sampling frequency experiment, echo=FALSE}
 plot <- plot(raw_spectra$low[[1]]$specx, raw_spectra$low[[1]]$specy, main = "Overlay all frequency spectra", 
        xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l")
@@ -357,6 +346,7 @@ for (spec in 2:length(raw_spectra$low)) {
 }
 rm(spec, i)
 ```
+#### Plot frequency spectra separately
 
 ```{r Plot spectra low sampling frequency experiment, echo=FALSE}
 for (spec in 1:length(raw_spectra$low)) {
@@ -371,7 +361,26 @@ for (spec in 1:length(raw_spectra$low)) {
 rm(spec, title, spectrum, i)
 ```
 
-### High sampling frequency experiment
+## High sampling frequency experiment
+
+### Mean frequency spectra
+
+```{r Plot mean frequency spectrum high sampling frequency, echo=FALSE}
+plot(mean.freqspec_high$x, mean.freqspec_high$y, xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l", main = "Mean frequency spectrum high sampling frequency experiment")
+rm(mean.freqspec_high)
+```
+
+### Derive frequency bins
+
+```{r Derive frequency bins high sampling frequency, echo=FALSE}
+peaks_high <- derivePeaks(raw_spectra$high_mean, 100, XLIM, plot = TRUE)
+bins_high <- deriveBins(peaks_high, raw_spectra$high_mean, XLIM = c(0, 5), plot = TRUE) 
+```
+
+### Frequency spectrum plots
+
+#### Overlay all frequency spectra
+
 ```{r Overlay all spectra high sampling frequency experiment, echo=FALSE}
 plot <- plot(raw_spectra$high[[1]]$specx, raw_spectra$high[[1]]$specy, main = "Overlay all frequency spectra", 
        xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l")
@@ -385,6 +394,8 @@ for (spec in 2:length(raw_spectra$high)) {
 }
 rm(spec, i)
 ```
+
+#### Plot frequency spectra separately
 
 ```{r Plot spectra high sampling frequency experiment, echo=FALSE}
 #load(paste0(datadir, "frequency_spectra.RData"))
@@ -518,11 +529,8 @@ summary(meanPSD_interaction_id_low)
 vcov(meanPSD_interaction_id_low)
 ```
 
-<<<<<<< HEAD
 #### Pairwise comparisons
-=======
-##### Pairwise comparisons
->>>>>>> 8391114a42bfe053526d5da623dbae2c64673498
+
 ```{r Calculate contrasts model meanPSD for low sampling frequency experiment, echo=FALSE}
 calculateContrasts(meanPSD_interaction_id_low, df_long$low)
 ```
@@ -561,17 +569,15 @@ residuals_domFreq <- resid(domFreq_interaction_id_low)
 #summary(residuals_domFreq)
 hist(residuals_domFreq) # approximately normally distributed
 ```
+
 #### Model summary
 ```{r Model summary domFreq low sampling frequency experiment, echo=FALSE}
 summary(domFreq_interaction_id_low)
 vcov(domFreq_interaction_id_low)
 ```
 
-<<<<<<< HEAD
 #### Pairwise comparisons
-=======
-##### Pairwise comparisons
->>>>>>> 8391114a42bfe053526d5da623dbae2c64673498
+
 ```{r Calculate contrasts model domFreq for low sampling frequency experiment, echo=FALSE}
 calculateContrasts(domFreq_interaction_id_low, df_long$low)
 ```
@@ -615,24 +621,21 @@ residuals_meanPSD <- resid(meanPSD_interaction_id_high)
 #summary(residuals_meanPSD)
 hist(residuals_meanPSD)
 ```
-
 #### Model summary
 ```{r Model summary meanPSD high sampling frequency experiment, echo=FALSE}
 summary(meanPSD_interaction_id_high)
 vcov(meanPSD_interaction_id_high)
 ```
 
-<<<<<<< HEAD
 #### Pairwise comparisons
-=======
-###### Pairwise comparisons
->>>>>>> 8391114a42bfe053526d5da623dbae2c64673498
+
 ```{r Calculate contrasts model meanPSD for high sampling frequency experiment, echo=FALSE}
 calculateContrasts(meanPSD_interaction_id_high, df_long$high)
 ```
 
 #### Boxplot
 This section presents a boxplot to illustrate differences in mean power spectral density between brands per bin for the high sampling frequency experiment.
+
 ```{r Create boxplot mean PSD high sampling frequency, include=FALSE}
 #load(paste0(datadir, "domfreq_meanPSD_ms_HA_dataset_long_hf.RData"))
 bxp_psd_high <- createBoxplot(df_long$high, bins_high, outcome = "meanPSD", experiment = "high", relative = FALSE) 
@@ -657,6 +660,7 @@ domFreq_interaction_id_high <- lme4::lmer(domFreq ~ 0 + bin + brand + bin*brand 
 domFreq_interaction_id_bin_high <- lme4::lmer(domFreq ~ 0 + bin + brand + bin*brand + (1 | serialnumber) + (1 | bin), data = df_long$high)
 anova(domFreq_interaction_id_high, domFreq_interaction_id_bin_high) # This is not necessary, so use simplest model
 ```
+
 #### Model assumption: normal distributions of residuals
 ```{r Dominant frequency Model assumptions high sampling frequency experiment, echo=FALSE}
 ggpubr::ggqqplot(df_long$high, "domFreq", facet.by = "bin", title = "QQ-plot dominant frequency")
@@ -670,11 +674,8 @@ summary(domFreq_interaction_id_high)
 vcov(domFreq_interaction_id_high)
 ```
 
-<<<<<<< HEAD
 #### Pairwise comparisons
-=======
-##### Pairwise comparisons
->>>>>>> 8391114a42bfe053526d5da623dbae2c64673498
+
 ```{r Calculate contrasts model domFreq for high sampling frequency experiment, echo=FALSE}
 calculateContrasts(domFreq_interaction_id_high, df_long$high)
 ```
