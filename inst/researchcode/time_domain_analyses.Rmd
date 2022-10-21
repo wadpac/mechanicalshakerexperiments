@@ -163,12 +163,11 @@ For the calculation of the cross-correlations, only data with equal sampling fre
 ```{r Ensure data with equal sampling frequencies are selected for both experiments, include=FALSE}
 
 # Cross-correlations are only calculated for the selected data as otherwise interpolation is required (this is not longer raw data and outside the scope of this paper)
-data_high <- clean_data_high$data[as.numeric(clean_data_high$specifications$sampling_frequency) == "100"]
-data_low <- clean_data_low$data[as.numeric(clean_data_low$specifications$sampling_frequency) == "25"]
+data_high <- clean_data_high$timeDomain$data[as.numeric(clean_data_high$timeDomain$specifications$sampling_frequency) == "100"]
+data_low <- clean_data_low$timeDomain$data[as.numeric(clean_data_low$timeDomain$specifications$sampling_frequency) == "25"]
 
-specifications_high <- clean_data_high$specifications[as.numeric(clean_data_high$specifications$sampling_frequency) == "100",]
-specifications_low <- clean_data_low$specifications[as.numeric(clean_data_low$specifications$sampling_frequency) == "25",]
-
+specifications_high <- clean_data_high$timeDomain$specifications[as.numeric(clean_data_high$timeDomain$specifications$sampling_frequency) == "100",]
+specifications_low <- clean_data_low$timeDomain$specifications[as.numeric(clean_data_low$timeDomain$specifications$sampling_frequency) == "25",]
 
 rm(shaker_experiments_folder, clean_data_high, clean_data_low)
 ```
