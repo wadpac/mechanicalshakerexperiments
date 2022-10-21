@@ -518,7 +518,11 @@ summary(meanPSD_interaction_id_low)
 vcov(meanPSD_interaction_id_low)
 ```
 
+<<<<<<< HEAD
 #### Pairwise comparisons
+=======
+##### Pairwise comparisons
+>>>>>>> 8391114a42bfe053526d5da623dbae2c64673498
 ```{r Calculate contrasts model meanPSD for low sampling frequency experiment, echo=FALSE}
 calculateContrasts(meanPSD_interaction_id_low, df_long$low)
 ```
@@ -563,7 +567,11 @@ summary(domFreq_interaction_id_low)
 vcov(domFreq_interaction_id_low)
 ```
 
+<<<<<<< HEAD
 #### Pairwise comparisons
+=======
+##### Pairwise comparisons
+>>>>>>> 8391114a42bfe053526d5da623dbae2c64673498
 ```{r Calculate contrasts model domFreq for low sampling frequency experiment, echo=FALSE}
 calculateContrasts(domFreq_interaction_id_low, df_long$low)
 ```
@@ -614,7 +622,11 @@ summary(meanPSD_interaction_id_high)
 vcov(meanPSD_interaction_id_high)
 ```
 
+<<<<<<< HEAD
 #### Pairwise comparisons
+=======
+###### Pairwise comparisons
+>>>>>>> 8391114a42bfe053526d5da623dbae2c64673498
 ```{r Calculate contrasts model meanPSD for high sampling frequency experiment, echo=FALSE}
 calculateContrasts(meanPSD_interaction_id_high, df_long$high)
 ```
@@ -658,7 +670,11 @@ summary(domFreq_interaction_id_high)
 vcov(domFreq_interaction_id_high)
 ```
 
+<<<<<<< HEAD
 #### Pairwise comparisons
+=======
+##### Pairwise comparisons
+>>>>>>> 8391114a42bfe053526d5da623dbae2c64673498
 ```{r Calculate contrasts model domFreq for high sampling frequency experiment, echo=FALSE}
 calculateContrasts(domFreq_interaction_id_high, df_long$high)
 ```
