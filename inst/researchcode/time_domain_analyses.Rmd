@@ -40,7 +40,7 @@ rm(filename_high, filename_low)
 ```
 
 ```{r Functions, include=FALSE}
-#' computeCrossCorrelatios
+#' computeCrossCorrelations
 #'
 #' @description 'computeCrossCorrelations' computes the maximum cross-correlations between two signals and the corresponding lag
 #' @param data An object of class "spec"
@@ -68,6 +68,29 @@ computeCrossCorrelations <- function(data, plot) {
   colnames(lagMatrix) <- names(data)
   rownames(lagMatrix) <- names(data)
   return(list(correlationMatrix = correlationMatrix, lags = lagMatrix))
+}
+
+#' computeCrossCorrelationsPerShakerCondition
+#'
+#' @description 'computeCrossCorrelationsPerShakerCondition' computes for each shaker condition the maximum cross-correlations between two signals and the corresponding lag per shaker condition using the function computeCrossCorrelations
+#' @param data An object of class "spec"
+#' @return List object containing the cross-correlations and lags for each shaker condition
+#' @export
+computeCrossCorrelationsPerShakerCondition <- function(data) {
+  correlationList <- list()
+  shakerCondition <- c(30, 40, 50, 62, 75, 87, 100, 112, 125, 137, 150, 160, 175, 187, 200, 212, 225, 237, 250)
+  for(condition in 1:length(shakerCondition)){
+    #Select data associated with the shaker condition
+    selectData <- list()
+    for(device in 1:length(data)){
+      tmp <- subset(data[[device]], data[[device]]$shaking_frequency == shakerCondition[condition])
+      selectData[[device]] <- tmp
+    }
+    names(selectData) <- names(data)
+    correlationList[[condition]] <- computeCrossCorrelations(selectData, plot = FALSE)
+  }
+  names(correlationList) <- shakerCondition
+  return(correlationList)
 }
 
 #' pairwisePlots
