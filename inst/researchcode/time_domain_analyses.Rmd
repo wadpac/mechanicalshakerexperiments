@@ -51,7 +51,7 @@ computeCrossCorrelations <- function(data, plot) {
   lagMatrix <- matrix(data=NA,nrow=length(data),ncol=length(data)) # create empty matrix to save lags corresponding to max cross-correlations
   for (x in 1:length(data)) {
     for (y in 1:length(data)) {
-      #cat(paste0(y, "/",  x, "/", length(data), " "))
+      cat(paste0(y, "/",  x, "/", length(data), " "))
       if (x==y) {
         correlationMatrix[x,y] <- 1
         x = x + 1
@@ -87,7 +87,7 @@ computeCrossCorrelationsPerShakerCondition <- function(data) {
       selectData[[device]] <- tmp
     }
     names(selectData) <- names(data)
-    correlationList[[condition]] <- computeCrossCorrelations(selectData, plot = FALSE)
+    correlationList[[condition]] <- computeCrossCorrelations(selectData, plot = TRUE)
   }
   names(correlationList) <- shakerCondition
   return(correlationList)
@@ -195,18 +195,25 @@ specifications_low <- clean_data_low$timeDomain$specifications[as.numeric(clean_
 rm(shaker_experiments_folder, clean_data_high, clean_data_low)
 ```
 
-```{r Compute cross-correlation matrices, include = FALSE}
+```{r Compute overall cross-correlation matrices, include = FALSE}
 correlations_low <- computeCrossCorrelations(data_low, plot = TRUE) 
 correlations_high <- computeCrossCorrelations(data_high, plot = TRUE)
+```
+
+```{r Compute cross-correlation matrices per shaker condition, include = FALSE}
+correlations_low_perShakerCondition <- computeCrossCorrelationsPerShakerCondition(data_low) 
+correlations_high_perShakerCondition <- computeCrossCorrelationsPerShakerCondition(data_high)
 ```
 
 ```{r Save cross-correlation matrices, include = FALSE}
 #cat("\nSaving data...")
 correlation_matrices <- list(low = correlations_low, high = correlations_high)
-save(correlation_matrices, file = paste0(datadir, "cross_correlations.RData"))
-rm(correlations_low, correlations_high)
+save(correlation_matrices, file = paste0(datadir, "cross_correlations_overall.RData"))
+correlation_matrices <- list(low = correlations_low_perShakerCondition, high = correlations_high_perShakerCondition)
+save(correlation_matrices, file = paste0(datadir, "cross_correlations_perShakerCondition.RData"))
+rm(correlations_low, correlations_high, correlations_low_perShakerCondition, correlations_high_perShakerCondition)
 
-#load(paste0(datadir, "cross_correlations.RData"))
+#load(paste0(datadir, "cross_correlations_overall.RData"))
 ```
 
 ## Low sampling frequency experiment
