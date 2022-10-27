@@ -51,7 +51,7 @@ computeCrossCorrelations <- function(data, plot) {
   lagMatrix <- matrix(data=NA,nrow=length(data),ncol=length(data)) # create empty matrix to save lags corresponding to max cross-correlations
   for (x in 1:length(data)) {
     for (y in 1:length(data)) {
-      cat(paste0(y, "/",  x, "/", length(data), " "))
+      #cat(paste0(y, "/",  x, "/", length(data), " "))
       if (x==y) {
         correlationMatrix[x,y] <- 1
         x = x + 1
@@ -216,17 +216,19 @@ correlations_high_perShakerCondition <- computeCrossCorrelationsPerShakerConditi
 #cat("\nSaving data...")
 correlation_matrices <- list(low = correlations_low, high = correlations_high)
 save(correlation_matrices, file = paste0(datadir, "cross_correlations_overall.RData"))
-correlation_matrices <- list(low = correlations_low_perShakerCondition, high = correlations_high_perShakerCondition)
-save(correlation_matrices, file = paste0(datadir, "cross_correlations_perShakerCondition.RData"))
+correlation_matrices_perShakerCondition <- list(low = correlations_low_perShakerCondition, high = correlations_high_perShakerCondition)
+save(correlation_matrices_perShakerCondition, file = paste0(datadir, "cross_correlations_perShakerCondition.RData"))
+
 rm(correlations_low, correlations_high, correlations_low_perShakerCondition, correlations_high_perShakerCondition)
 
 #load(paste0(datadir, "cross_correlations_overall.RData"))
+#load(paste0(datadir, "cross_correlations_perShakerCondition.RData"))
 ```
 
 ## Low sampling frequency experiment
 
-### Heatmap
-```{r Heatmap low frequency experiment, echo=FALSE, fig.width=14, fig.height=14}
+### Overall heatmap
+```{r Heatmap low sampling frequency experiment, echo=FALSE, fig.width=14, fig.height=14}
 fullmatrix_low <- correlation_matrices$low$correlationMatrix
 heatmap_low <- corrplot::corrplot(pmax(fullmatrix_low, t(fullmatrix_low), na.rm = TRUE), 
                                   type = 'lower', method = 'color', order = "alphabet", 
@@ -235,6 +237,23 @@ heatmap_low <- corrplot::corrplot(pmax(fullmatrix_low, t(fullmatrix_low), na.rm 
                                   diag = TRUE, tl.col = "black")
 rm(fullmatrix_low, heatmap_low)
 ```
+### Heatmap per shaker condition
+```{r Heatmap low shaking frequency experiment per shaker condition, echo=FALSE, fig.width=14, fig.height=14}
+fullmatrices_low <- correlation_matrices_perShakerCondition$low
+
+for (condition in 1:length(fullmatrices_low)){
+  corrplot::corrplot(pmax(fullmatrices_low[[condition]]$correlationMatrix,
+                          t(fullmatrices_low[[condition]]$correlationMatrix), na.rm = TRUE), 
+                            title = paste0("shaker condition: ", names(fullmatrices_low)[condition]),
+                            type = 'lower', method = 'color', order = "alphabet", 
+                            number.cex = 1.25, cl.cex = 2, tl.cex = 2,
+                            col.lim = c(0,1), addCoef.col = 'black', tl.srt = 45, 
+                            diag = TRUE, tl.col = "black")
+}
+
+rm(fullmatrices_low)
+```
+
 
 ### Pairwise signal plots
 In this section pairwise plots are generated for cross-correlations that are 1 SD lower than the mean cross-correlation (i.e., threshold).
@@ -280,10 +299,10 @@ for(plot in 1:length(plots_low)){
 
 ## High sampling frequency experiment
 
-### Heatmaps
+### Overall heatmap
 This section presents the heatmaps for all devices and per brand.
 
-```{r Heatmap high sampling frequency experiment, echo=FALSE, , out.extra='angle=90', fig.width=14, fig.height=14}
+```{r Heatmap high sampling frequency experiment, echo=FALSE, fig.width=14, fig.height=14}
 fullmatrix_high <- correlation_matrices$high$correlationMatrix
 heatmap_high <- corrplot::corrplot(pmax(fullmatrix_high, t(fullmatrix_high), na.rm = TRUE), 
                                    type = 'lower', method = 'color', order = "alphabet",
@@ -292,8 +311,9 @@ heatmap_high <- corrplot::corrplot(pmax(fullmatrix_high, t(fullmatrix_high), na.
                                    tl.col = "black")
 ```
 
+
 #### ActiGraph
-```{r Heatmap high sampling frequency experiment, echo=FALSE, , out.extra='angle=90', fig.width=14, fig.height=14}
+```{r Heatmap high sampling frequency experiment AG, echo=FALSE, fig.width=14, fig.height=14}
 matrix_high_AG <- correlation_matrices$high$correlationMatrix[grep("AG",rownames(correlation_matrices$high$correlationMatrix)), grep("AG", colnames(correlation_matrices$high$correlationMatrix))] 
 heatmap_high_AG <- corrplot::corrplot(pmax(matrix_high_AG, t(matrix_high_AG), na.rm = TRUE), 
                                       type = 'lower', method = 'color', order = "alphabet",
@@ -303,7 +323,7 @@ heatmap_high_AG <- corrplot::corrplot(pmax(matrix_high_AG, t(matrix_high_AG), na
 ```
 
 #### Axivity
-```{r Heatmap high sampling frequency experiment, echo=FALSE, , out.extra='angle=90', fig.width=14, fig.height=14}
+```{r Heatmap high sampling frequency experiment Ax, echo=FALSE, fig.width=14, fig.height=14}
 matrix_high_Ax <- correlation_matrices$high$correlationMatrix[grep("Ax",rownames(correlation_matrices$high$correlationMatrix)), grep("Ax", colnames(correlation_matrices$high$correlationMatrix))] 
 heatmap_high_Ax <- corrplot::corrplot(pmax(matrix_high_Ax, t(matrix_high_Ax), na.rm = TRUE), 
                                       type = 'lower', method = 'color', order = "alphabet",
@@ -313,13 +333,30 @@ heatmap_high_Ax <- corrplot::corrplot(pmax(matrix_high_Ax, t(matrix_high_Ax), na
 ```
 
 #### GENEActiv
-```{r Heatmap high sampling frequency experiment, echo=FALSE, , out.extra='angle=90', fig.width=14, fig.height=14}
+```{r Heatmap high sampling frequency experiment GA, echo=FALSE, fig.width=14, fig.height=14}
 matrix_high_GA <- correlation_matrices$high$correlationMatrix[grep("GA",rownames(correlation_matrices$high$correlationMatrix)), grep("GA", colnames(correlation_matrices$high$correlationMatrix))] 
 heatmap_high_GA <- corrplot::corrplot(pmax(matrix_high_GA, t(matrix_high_GA), na.rm = TRUE), 
                                       type = 'lower', method = 'color', order = "alphabet",
                                       number.cex = 1.25, cl.cex = 2, tl.cex = 2,
                                       col.lim = c(0,1), addCoef.col = 'black', tl.srt=45, diag = TRUE, 
                                       tl.col = "black")
+```
+
+### Heatmap per shaker condition
+```{r Heatmap high shaking frequency experiment per shaker condition, echo=FALSE, fig.width=14, fig.height=14}
+fullmatrices_high <- correlation_matrices_perShakerCondition$high
+
+for (condition in 1:length(fullmatrices_high)){
+  corrplot::corrplot(pmax(fullmatrices_high[[condition]]$correlationMatrix,
+                          t(fullmatrices_high[[condition]]$correlationMatrix), na.rm = TRUE), 
+                            title = paste0("shaker condition: ", names(fullmatrices_high)[condition]),
+                            type = 'lower', method = 'color', order = "alphabet", 
+                            number.cex = 1.25, cl.cex = 2, tl.cex = 2,
+                            col.lim = c(-1,1), addCoef.col = 'black', tl.srt = 45, 
+                            diag = TRUE, tl.col = "black")
+}
+
+rm(fullmatrices_high)
 ```
 
 ### Pairwise signal plots
@@ -383,7 +420,7 @@ correlations_between_high <- correlation_df$high[correlation_df$high$same_brand 
 
 ### Low sampling frequency experiment
 ```{r Descriptives low sampling frequency experiment, echo=FALSE}
-library(dplyr)
+#library(dplyr)
 correlations_between_low$correlation <- as.numeric(correlations_between_low$correlation)
 #table_between_low <- correlations_between_low %>% group_by(brands)
 avg_cor <- tapply(correlations_between_low$correlation, correlations_between_low$brands, summary)
