@@ -57,9 +57,18 @@ computeCrossCorrelations <- function(data, plot) {
         x = x + 1
       }
       else {
-        crossCorr <- ccf(data[[x]]$HA, data[[y]]$HA, type = "correlation", plot = FALSE)
-        correlationMatrix[x,y] <- max(crossCorr$acf)
-        lagMatrix[x,y] <- crossCorr$lag[crossCorr$acf==max(crossCorr$acf)]
+        #If one the time series during the shaker condition(s) has a standard deviation of 0, cross-correlation coefficient = 0
+        if(sd(data[[x]]$HA) == 0 | sd(data[[y]]$HA) == 0){
+          correlationMatrix[x,y] <- 0
+          lagMatrix[x,y] <- NA
+        }
+        else{
+          crossCorr <- ccf(data[[x]]$HA, data[[y]]$HA, type = "correlation", plot = plot)
+          correlationMatrix[x,y] <- max(crossCorr$acf)
+          lagMatrix[x,y] <- crossCorr$lag[crossCorr$acf==max(crossCorr$acf)]
+        
+        }
+        
       }
     }
   }
