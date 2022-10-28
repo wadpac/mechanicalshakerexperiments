@@ -191,8 +191,8 @@ dataframeShapeComparisonBeween <- function(crossCorrelations, specifications){
 }
 ```
 
-# Cross-correlations
-For the calculation of the cross-correlations, only data of devices with equal sampling frequency were included. For the high sampling frequency experiment this sampling frequency was 100 Hz, and for the low frequency sampling experiment this was 25 Hz. This section presents the maximum lagged cross-correlation coefficients between all signal pairs separately for both experiments.
+# Cross-correlation coefficients
+For the calculation of the cross-correlation coefficients, only data of devices with equal sampling frequency were included. For the high sampling frequency experiment this sampling frequency was 100 Hz, and for the low frequency sampling experiment this was 25 Hz. This section presents the maximum lagged cross-correlation coefficients between all signal pairs separately for both experiments.
 
 ```{r Ensure data with equal sampling frequencies are selected for both experiments, include=FALSE}
 # Cross-correlations are only calculated for the selected data as otherwise interpolation is required (this is not longer raw data and outside the scope of this paper)
