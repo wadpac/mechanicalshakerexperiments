@@ -22,7 +22,7 @@ packages = c("gdata", "doParallel", "remotes", "GENEAread", "THLfi/read.gt3x", "
 lapply(packages, FUN = function(X) {
   tmp = unlist(strsplit(X, "/"))
   X = tmp[length(tmp)]
-  do.call("require", list(X)) 
+  do.call("require", list(X))
 })
 
 

@@ -13,12 +13,12 @@
 autocalibration = function(data, sf, printsummary= TRUE, brand) {
   # simplified version of auto-calibration from R package GGIR
   # without temperature and without loading the data in blocks
-  
+
   spherecrit=0.3
   minloadcrit=72
   # printsummary=TRUE
   windowsizes=c(5,600,600)
-  
+
   use.temp = FALSE
   # filename = unlist(strsplit(as.character(datafile),"/"))
   # filename = filename[length(filename)]
@@ -62,8 +62,8 @@ autocalibration = function(data, sf, printsummary= TRUE, brand) {
       durexp = nrow(data) / (sf*ws)	#duration of experiment in hrs
       # Initialization of variables
       # if (dformat != 5) {
-      
-      # } 
+
+      # }
       data = as.data.frame(data)
       data$X = as.numeric(data$X)
       data$Y = as.numeric(data$Y)
@@ -110,7 +110,7 @@ autocalibration = function(data, sf, printsummary= TRUE, brand) {
     meta_temp = meta_temp[-cut,]
   }
   nhoursused = (nrow(meta_temp) * 10)/3600
-  if (nrow(meta_temp) > (minloadcrit-21)) {  # enough data for the sphere?
+  if (nrow(meta_temp) > minloadcrit) {  # enough data for the sphere?
     meta_temp = meta_temp[-1,]
     #select parts with no movement
     if (brand == "MOX") {
@@ -266,4 +266,3 @@ autocalibration = function(data, sf, printsummary= TRUE, brand) {
                  spheredata=spheredata, npoints=npoints, nhoursused=nhoursused,
                  QCmessage=QCmessage, use.temp=use.temp, bsc_qc=bsc_qc))
 }
-
