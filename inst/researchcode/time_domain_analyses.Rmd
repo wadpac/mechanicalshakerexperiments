@@ -7,7 +7,7 @@ output:
     toc_depth: 5 # upto four depths of headings (specified by #, ##, ###, #### and #####)
 ---
 
-```{r Setup and load data, include = FALSE}
+```{r Setup and load data, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 knitr::opts_chunk$set(dev = 'pdf')
 
@@ -235,7 +235,7 @@ rm(correlations_low, correlations_high, correlations_low_perShakerCondition, cor
 ## Low sampling frequency experiment
 
 ### Overall heatmap
-```{r Heatmap low sampling frequency experiment, fig.width=14, fig.height=14, echo=FALSE}
+```{r Heatmap low sampling frequency experiment, echo=FALSE, fig.width=14, fig.height=14}
 fullmatrix_low <- correlation_matrices$low$correlationMatrix
 heatmap_low <- corrplot::corrplot(pmax(fullmatrix_low, t(fullmatrix_low), na.rm = TRUE), 
                                   type = 'lower', method = 'color', order = "alphabet", 
@@ -245,7 +245,7 @@ heatmap_low <- corrplot::corrplot(pmax(fullmatrix_low, t(fullmatrix_low), na.rm 
 rm(fullmatrix_low, heatmap_low)
 ```
 ### Heatmap per shaker condition
-```{r Heatmap low shaking frequency experiment per shaker condition, fig.width=14, fig.height=14, echo=FALSE}
+```{r Heatmap low sampling frequency experiment per shaker condition, echo=FALSE, fig.width=14, fig.height=14}
 fullmatrices_low <- correlation_matrices_perShakerCondition$low
 
 heatmaps_low <- list()
@@ -259,7 +259,7 @@ for (condition in 1:length(fullmatrices_low)){
                             diag = TRUE, tl.col = "black")
 }
 
-rm(fullmatrices_low)
+rm(fullmatrices_low, heatmaps_low)
 ```
 
 
@@ -310,7 +310,7 @@ for(plot in 1:length(plots_low)){
 ### Overall heatmap
 This section presents the heatmaps for all devices and per brand.
 
-```{r Heatmap high sampling frequency experiment, echo=FALSE, , fig.width=14, fig.height=14}
+```{r Heatmap high sampling frequency experiment, echo=FALSE, fig.width=14, fig.height=14}
 fullmatrix_high <- correlation_matrices$high$correlationMatrix
 heatmap_high <- corrplot::corrplot(pmax(fullmatrix_high, t(fullmatrix_high), na.rm = TRUE), 
                                    type = 'lower', method = 'color', order = "alphabet",
@@ -321,7 +321,7 @@ heatmap_high <- corrplot::corrplot(pmax(fullmatrix_high, t(fullmatrix_high), na.
 
 
 #### ActiGraph
-```{r Heatmap high sampling frequency experiment AG, fig.width=14, fig.height=14,  echo=FALSE}
+```{r Heatmap high sampling frequency experiment AG, echo=FALSE, fig.width=14, fig.height=14}
 matrix_high_AG <- correlation_matrices$high$correlationMatrix[grep("AG",rownames(correlation_matrices$high$correlationMatrix)), grep("AG", colnames(correlation_matrices$high$correlationMatrix))] 
 heatmap_high_AG <- corrplot::corrplot(pmax(matrix_high_AG, t(matrix_high_AG), na.rm = TRUE), 
                                       type = 'lower', method = 'color', order = "alphabet",
@@ -365,7 +365,7 @@ for (condition in 1:length(fullmatrices_high)){
                             diag = TRUE, tl.col = "black")
 }
 
-rm(fullmatrices_high)
+rm(fullmatrices_high, heatmaps_high)
 ```
 
 ### Pairwise signal plots
