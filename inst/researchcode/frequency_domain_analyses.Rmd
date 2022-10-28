@@ -312,6 +312,8 @@ raw_spectra <- list(high = raw.spectra_high, high_mean = mean.freqspec_high, spe
                     low = raw.spectra_low, low_mean = mean.freqspec_low, specifications_low = clean_data_low$frequencyDomain$specifications) # Save derived raw spectra for HA in one list
 save(raw_spectra, file = paste0(datadir, "frequency_spectra.RData"))
 rm(raw.spectra_high, raw.spectra_low, HA, sampling_frequency)
+
+#load(paste0(datadir, "frequency_spectra.RData"))
 ```
 
 ## Low sampling frequency experiment
@@ -498,6 +500,8 @@ df_long <- list(low = df_low, high = df_high)
 #cat("\nSaving data...")
 save(df_long, file = paste0(datadir, "domfreq_meanPSD_long.RData"))
 rm(df_high, df_low)
+
+#load(datadir, "df_long.RData")
 ```
 
 # Statistical comparison: Mixed model analyses
@@ -509,11 +513,11 @@ This section presents the statistical comparison between the brand for the low s
 
 ### Model: meanPSD ~ brand + bin + brand*bin
 ```{r Fit model meanPSD for low sampling frequency experiment, echo=FALSE}
-meanPSD_interaction_id_low <- lme4::lmer(meanPSD ~ 0 + bin + brand + bin*brand + (1 | serialnumber), data = df_long$low)
+meanPSD_interaction_id_low <- lme4::lmer(meanPSD ~ 0 + bin + brand + bin*brand + (1 | serialnumber), REML = TRUE, data = df_long$low)
 
 # Evaluate if adding a random intercept for frequency bin is necessary
-meanPSD_interaction_id_bin_low <- lme4::lmer(meanPSD ~ 0 + bin + brand + bin*brand + (1 | serialnumber) + (1 | bin), data = df_long$low)
-anova(meanPSD_interaction_id_low, meanPSD_interaction_id_bin_low) # This is not necessary, so use simplest model
+meanPSD_interaction_id_bin_low <- lme4::lmer(meanPSD ~ 0 + bin + brand + bin*brand + (1 | serialnumber) + (1 | bin), REML = TRUE, data = df_long$low)
+anova(meanPSD_interaction_id_low, meanPSD_interaction_id_bin_low, refit = FALSE) # This is not necessary, so use simplest model
 ```
 
 #### Model assumption: normal distribution of residuals
@@ -525,8 +529,13 @@ hist(residuals_meanPSD)
 ```
 #### Model summary
 ```{r Model summary meanPSD low sampling frequency experiment, echo=FALSE}
+anova(meanPSD_interaction_id_low)
+car::Anova(meanPSD_interaction_id_low)
+
 summary(meanPSD_interaction_id_low)
 vcov(meanPSD_interaction_id_low)
+
+#drop1(meanPSD_interaction_id_low,scope=c("brand","bin","bin:brand"),test="Chisq")
 ```
 
 #### Pairwise comparisons
@@ -555,11 +564,11 @@ plot(meanpsd_low)
 
 ### Model: domFreq ~ brand + bin + brand*bin
 ```{r Fit model domFreq for low sampling frequency experiment, echo=FALSE}
-domFreq_interaction_id_low <- lme4::lmer(domFreq ~ 0 + bin + brand + bin*brand + (1 | serialnumber), data = df_long$low)
+domFreq_interaction_id_low <- lme4::lmer(domFreq ~ 0 + bin + brand + bin*brand + (1 | serialnumber), REML = TRUE, data = df_long$low)
 
 # Evaluate if adding a random intercept for frequency bin is necessary
-domFreq_interaction_id__bin_low <- lme4::lmer(domFreq ~ 0 + bin + brand + bin*brand + (1 | serialnumber) + (1 | bin), data = df_long$low)
-anova(domFreq_interaction_id_low, domFreq_interaction_id__bin_low) # This is not necessary, so use simplest model
+domFreq_interaction_id__bin_low <- lme4::lmer(domFreq ~ 0 + bin + brand + bin*brand + (1 | serialnumber) + (1 | bin), REML = TRUE, data = df_long$low)
+anova(domFreq_interaction_id_low, domFreq_interaction_id__bin_low, refit = FALSE) # This is not necessary, so use simplest model
 ```
 
 #### Model assumption: normal distribution of residuals
@@ -572,8 +581,13 @@ hist(residuals_domFreq) # approximately normally distributed
 
 #### Model summary
 ```{r Model summary domFreq low sampling frequency experiment, echo=FALSE}
+anova(domFreq_interaction_id_low)
+car::Anova(domFreq_interaction_id_low)
+
 summary(domFreq_interaction_id_low)
 vcov(domFreq_interaction_id_low)
+
+#drop1(domFreq_interaction_id_low,scope=c("brand","bin","bin:brand"),test="Chisq")
 ```
 
 #### Pairwise comparisons
@@ -606,11 +620,11 @@ This section presents the statistical comparison between the brand for the high 
 
 ### Model: meanPSD ~ brand + bin + brand*bin
 ```{r Fit model meanPSD for high sampling frequency experiment, echo=FALSE}
-meanPSD_interaction_id_high <- lme4::lmer(meanPSD ~ 0 + bin + brand + bin*brand + (1 | serialnumber), data = df_long$high)
+meanPSD_interaction_id_high <- lme4::lmer(meanPSD ~ 0 + bin + brand + bin*brand + (1 | serialnumber), REML = TRUE, data = df_long$high)
 
 # Evaluate if adding a random intercept for frequency bin is necessary
-meanPSD_interaction_id_bin_high <- lme4::lmer(meanPSD ~ 0 + bin + brand + bin*brand + (1 | serialnumber) + (1 | bin), data = df_long$high)
-anova(meanPSD_interaction_id_high, meanPSD_interaction_id_bin_high) # This is not necessary, so use simplest model
+meanPSD_interaction_id_bin_high <- lme4::lmer(meanPSD ~ 0 + bin + brand + bin*brand + (1 | serialnumber) + (1 | bin), REML = TRUE, data = df_long$high)
+anova(meanPSD_interaction_id_high, meanPSD_interaction_id_bin_high, refit = FALSE) # This is not necessary, so use simplest model
 ```
 
 #### Model assumption: normal distributions of residuals
@@ -623,8 +637,13 @@ hist(residuals_meanPSD)
 ```
 #### Model summary
 ```{r Model summary meanPSD high sampling frequency experiment, echo=FALSE}
+anova(meanPSD_interaction_id_high)
+car::Anova(meanPSD_interaction_id_high)
+
 summary(meanPSD_interaction_id_high)
 vcov(meanPSD_interaction_id_high)
+
+#drop1(meanPSD_interaction_id_high,scope=c("brand","bin","bin:brand"),test="Chisq")
 ```
 
 #### Pairwise comparisons
@@ -654,11 +673,11 @@ plot(meanpsd_high)
 
 ### Model: domFreq ~ brand + bin + brand*bin
 ```{r Fit model domFreq for high sampling frequency experiment, echo=FALSE}
-domFreq_interaction_id_high <- lme4::lmer(domFreq ~ 0 + bin + brand + bin*brand + (1 | serialnumber), data = df_long$high)
+domFreq_interaction_id_high <- lme4::lmer(domFreq ~ 0 + bin + brand + bin*brand + (1 | serialnumber), REML = TRUE, data = df_long$high)
 
 # Evaluate if adding a random intercept for frequency bin is necessary
-domFreq_interaction_id_bin_high <- lme4::lmer(domFreq ~ 0 + bin + brand + bin*brand + (1 | serialnumber) + (1 | bin), data = df_long$high)
-anova(domFreq_interaction_id_high, domFreq_interaction_id_bin_high) # This is not necessary, so use simplest model
+domFreq_interaction_id_bin_high <- lme4::lmer(domFreq ~ 0 + bin + brand + bin*brand + (1 | serialnumber) + (1 | bin), REML = TRUE, data = df_long$high)
+anova(domFreq_interaction_id_high, domFreq_interaction_id_bin_high, refit = FALSE) # This is not necessary, so use simplest model
 ```
 
 #### Model assumption: normal distributions of residuals
@@ -670,8 +689,13 @@ hist(residuals_domFreq) # approximately normally distributed
 ```
 #### Model summary
 ```{r Model summary domFreq high sampling frequency experiment, echo=FALSE}
+anova(domFreq_interaction_id_high)
+car::Anova(domFreq_interaction_id_high)
+
 summary(domFreq_interaction_id_high)
 vcov(domFreq_interaction_id_high)
+
+#drop1(domFreq_interaction_id_high,scope=c("brand","bin","bin:brand"),test="Chisq")
 ```
 
 #### Pairwise comparisons
@@ -697,7 +721,6 @@ ggplot2::ggsave(file=paste0(datadir, "plots/boxplots_dominant-frequency_HIGH.pdf
 ```{r Print boxplot for dominant frequency high sampling frequency experiment, echo=FALSE}
 plot(domfreq_high)
 ```
-
 
 ```{r Create boxplot mean power spectral density, include=FALSE}
 gridExtra::grid.arrange(bxp_psd_low, bxp_psd_high, nrow=1) #arranges plots within grid
