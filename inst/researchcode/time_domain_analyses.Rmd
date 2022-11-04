@@ -254,7 +254,90 @@ for (condition in 1:length(fullmatrices_low)){
 
 rm(fullmatrices_low, heatmaps_low)
 ```
+### Comparison
+This section presents the average maximum lagged cross-correlation between and within brands separately per shaker condition.
 
+```{r Calculate average maximum cross lagged correlation coefficients low sampling frequency experiment per shaker condition, include=FALSE}
+avg_crosscor_low_between <- list()
+avg_crosscor_low_within <- list()
+
+for (condition in 1:length(correlation_matrices_perShakerCondition$low)){
+  avg_crosscor_low <- dataframeShapeComparisonBeween(correlation_matrices_perShakerCondition$low[[condition]], specifications_low) 
+  avg_crosscor_low_between[[condition]] <- avg_crosscor_low[avg_crosscor_low$same_brand == "0",]
+  avg_crosscor_low_within[[condition]] <- avg_crosscor_low[avg_crosscor_low$same_brand == "1",]
+}
+rm(avg_crosscor_low)
+names(avg_crosscor_low_between) <- names(correlation_matrices_perShakerCondition$low)
+names(avg_crosscor_low_within) <- names(correlation_matrices_perShakerCondition$low)
+```
+
+#### Between brands
+```{r Between brand comparison low sampling frequency experiment, echo=FALSE}
+table_between_low <- list()
+for(condition in 1:length(avg_crosscor_low_between)){
+  df_correlations_low <- avg_crosscor_low_between[[condition]]
+  df_correlations_low$correlation <- as.numeric(df_correlations_low$correlation)
+  avg_cor <- tapply(df_correlations_low$correlation, df_correlations_low$brands, summary)
+  
+  tab <- rbind(avg_cor$GENEActivAxivity, avg_cor$MOXAxivity, avg_cor$MOXGENEActiv)
+  tab <- tab[,-1]
+  tab <- tab[,-5]
+  SD <- tapply(df_correlations_low$correlation, df_correlations_low$brands, sd)
+  SD <- c(SD[2], SD[4], SD[5])
+  tab <- cbind(tab, SD)
+  table_between_low[[condition]] <- tab
+}
+rm(avg_cor, tab, SD)
+names(table_between_low) <- names(correlation_matrices_perShakerCondition$low)
+```
+
+```{r Print between comparison tables low frequency experiment, echo = FALSE}
+for(condition in 1:length(table_between_low)){
+  print(paste0("Shaker condition: ", names(table_between_low)[condition]))
+  print(table_between_low[[condition]])
+}
+```
+
+#### Within brands
+```{r Within brand comparison low sampling frequency experiment, echo=FALSE}
+table_within_low <- list()
+for(condition in 1:length(avg_crosscor_low_within)){
+  df_correlations_low <- avg_crosscor_low_within[[condition]]
+  df_correlations_low$correlation <- as.numeric(df_correlations_low$correlation)
+  avg_cor <- tapply(df_correlations_low$correlation, df_correlations_low$brands, summary)
+  
+  tab <- rbind(avg_cor$AxivityAxivity, avg_cor$GENEActivGENEActiv, avg_cor$MOXMOX)
+  tab <- tab[,-1]
+  tab <- tab[,-5]
+  SD <- tapply(df_correlations_low$correlation, df_correlations_low$brands, sd)
+  SD <- c(SD[1], SD[3], SD[6])
+  tab <- cbind(tab, SD)
+  table_within_low[[condition]] <- tab
+}
+rm(avg_cor, tab, SD)
+names(table_within_low) <- names(correlation_matrices_perShakerCondition$low)
+```
+
+```{r Print between comparison tables low frequency experiment, echo = FALSE}
+for(condition in 1:length(table_within_low)){
+  print(paste0("Shaker condition: ", names(table_within_low)[condition]))
+  print(table_within_low[[condition]])
+}
+```
+
+## Overall descriptive statistics
+```{r  Derive data.frames required for comparison of the signal shape between brands, include=FALSE}
+df_correlations_low <- dataframeShapeComparisonBeween(correlation_matrices$low, specifications_low) 
+df_correlations_high <- dataframeShapeComparisonBeween(correlation_matrices$high, specifications_high) 
+
+cat("\nSaving data...")
+correlation_df <- list(low = df_correlations_low, high = df_correlations_high)
+save(correlation_df, file = paste0(datadir, "cross_correlation_df.RData"))
+
+#Subset the data to include only between brand comparisons
+correlations_between_low <- correlation_df$low[correlation_df$low$same_brand =="0", ]
+correlations_between_high <- correlation_df$high[correlation_df$high$same_brand =="0", ]
+```
 
 ### Pairwise signal plots
 This section presents pairwise plots for cross-correlation coefficients that are 1 SD lower than the mean cross-correlation (i.e., threshold).
@@ -296,7 +379,6 @@ plots_low <- pairwisePlots(correlationMatrix = correlation_matrices$low$correlat
 for(plot in 1:length(plots_low)){
   print(plots_low[[plot]])
 }
-
 ```
 
 ## High sampling frequency experiment
@@ -366,6 +448,77 @@ for (condition in 1:length(fullmatrices_high)){
 rm(fullmatrices_high, heatmaps_high)
 ```
 
+### Comparison
+This section presents the average maximum lagged cross-correlation between and within brands separately per shaker condition.
+
+```{r Calculate average maximum cross lagged correlation coefficients high sampling frequency experiment per shaker condition, include=FALSE}
+avg_crosscor_high_between <- list()
+avg_crosscor_high_within <- list()
+
+for (condition in 1:length(correlation_matrices_perShakerCondition$high)){
+  avg_crosscor_high <- dataframeShapeComparisonBeween(correlation_matrices_perShakerCondition$high[[condition]], specifications_high) 
+  avg_crosscor_high_between[[condition]] <- avg_crosscor_high[avg_crosscor_high$same_brand == "0",]
+  avg_crosscor_high_within[[condition]] <- avg_crosscor_high[avg_crosscor_high$same_brand == "1",]
+}
+rm(avg_crosscor_high)
+names(avg_crosscor_high_between) <- names(correlation_matrices_perShakerCondition$high)
+names(avg_crosscor_high_within) <- names(correlation_matrices_perShakerCondition$high)
+```
+
+#### Between brands
+```{r Between brand comparison high sampling frequency experiment, echo=FALSE}
+table_between_high <- list()
+for(condition in 1:length(avg_crosscor_high_between)){
+  df_correlations_high <- avg_crosscor_high_between[[condition]]
+  df_correlations_high$correlation <- as.numeric(df_correlations_high$correlation)
+  avg_cor <- tapply(df_correlations_high$correlation, df_correlations_high$brands, summary)
+  
+  tab <- rbind(avg_cor$AxivityActigraph, avg_cor$GENEActivActigraph, avg_cor$GENEActivAxivity)
+  tab <- tab[,-1]
+  tab <- tab[,-5]
+  SD <- tapply(df_correlations_high$correlation, df_correlations_high$brands, sd)
+  SD <- c(SD[2], SD[4], SD[5])
+  tab <- cbind(tab, SD)
+  table_between_high[[condition]] <- tab
+}
+rm(avg_cor, tab, SD)
+names(table_between_high) <- names(correlation_matrices_perShakerCondition$low)
+```
+
+```{r Print between comparison tables high frequency experiment, echo = FALSE}
+for(condition in 1:length(table_between_high)){
+  print(paste0("Shaker condition: ", names(table_between_high)[condition]))
+  print(table_between_high[[condition]])
+}
+```
+
+#### Within brands
+```{r Within brand comparison high sampling frequency experiment, echo=FALSE}
+table_within_high <- list()
+for(condition in 1:length(avg_crosscor_high_within)){
+  df_correlations_high <- avg_crosscor_high_within[[condition]]
+  df_correlations_high$correlation <- as.numeric(df_correlations_high$correlation)
+  avg_cor <- tapply(df_correlations_high$correlation, df_correlations_high$brands, summary)
+  
+  tab <- rbind(avg_cor$ActigraphActigraph, avg_cor$AxivityAxivity, avg_cor$GENEActivGENEActiv)
+  tab <- tab[,-1]
+  tab <- tab[,-5]
+  SD <- tapply(df_correlations_high$correlation, df_correlations_high$brands, sd)
+  SD <- c(SD[1], SD[3], SD[6])
+  tab <- cbind(tab, SD)
+  table_within_high[[condition]] <- tab
+}
+rm(avg_cor, tab, SD)
+names(table_within_high) <- names(correlation_matrices_perShakerCondition$high)
+```
+
+```{r Print between comparison tables high frequency experiment, echo = FALSE}
+for(condition in 1:length(table_within_high)){
+  print(paste0("Shaker condition: ", names(table_within_high)[condition]))
+  print(table_within_high[[condition]])
+}
+```
+
 ### Pairwise signal plots
 In this section pairwise plots are generated for cross-correlations that are 1 SD lower than the mean cross-correlation (i.e., threshold).
 
@@ -411,7 +564,7 @@ for(plot in 1:length(plots_high)){
 # Between brand comparison
 In this section the average maximum lagged cross-correlation between the pair brands are presented separately for both experiments.
 
-## Descriptive statistics
+## Overall descriptive statistics
 ```{r  Derive data.frames required for comparison of the signal shape between brands, include=FALSE}
 df_correlations_low <- dataframeShapeComparisonBeween(correlation_matrices$low, specifications_low) 
 df_correlations_high <- dataframeShapeComparisonBeween(correlation_matrices$high, specifications_high) 
