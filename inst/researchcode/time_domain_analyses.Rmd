@@ -318,7 +318,7 @@ rm(avg_cor, tab, SD)
 names(table_within_low) <- names(correlation_matrices_perShakerCondition$low)
 ```
 
-```{r Print between comparison tables low frequency experiment, echo = FALSE}
+```{r Print within comparison tables low frequency experiment, echo = FALSE}
 for(condition in 1:length(table_within_low)){
   print(paste0("Shaker condition: ", names(table_within_low)[condition]))
   print(table_within_low[[condition]])
@@ -338,6 +338,25 @@ save(correlation_df, file = paste0(datadir, "cross_correlation_df.RData"))
 correlations_between_low <- correlation_df$low[correlation_df$low$same_brand =="0", ]
 correlations_between_high <- correlation_df$high[correlation_df$high$same_brand =="0", ]
 ```
+
+#### Heatmap table average cross-correlation coefficients per shaker condition
+```{r Heatmap table low sampling freqency, echo=TRUE}
+overview_tab_between <- data.frame()
+overview_tab_within <- data.frame()
+
+for(condition in 1:length(table_between_low)){
+  overview_tab_between <- rbind(overview_tab_between, table_between_low[[condition]][,3])
+  overview_tab_within <- rbind(overview_tab_within, table_between_low[[condition]][,3])
+}
+colnames(overview_tab_between) <- rownames(table_between_low[[condition]])
+colnames(overview_tab_within) <- rownames(table_between_low[[condition]])
+overview_tab <- cbind(overview_tab_between, overview_tab_within)
+rownames(overview_tab) <- c(30, 40, 50, 62, 75, 87, 100, 112, 125, 137, 150, 160, 175, 187, 200, 212, 225, 237, 250)
+
+pheatmap::pheatmap(overview_tab, display_numbers = TRUE, cluster_rows = FALSE, cluster_cols = FALSE, angle_col = c("90"), row_names_side = c("left"))
+
+```
+
 
 ### Pairwise signal plots
 This section presents pairwise plots for cross-correlation coefficients that are 1 SD lower than the mean cross-correlation (i.e., threshold).
@@ -512,11 +531,29 @@ rm(avg_cor, tab, SD)
 names(table_within_high) <- names(correlation_matrices_perShakerCondition$high)
 ```
 
-```{r Print between comparison tables high frequency experiment, echo = FALSE}
+```{r Print within comparison tables high frequency experiment, echo = FALSE}
 for(condition in 1:length(table_within_high)){
   print(paste0("Shaker condition: ", names(table_within_high)[condition]))
   print(table_within_high[[condition]])
 }
+```
+
+#### Heatmap table average cross-correlation coefficients per shaker condition
+```{r Heatmap table high sampling freqency}
+overview_tab_between <- data.frame()
+overview_tab_within <- data.frame()
+
+for(condition in 1:length(table_between_high)){
+  overview_tab_between <- rbind(overview_tab_between, table_between_high[[condition]][,3])
+  overview_tab_within <- rbind(overview_tab_within, table_within_high[[condition]][,3])
+}
+colnames(overview_tab_between) <- rownames(table_between_high[[condition]])
+colnames(overview_tab_within) <- rownames(table_within_high[[condition]])
+overview_tab <- cbind(overview_tab_between, overview_tab_within)
+rownames(overview_tab) <- c(30, 40, 50, 62, 75, 87, 100, 112, 125, 137, 150, 160, 175, 187, 200, 212, 225, 237, 250)
+
+pheatmap::pheatmap(overview_tab, display_numbers = TRUE, cluster_rows = FALSE, cluster_cols = FALSE, angle_col = c("90"), row_names_side = c("left"))
+
 ```
 
 ### Pairwise signal plots
