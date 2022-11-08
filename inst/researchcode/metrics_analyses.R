@@ -2,25 +2,21 @@ rm(list = ls())
 graphics.off()
 
 # Update to be your local directory, if all goes well this is the only line you will have to update
-shaker_experiments_folder = "~/data/VUMC/shaker_experiments"
+shaker_experiments_folder = "/media/vincent/DATA/VUMC/shaker_experiments"
 
 # TO DO: Check which GENEActiv was removed towards end of one of the experiments, and make sure data is not included
 
 source("~/projects/mechanicalshakerexperiments/R/applymetrics.R")
 
-#========================================================================================
-# Most of these libraries are needed for running SummarizedActigraph and/or MIMSunit
+# #========================================================================================
+# # Most of these libraries are needed for running SummarizedActigraph and/or MIMSunit
 library(tidyverse)
 library(lubridate)
-# library(lme4)
-library(knitr)
-remotes::install_github("muschellij2/SummarizedActigraphy")
+# remotes::install_github("muschellij2/SummarizedActigraphy")
 library(SummarizedActigraphy)
-library(MIMSunit)
-library(activityCounts)
 options(digits.secs = 7)
 options(scipen = 999)
-# library("MIMSunit")
+
 
 #====================================================================================
 # Specify file paths
@@ -32,9 +28,9 @@ extracted_data_path = paste0(shaker_experiments_folder, "/structured_raw_data")
 #======================================================================================
 # Load relevant files, apply calibration correction coefficients, and apply metrics
 fns = dir(extracted_data_path, full.names = TRUE)
-outputfile = paste0(shaker_experiments_folder, "/metric_analyses/explore_metrics.RData")
+outputfile = paste0(shaker_experiments_folder, "/analyses/explore_metrics.RData")
 sessionames = c("ms_hfcr", "ms_lfcr", "ms_mfcr") 
-overwrite = TRUE
+overwrite = FALSE
 epochsize = 5
 averageperws3 = function(x,sf,epochsize) {
   x2 = cumsum(c(0, x))
@@ -48,7 +44,6 @@ if (!file.exists(outputfile) | overwrite == TRUE) {
   cnt  = 1
   for (ses_name in sessionames) { #
     ses1 = grep(basename(fns), pattern = ses_name)
-    # pdf(file = paste0(shaker_experiments_folder, "/metric_analyses/explore_metrics",ses_name,".pdf"))
     for (fn in fns[ses1]) {
       print(fn)
       load(fn) # TO DO: This loads object extracteddata => maybe rename this "structured_data"???
@@ -246,9 +241,6 @@ if (!file.exists(outputfile) | overwrite == TRUE) {
           print(paste0(sn, " ignored")) 
           sn_ignored = c(sn_ignored, paste0(sn,"_", brand,"_", ses_name))
         }
-        #     }
-        #   }
-        # }
       }
     }
   }
@@ -264,6 +256,8 @@ if (!file.exists(outputfile) | overwrite == TRUE) {
 # Combine into data.frame
 DATA = do.call("rbind", combineddata)
 DATA = DATA[-which(DATA$sn %in% c(21950, 37727) == TRUE & DATA$sf == 800),] # remove extreme configuration that caused artifacts
+# jjjj
+DATA = DATA[-which(DATA$sn %in% c("AP672490", "AP473254") == TRUE & DATA$ses_name == "ms_lfcr"),] # remove extreme configuration that caused artifacts
 #====================================================================
 # Stratify Actigraph by version:
 MOS = grep(pattern = "MOS", x = DATA$sn)
@@ -330,7 +324,7 @@ D$time = as.POSIXlt(D$time, tz = "Europe/Amsterdam", origin = "1970-01-01")
 # D = D[-which(D$brand == "Activpal"),]
 
 CX = 0.7
-pdf(file = "~/data/VUMC/shaker_experiments/metric_analyses/inspect_metrics.pdf")
+pdf(file = paste0(shaker_experiments_folder, "/analyses/inspect_metrics.pdf"))
 for (metric in c("MAD", "AI", "MIMSlight",  "HFEN", "BFEN")) { # "EN",  "ENMO",  "HFENplus", 
   par(mfrow = c(1,3))  
   YLIM = range(D[,metric], na.rm = TRUE)

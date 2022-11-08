@@ -205,6 +205,7 @@ if (!file.exists(outputfile) | overwrite == TRUE) {
 # Combine into data.frame
 DATA = do.call("rbind", combineddata)
 DATA = DATA[-which(DATA$sn %in% c(21950, 37727) == TRUE & DATA$sf == 800),] # remove extreme configuration that caused artifacts
+DATA = DATA[-which(DATA$sn %in% c("AP672490", "AP473254") == TRUE & DATA$ses_name == "ms_lfcr"),] # remove extreme configuration that caused artifacts
 #====================================================================
 # Stratify Actigraph by version:
 MOS = grep(pattern = "MOS", x = DATA$sn)
