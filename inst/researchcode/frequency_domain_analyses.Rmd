@@ -512,11 +512,12 @@ This section presents the statistical comparison of the frequency spectra in ter
 
 ### Low sampling frequency experiment
 ```{r Fit model meanPSD for low sampling frequency experiment, echo=FALSE}
-meanPSD_interaction_id_low <- lme4::lmer(meanPSD ~ 0 + bin + brand + bin*brand + (1 | serialnumber), REML = TRUE, data = df_long$low)
+meanPSD_interaction_id_low <- lme4::lmer(meanPSD ~ bin*brand + (1 | serialnumber), REML = TRUE, data = df_long$low)
 
 # Evaluate if adding a random intercept for frequency bin is necessary
-meanPSD_interaction_id_bin_low <- lme4::lmer(meanPSD ~ 0 + bin + brand + bin*brand + (1 | serialnumber) + (1 | bin), REML = TRUE, data = df_long$low)
+meanPSD_interaction_id_bin_low <- lme4::lmer(meanPSD ~ bin*brand + (1 | serialnumber) + (1 | bin), REML = TRUE, data = df_long$low) # No convergence, so use the simpler model
 anova(meanPSD_interaction_id_low, meanPSD_interaction_id_bin_low, refit = FALSE) # This is not necessary, so use simplest model
+rm(meanPSD_interaction_id_bin_low)
 ```
 
 #### Model assumption: normal distribution of residuals
@@ -528,11 +529,12 @@ hist(residuals_meanPSD)
 ```
 #### Model summary
 ```{r Model summary meanPSD low sampling frequency experiment, echo=FALSE}
-anova(meanPSD_interaction_id_low)
-car::Anova(meanPSD_interaction_id_low)
-
-summary(meanPSD_interaction_id_low)
-vcov(meanPSD_interaction_id_low)
+car::Anova(meanPSD_interaction_id_low, type="II", test.statistic="F")
+require(lmerTest)
+test.meanPSD_low <- as(meanPSD_interaction_id_low, "merModLmerTest")
+print(summary(test.meanPSD_low, ddf="Kenward-Roger"), correlation = FALSE)
+#summary(meanPSD_interaction_id_low)
+vcov(meanPSD_interaction_id_low, type = "random")
 
 #drop1(meanPSD_interaction_id_low,scope=c("brand","bin","bin:brand"),test="Chisq")
 ```
@@ -557,6 +559,9 @@ emmeans::contrast(maineffect_brand, "pairwise")
 ##### Interaction effect
 ```{r Calculate contrasts model meanPSD for low sampling frequency experiment, echo=FALSE}
 calculateContrasts(meanPSD_interaction_id_low, df_long$low)
+
+emmeans::emmeans(meanPSD_interaction_id_low, specs = c("bin", "brand"))
+
 ```
 
 #### Boxplot
@@ -580,10 +585,10 @@ plot(meanpsd_low)
 ### High sampling frequency experiment
 
 ```{r Fit model meanPSD for high sampling frequency experiment, echo=FALSE}
-meanPSD_interaction_id_high <- lme4::lmer(meanPSD ~ 0 + bin + brand + bin*brand + (1 | serialnumber), REML = TRUE, data = df_long$high)
+meanPSD_interaction_id_high <- lme4::lmer(meanPSD ~ bin*brand + (1 | serialnumber), REML = TRUE, data = df_long$high)
 
 # Evaluate if adding a random intercept for frequency bin is necessary
-meanPSD_interaction_id_bin_high <- lme4::lmer(meanPSD ~ 0 + bin + brand + bin*brand + (1 | serialnumber) + (1 | bin), REML = TRUE, data = df_long$high)
+meanPSD_interaction_id_bin_high <- lme4::lmer(meanPSD ~ bin*brand + (1 | serialnumber) + (1 | bin), REML = TRUE, data = df_long$high) # No convergence, so use simpler model
 anova(meanPSD_interaction_id_high, meanPSD_interaction_id_bin_high, refit = FALSE) # This is not necessary, so use simplest model
 ```
 
@@ -597,11 +602,12 @@ hist(residuals_meanPSD)
 ```
 #### Model summary
 ```{r Model summary meanPSD high sampling frequency experiment, echo=FALSE}
-anova(meanPSD_interaction_id_high)
-car::Anova(meanPSD_interaction_id_high)
-
-summary(meanPSD_interaction_id_high)
-vcov(meanPSD_interaction_id_high)
+car::Anova(meanPSD_interaction_id_high, type="II", test.statistic="F")
+require(lmerTest)
+test.meanPSD_high <- as(meanPSD_interaction_id_high, "merModLmerTest")
+print(summary(test.meanPSD_high, ddf="Kenward-Roger"), correlation = FALSE)
+#summary(meanPSD_interaction_id_high)
+vcov(meanPSD_interaction_id_high, type = "random")
 
 #drop1(meanPSD_interaction_id_high,scope=c("brand","bin","bin:brand"),test="Chisq")
 ```
@@ -645,10 +651,10 @@ plot(meanpsd_high)
 
 ### Low sampling frequency experiment
 ```{r Fit model domFreq for low sampling frequency experiment, echo=FALSE}
-domFreq_interaction_id_low <- lme4::lmer(domFreq ~ 0 + bin + brand + bin*brand + (1 | serialnumber), REML = TRUE, data = df_long$low)
+domFreq_interaction_id_low <- lme4::lmer(domFreq ~ bin*brand + (1 | serialnumber), REML = TRUE, data = df_long$low)
 
 # Evaluate if adding a random intercept for frequency bin is necessary
-domFreq_interaction_id__bin_low <- lme4::lmer(domFreq ~ 0 + bin + brand + bin*brand + (1 | serialnumber) + (1 | bin), REML = TRUE, data = df_long$low)
+domFreq_interaction_id__bin_low <- lme4::lmer(domFreq ~ bin*brand + (1 | serialnumber) + (1 | bin), REML = TRUE, data = df_long$low)
 anova(domFreq_interaction_id_low, domFreq_interaction_id__bin_low, refit = FALSE) # This is not necessary, so use simplest model
 ```
 
@@ -662,11 +668,12 @@ hist(residuals_domFreq) # approximately normally distributed
 
 #### Model summary
 ```{r Model summary domFreq low sampling frequency experiment, echo=FALSE}
-anova(domFreq_interaction_id_low)
-car::Anova(domFreq_interaction_id_low)
-
-summary(domFreq_interaction_id_low)
-vcov(domFreq_interaction_id_low)
+car::Anova(domFreq_interaction_id_low, type="II", test.statistic="F")
+require(lmerTest)
+test.domFreq_low <- as(domFreq_interaction_id_low, "merModLmerTest")
+print(summary(test.domFreq_low, ddf="Kenward-Roger"), correlation = FALSE)
+#summary(domFreq_interaction_id_low)
+vcov(domFreq_interaction_id_low, type = "random")
 
 #drop1(domFreq_interaction_id_low,scope=c("brand","bin","bin:brand"),test="Chisq")
 ```
@@ -714,10 +721,10 @@ plot(domfreq_low)
 
 ### High sampling frequency experiment
 ```{r Fit model domFreq for high sampling frequency experiment, echo=FALSE}
-domFreq_interaction_id_high <- lme4::lmer(domFreq ~ 0 + bin + brand + bin*brand + (1 | serialnumber), REML = TRUE, data = df_long$high)
+domFreq_interaction_id_high <- lme4::lmer(domFreq ~ bin*brand + (1 | serialnumber), REML = TRUE, data = df_long$high)
 
 # Evaluate if adding a random intercept for frequency bin is necessary
-domFreq_interaction_id_bin_high <- lme4::lmer(domFreq ~ 0 + bin + brand + bin*brand + (1 | serialnumber) + (1 | bin), REML = TRUE, data = df_long$high)
+domFreq_interaction_id_bin_high <- lme4::lmer(domFreq ~ bin*brand + (1 | serialnumber) + (1 | bin), REML = TRUE, data = df_long$high)
 anova(domFreq_interaction_id_high, domFreq_interaction_id_bin_high, refit = FALSE) # This is not necessary, so use simplest model
 ```
 
@@ -730,11 +737,13 @@ hist(residuals_domFreq) # approximately normally distributed
 ```
 #### Model summary
 ```{r Model summary domFreq high sampling frequency experiment, echo=FALSE}
-anova(domFreq_interaction_id_high)
-car::Anova(domFreq_interaction_id_high)
 
-summary(domFreq_interaction_id_high)
-vcov(domFreq_interaction_id_high)
+car::Anova(domFreq_interaction_id_high, type="II", test.statistic="F")
+require(lmerTest)
+test.domFreq_high <- as(domFreq_interaction_id_high, "merModLmerTest")
+print(summary(test.domFreq_high, ddf="Kenward-Roger"), correlation = FALSE)
+#summary(domFreq_interaction_id_high)
+vcov(domFreq_interaction_id_high, type = "random")
 
 #drop1(domFreq_interaction_id_high,scope=c("brand","bin","bin:brand"),test="Chisq")
 ```
