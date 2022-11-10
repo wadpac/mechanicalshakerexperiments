@@ -238,7 +238,7 @@ heatmap_low <- corrplot::corrplot(pmax(fullmatrix_low, t(fullmatrix_low), na.rm 
 rm(fullmatrix_low, heatmap_low)
 ```
 ### Heatmap per shaker condition
-```{r Heatmap low sampling frequency experiment per shaker condition, echo=FALSE, fig.width=14, fig.height=14}
+```{r Heatmap low sampling frequency experiment per shaker condition, echo=FALSE, fig.width=14, fig.height=15}
 fullmatrices_low <- correlation_matrices_perShakerCondition$low
 
 heatmaps_low <- list()
@@ -248,7 +248,7 @@ for (condition in 1:length(fullmatrices_low)){
                             title = paste0("shaker condition: ", names(fullmatrices_low)[condition]),
                             type = 'lower', method = 'color', order = "alphabet", 
                             number.cex = 1.25, cl.cex = 2, tl.cex = 2,
-                            col.lim = c(0,1), addCoef.col = 'black', tl.srt = 45, 
+                            col.lim = c(0,1), addCoef.col = 'black', tl.srt = 45, mar=c(0,0,2,0),
                             diag = TRUE, tl.col = "black")
 }
 
@@ -346,10 +346,10 @@ overview_tab_within <- data.frame()
 
 for(condition in 1:length(table_between_low)){
   overview_tab_between <- rbind(overview_tab_between, table_between_low[[condition]][,3])
-  overview_tab_within <- rbind(overview_tab_within, table_between_low[[condition]][,3])
+  overview_tab_within <- rbind(overview_tab_within, table_within_low[[condition]][,3])
 }
 colnames(overview_tab_between) <- rownames(table_between_low[[condition]])
-colnames(overview_tab_within) <- rownames(table_between_low[[condition]])
+colnames(overview_tab_within) <- rownames(table_within_low[[condition]])
 overview_tab <- cbind(overview_tab_between, overview_tab_within)
 rownames(overview_tab) <- c(30, 40, 50, 62, 75, 87, 100, 112, 125, 137, 150, 160, 175, 187, 200, 212, 225, 237, 250)
 
@@ -450,17 +450,17 @@ rm(matrix_high_GA, heatmap_high_GA)
 ```
 
 ### Heatmap per shaker condition
-```{r Heatmap high shaking frequency experiment per shaker condition, echo=FALSE, fig.width=14, fig.height=14}
+```{r Heatmap high shaking frequency experiment per shaker condition, echo=FALSE, fig.width=14, fig.height=15}
 fullmatrices_high <- correlation_matrices_perShakerCondition$high
 
 heatmaps_high <- list()
 for (condition in 1:length(fullmatrices_high)){
   heatmaps_high[[condition]] <- corrplot::corrplot(pmax(fullmatrices_high[[condition]]$correlationMatrix,
                           t(fullmatrices_high[[condition]]$correlationMatrix), na.rm = TRUE), 
-                            title = paste0("shaker condition: ", names(fullmatrices_high)[condition]),
+                            #title = paste0("shaker condition: ", names(fullmatrices_high)[condition]),
                             type = 'lower', method = 'color', order = "alphabet", 
                             number.cex = 1.25, cl.cex = 2, tl.cex = 2,
-                            col.lim = c(-1,1), addCoef.col = 'black', tl.srt = 45, 
+                            col.lim = c(-1,1), addCoef.col = 'black', tl.srt = 45,  mar=c(0,0,2,0),
                             diag = TRUE, tl.col = "black")
 }
 
