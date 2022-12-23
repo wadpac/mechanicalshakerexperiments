@@ -95,7 +95,7 @@ loaddata <- function(path, brand, experiment, windows = TRUE, experimentfile, ac
                        # Load in the data
                        tz = "Europe/Amsterdam"
                        if (brand == "Actigraph") {
-                         rawdata <- as.data.frame(GGIR::read.gt3x_ggir(paste(file_path, file_list[i], sep = "/"), asDataFrame = TRUE))
+                         rawdata <- as.data.frame(read.gt3x::read.gt3x(paste(file_path, file_list[i], sep = "/"), asDataFrame = TRUE))
                          options(digits.secs = 5)
                          options(scipen = 999)
                          options(digits = 20)

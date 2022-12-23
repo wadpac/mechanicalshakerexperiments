@@ -7,7 +7,8 @@ output:
     toc_depth: 5 # upto four depths of headings (specified by #, ##, ###, #### and #####)
 ---
 
-```{r Setup and load data, include = FALSE}
+```{r Setup and load data, include=FALSE}
+
 knitr::opts_chunk$set(echo = TRUE)
 knitr::opts_chunk$set(dev = 'pdf')
 
@@ -24,24 +25,20 @@ datadir = paste0(shaker_experiments_folder, "/analyses/")
 if (!dir.exists(datadir)) {
   stop(paste0("Directory does not exist: ", datadir))
 }
-# Load mechanical shaker data for horizontal axis without the deviating signals
-filename_flatHA = paste0(datadir, "ms_flat_HA_deviates_removed.RData") 
-if (!file.exists(filename_flatHA)) {
-  stop(paste0("File does not exist: ", filename_flatHA))
+
+# Load cleaned mechanical shaker machine data for both experiments
+filename_high = paste0(datadir, "ms_flat_HA_cleaned_high.RData") 
+filename_low = paste0(datadir, "ms_flat_HA_cleaned_low.RData") 
+if (!file.exists(filename_high)) {
+  stop(paste0("File does not exist: ", filename_high))
 }
-load(filename_flatHA)
+load(filename_high)
+if (!file.exists(filename_low)) {
+  stop(paste0("File does not exist: ", filename_low))
+}
+load(filename_low)
+rm(filename_high, filename_low)
 
-# Select data with same sampling frequency for high and low experiments only
-# Cross-correlations are only calculated for the selected data as otherwise interpolation is required (this is not longer raw data and outside the scope of this paper)
-data_high_100 <- ms_flat_HA_new$data[ms_flat_HA_new$specifications$experiment == "ms_hfcr" &
-                  round(as.numeric(ms_flat_HA_new$specifications$sampling_frequency)) == "100"]
-data_low_25 <- ms_flat_HA_new$data[ms_flat_HA_new$specifications$experiment == "ms_lfcr" &
-                round(as.numeric(ms_flat_HA_new$specifications$sampling_frequency)) == "25"]
-specifications_high <- ms_flat_HA_new$specifications[ms_flat_HA_new$specifications$experiment == "ms_hfcr" &                      
-                        round(as.numeric(ms_flat_HA_new$specifications$sampling_frequency)) == "100",]
-specifications_low <- ms_flat_HA_new$specifications[ms_flat_HA_new$specifications$experiment == "ms_lfcr" &                                                 round(as.numeric(ms_flat_HA_new$specifications$sampling_frequency)) == "25",]
-
-rm(shaker_experiments_folder, filename_flatHA, ms_flat_HA_new)
 ```
 
 ```{r Functions, include=FALSE}
@@ -62,9 +59,20 @@ computeCrossCorrelations <- function(data, plot) {
         x = x + 1
       }
       else {
-        crossCorr <- ccf(data[[x]]$HA, data[[y]]$HA, type = "correlation", plot = FALSE)
-        correlationMatrix[x,y] <- max(crossCorr$acf)
-        lagMatrix[x,y] <- crossCorr$lag[crossCorr$acf==max(crossCorr$acf)]
+      #If one of the time series during the shaker condition(s) has a standard deviation of 0, cross-correlation coefficient = 0
+        if(sd(data[[x]]$HA) == 0 | sd(data[[y]]$HA) == 0){
+          correlationMatrix[x,y] <- 0
+          lagMatrix[x,y] <- NA
+        }
+        #If both time series during the shaker condition(s) have a standard deviation of 0, cross-correlation coefficient = 1
+        else if(sd(data[[x]]$HA) == 0 & sd(data[[y]]$HA) == 0){
+          correlationMatrix[x,y] <- 1
+        }
+        else{
+          crossCorr <- ccf(data[[x]]$HA, data[[y]]$HA, type = "correlation", plot = plot)
+          correlationMatrix[x,y] <- max(crossCorr$acf)
+          lagMatrix[x,y] <- crossCorr$lag[crossCorr$acf==max(crossCorr$acf)]
+        }
       }
     }
   }
@@ -73,6 +81,29 @@ computeCrossCorrelations <- function(data, plot) {
   colnames(lagMatrix) <- names(data)
   rownames(lagMatrix) <- names(data)
   return(list(correlationMatrix = correlationMatrix, lags = lagMatrix))
+}
+
+#' computeCrossCorrelationsPerShakerCondition
+#'
+#' @description 'computeCrossCorrelationsPerShakerCondition' computes for each shaker condition the maximum cross-correlations between two signals and the corresponding lag per shaker condition using the function computeCrossCorrelations
+#' @param data An object of class "spec"
+#' @return List object containing the cross-correlations and lags for each shaker condition
+#' @export
+computeCrossCorrelationsPerShakerCondition <- function(data) {
+  correlationList <- list()
+  shakerCondition <- c(30, 40, 50, 62, 75, 87, 100, 112, 125, 137, 150, 160, 175, 187, 200, 212, 225, 237, 250)
+  for(condition in 1:length(shakerCondition)){
+    #Select data associated with the shaker condition
+    selectData <- list()
+    for(device in 1:length(data)){
+      tmp <- subset(data[[device]], data[[device]]$shaking_frequency == shakerCondition[condition])
+      selectData[[device]] <- tmp
+    }
+    names(selectData) <- names(data)
+    correlationList[[condition]] <- computeCrossCorrelations(selectData, plot = TRUE)
+  }
+  names(correlationList) <- shakerCondition
+  return(correlationList)
 }
 
 #' pairwisePlots
@@ -102,10 +133,10 @@ pairwisePlots <- function(correlationMatrix, data, threshold) {
           ggplot2::geom_point(data = data[[y]], ggplot2::aes(x = time, y = HA, colour = "red"), 
                               alpha =  0.2, size = 0.25) +
           ggplot2::theme_bw() +
-          ggplot2::labs(y = "acceleration (g)") +
+          ggplot2::labs(title = paste0("Cross-correlation = ",  correlationMatrix[x,y]), y = "acceleration (g)") +
           #Legend
           ggplot2::scale_color_manual(values = c("black", "red"), labels=c(device1, device2)) +
-          ggplot2::scale_fill_manual(name =" ") + ggplot2::theme(legend.position = "right") 
+          ggplot2::scale_fill_manual(name ="signal") + ggplot2::theme(legend.position = "right") 
         dev.off()
         plot_list[[counter]] <- p
         }
@@ -162,38 +193,178 @@ dataframeShapeComparisonBeween <- function(crossCorrelations, specifications){
 }
 ```
 
-```{r Compute cross-correlation matrices, include = FALSE}
-correlations_low <- computeCrossCorrelations(data_low_25, plot = TRUE) 
-correlations_high <- computeCrossCorrelations(data_high_100, plot = TRUE)
+# Cross-correlation coefficients
+For the calculation of the cross-correlation coefficients, only data of devices with equal sampling frequency were included. For the high sampling frequency experiment this sampling frequency was 100 Hz, and for the low frequency sampling experiment this was 25 Hz. This section presents the maximum lagged cross-correlation coefficients between all signal pairs separately for both experiments.
+
+```{r Ensure data with equal sampling frequencies are selected for both experiments, include=FALSE}
+# Cross-correlations are only calculated for the selected data as otherwise interpolation is required (this is not longer raw data and outside the scope of this paper)
+data_high <- clean_data_high$timeDomain$data[as.numeric(clean_data_high$timeDomain$specifications$sampling_frequency) == "100"]
+data_low <- clean_data_low$timeDomain$data[as.numeric(clean_data_low$timeDomain$specifications$sampling_frequency) == "25"]
+
+specifications_high <- clean_data_high$timeDomain$specifications[as.numeric(clean_data_high$timeDomain$specifications$sampling_frequency) == "100",]
+specifications_low <- clean_data_low$timeDomain$specifications[as.numeric(clean_data_low$timeDomain$specifications$sampling_frequency) == "25",]
+
+rm(shaker_experiments_folder, clean_data_high, clean_data_low)
 ```
 
-```{r Save cross-correlation matrices, include = FALSE}
+```{r Compute cross-correlation matrices, include=FALSE}
+correlations_low <- computeCrossCorrelations(data_low, plot = TRUE) 
+correlations_high <- computeCrossCorrelations(data_high, plot = TRUE)
+correlations_low_perShakerCondition <- computeCrossCorrelationsPerShakerCondition(data_low) 
+correlations_high_perShakerCondition <- computeCrossCorrelationsPerShakerCondition(data_high) 
+```
+
+```{r Save cross-correlation matrices, include=FALSE}
 #cat("\nSaving data...")
 correlation_matrices <- list(low = correlations_low, high = correlations_high)
-save(correlation_matrices, file = paste0(datadir, "cross_correlations.RData"))
-rm(correlations_low, correlations_high)
+save(correlation_matrices, file = paste0(datadir, "cross_correlations_overall.RData"))
+correlation_matrices_perShakerCondition <- list(low = correlations_low_perShakerCondition, high = correlations_high_perShakerCondition)
+save(correlation_matrices_perShakerCondition, file = paste0(datadir, "cross_correlations_perShakerCondition.RData"))
 
-#load(paste0(datadir, "cross_correlations.RData"))
+rm(correlations_low, correlations_high, correlations_low_perShakerCondition, correlations_high_perShakerCondition)
+
+#load(paste0(datadir, "cross_correlations_overall.RData"))
+#load(paste0(datadir, "cross_correlations_perShakerCondition.RData"))
 ```
-
-# Cross-correlations
-In this section the maximum lagged cross-correlations between all signal pairs are presented for both experiments separately.
 
 ## Low sampling frequency experiment
 
-### Heatmap
-```{r Heatmap low frequency experiment, echo=FALSE, fig.width=14, fig.height=14}
+### Overall heatmap
+```{r Heatmap low sampling frequency experiment, echo=FALSE, fig.width=14, fig.height=14}
 fullmatrix_low <- correlation_matrices$low$correlationMatrix
 heatmap_low <- corrplot::corrplot(pmax(fullmatrix_low, t(fullmatrix_low), na.rm = TRUE), 
                                   type = 'lower', method = 'color', order = "alphabet", 
-                                  number.cex = 2, cl.cex = 2, tl.cex = 2,
+                                  number.cex = 1.25, cl.cex = 2, tl.cex = 2,
                                   col.lim = c(0,1), addCoef.col = 'black', tl.srt = 45, 
                                   diag = TRUE, tl.col = "black")
 rm(fullmatrix_low, heatmap_low)
 ```
+### Heatmap per shaker condition
+```{r Heatmap low sampling frequency experiment per shaker condition, echo=FALSE, fig.width=14, fig.height=15}
+fullmatrices_low <- correlation_matrices_perShakerCondition$low
+
+heatmaps_low <- list()
+for (condition in 1:length(fullmatrices_low)){
+  heatmaps_low[[condition]] <- corrplot::corrplot(pmax(fullmatrices_low[[condition]]$correlationMatrix,
+                          t(fullmatrices_low[[condition]]$correlationMatrix), na.rm = TRUE), 
+                            title = paste0("shaker condition: ", names(fullmatrices_low)[condition]),
+                            type = 'lower', method = 'color', order = "alphabet", 
+                            number.cex = 1.25, cl.cex = 2, tl.cex = 2,
+                            col.lim = c(0,1), addCoef.col = 'black', tl.srt = 45, mar=c(0,0,2,0),
+                            diag = TRUE, tl.col = "black")
+}
+
+rm(fullmatrices_low, heatmaps_low)
+```
+### Comparison
+This section presents the average maximum lagged cross-correlation between and within brands separately per shaker condition.
+
+```{r Calculate average maximum cross lagged correlation coefficients low sampling frequency experiment per shaker condition, include=FALSE}
+avg_crosscor_low_between <- list()
+avg_crosscor_low_within <- list()
+
+for (condition in 1:length(correlation_matrices_perShakerCondition$low)){
+  avg_crosscor_low <- dataframeShapeComparisonBeween(correlation_matrices_perShakerCondition$low[[condition]], specifications_low) 
+  avg_crosscor_low_between[[condition]] <- avg_crosscor_low[avg_crosscor_low$same_brand == "0",]
+  avg_crosscor_low_within[[condition]] <- avg_crosscor_low[avg_crosscor_low$same_brand == "1",]
+}
+rm(avg_crosscor_low)
+names(avg_crosscor_low_between) <- names(correlation_matrices_perShakerCondition$low)
+names(avg_crosscor_low_within) <- names(correlation_matrices_perShakerCondition$low)
+```
+
+#### Between brands
+```{r Between brand comparison low sampling frequency experiment, echo=FALSE}
+table_between_low <- list()
+for(condition in 1:length(avg_crosscor_low_between)){
+  df_correlations_low <- avg_crosscor_low_between[[condition]]
+  df_correlations_low$correlation <- as.numeric(df_correlations_low$correlation)
+  avg_cor <- tapply(df_correlations_low$correlation, df_correlations_low$brands, summary)
+  
+  tab <- rbind(avg_cor$GENEActivAxivity, avg_cor$MOXAxivity, avg_cor$MOXGENEActiv)
+  tab <- tab[,-1]
+  tab <- tab[,-5]
+  SD <- tapply(df_correlations_low$correlation, df_correlations_low$brands, sd)
+  SD <- c(SD[2], SD[4], SD[5])
+  tab <- cbind(tab, SD)
+  table_between_low[[condition]] <- tab
+}
+rm(avg_cor, tab, SD)
+names(table_between_low) <- names(correlation_matrices_perShakerCondition$low)
+```
+
+```{r Print between comparison tables low frequency experiment, echo = FALSE}
+for(condition in 1:length(table_between_low)){
+  print(paste0("Shaker condition: ", names(table_between_low)[condition]))
+  print(table_between_low[[condition]])
+}
+```
+
+#### Within brands
+```{r Within brand comparison low sampling frequency experiment, echo=FALSE}
+table_within_low <- list()
+for(condition in 1:length(avg_crosscor_low_within)){
+  df_correlations_low <- avg_crosscor_low_within[[condition]]
+  df_correlations_low$correlation <- as.numeric(df_correlations_low$correlation)
+  avg_cor <- tapply(df_correlations_low$correlation, df_correlations_low$brands, summary)
+  
+  tab <- rbind(avg_cor$AxivityAxivity, avg_cor$GENEActivGENEActiv, avg_cor$MOXMOX)
+  tab <- tab[,-1]
+  tab <- tab[,-5]
+  SD <- tapply(df_correlations_low$correlation, df_correlations_low$brands, sd)
+  SD <- c(SD[1], SD[3], SD[6])
+  tab <- cbind(tab, SD)
+  table_within_low[[condition]] <- tab
+}
+rm(avg_cor, tab, SD)
+names(table_within_low) <- names(correlation_matrices_perShakerCondition$low)
+```
+
+```{r Print within comparison tables low frequency experiment, echo = FALSE}
+for(condition in 1:length(table_within_low)){
+  print(paste0("Shaker condition: ", names(table_within_low)[condition]))
+  print(table_within_low[[condition]])
+}
+```
+
+## Overall descriptive statistics
+```{r  Derive data.frames required for comparison of the signal shape between brands, include=FALSE}
+df_correlations_low <- dataframeShapeComparisonBeween(correlation_matrices$low, specifications_low) 
+df_correlations_high <- dataframeShapeComparisonBeween(correlation_matrices$high, specifications_high) 
+
+cat("\nSaving data...")
+correlation_df <- list(low = df_correlations_low, high = df_correlations_high)
+save(correlation_df, file = paste0(datadir, "cross_correlation_df.RData"))
+
+#Subset the data to include only between brand comparisons
+correlations_between_low <- correlation_df$low[correlation_df$low$same_brand =="0", ]
+correlations_between_high <- correlation_df$high[correlation_df$high$same_brand =="0", ]
+```
+
+#### Heatmap table average cross-correlation coefficients per shaker condition
+```{r Heatmap table low sampling freqency, echo=TRUE}
+overview_tab_between <- data.frame()
+overview_tab_within <- data.frame()
+
+for(condition in 1:length(table_between_low)){
+  overview_tab_between <- rbind(overview_tab_between, table_between_low[[condition]][,3])
+  overview_tab_within <- rbind(overview_tab_within, table_within_low[[condition]][,3])
+}
+colnames(overview_tab_between) <- rownames(table_between_low[[condition]])
+colnames(overview_tab_within) <- rownames(table_within_low[[condition]])
+#overview_tab <- cbind(overview_tab_between, overview_tab_within)
+rownames(overview_tab_between) <- c(30, 40, 50, 62, 75, 87, 100, 112, 125, 137, 150, 160, 175, 187, 200, 212, 225, 237, 250)
+
+pheatmap::pheatmap(overview_tab_between, display_numbers = TRUE, cluster_rows = FALSE, cluster_cols = FALSE, angle_col = c("90"), row_names_side = c("left"))
+setHook("grid.newpage", NULL, "replace")
+grid::grid.text("xlabel example", y=-0.07, gp=grid::gpar(fontsize=10))
+grid::grid.text("ylabel example", x=-0.07, rot=90, gp=grid::gpar(fontsize=10))
+
+```
+
 
 ### Pairwise signal plots
-In this section pairwise plots are generated for cross-correlations that are 1 SD lower than the mean cross-correlation.
+This section presents pairwise plots for cross-correlation coefficients that are 1 SD lower than the mean cross-correlation (i.e., threshold).
 
 #### Descriptive statistics
 
@@ -201,52 +372,198 @@ In this section pairwise plots are generated for cross-correlations that are 1 S
 # cross-correlations
 M <- mean(correlation_matrices$low$correlationMatrix, na.rm = TRUE)
 SD <- sd(correlation_matrices$low$correlationMatrix, na.rm = TRUE)
-min <- min(correlation_matrices$low$correlationMatrix, na.rm = TRUE)
-max <- max(correlation_matrices$low$correlationMatrix, na.rm = TRUE)
+Q1 <- quantile(correlation_matrices$low$correlationMatrix, na.rm = TRUE)[2]
+Median <- median(correlation_matrices$low$correlationMatrix, na.rm = TRUE)
+Q3 <- quantile(correlation_matrices$low$correlationMatrix, na.rm = TRUE)[4]
 crosscorr_low_threshold <- M - SD
-cross_correlations <- c(M, SD, min, max, crosscorr_low_threshold)
+cross_correlations <- c(M, SD, Q1, Median, Q3, crosscorr_low_threshold)
+
 
 # lags
 M <- mean(correlation_matrices$low$lags, na.rm = TRUE)
 SD <- sd(correlation_matrices$low$lags, na.rm = TRUE)
-min <- min(correlation_matrices$low$lags, na.rm = TRUE)
-max <- max(correlation_matrices$low$lags, na.rm = TRUE)
+Q1 <- quantile(correlation_matrices$low$lags, na.rm = TRUE)[2]
+Median <- median(correlation_matrices$low$lags, na.rm = TRUE)
+Q3 <- quantile(correlation_matrices$low$lags, na.rm = TRUE)[4]
 low_threshold <- NA
-lags <- c(M, SD, min, max, low_threshold)
+lags <- c(M, SD, Q1, Median, Q3, low_threshold)
 
 tab <- rbind(cross_correlations, lags)
-colnames(tab) <- c("M", "SD", "min", "max", "threshold")
+colnames(tab) <- c("M", "SD", "Q1", "Median", "Q3", "threshold")
 tab
-rm(tab, M, SD, min, max, low_threshold)
+rm(tab, M, SD, Q1, Median, Q3, low_threshold)
 ```
 
 ```{r Low Frequency Experiment: Pairwise plots, include=FALSE}
 plots_low <- pairwisePlots(correlationMatrix = correlation_matrices$low$correlationMatrix, 
-                           data = data_low_25, threshold = crosscorr_low_threshold)
+                           data = data_low, threshold = crosscorr_low_threshold)
 ```
 
 #### Pairwise plots
-
 ```{r Print pairwise plots: low sampling experiment, echo=FALSE}
 for(plot in 1:length(plots_low)){
   print(plots_low[[plot]])
 }
 ```
 
-
 ## High sampling frequency experiment
 
-### Heatmap
-```{r Heatmap high sampling frequency experiment, echo=FALSE, , out.extra='angle=90', fig.width=14, fig.height=14}
+### Overall heatmap
+This section presents the heatmaps for all devices and per brand.
+
+```{r Heatmap high sampling frequency experiment, echo=FALSE, fig.width=14, fig.height=14}
 fullmatrix_high <- correlation_matrices$high$correlationMatrix
 heatmap_high <- corrplot::corrplot(pmax(fullmatrix_high, t(fullmatrix_high), na.rm = TRUE), 
                                    type = 'lower', method = 'color', order = "alphabet",
                                    number.cex = 1.25, cl.cex = 2, tl.cex = 2,
                                    col.lim = c(0,1), addCoef.col = 'black', tl.srt=45, diag = TRUE, 
                                    tl.col = "black")
+rm(fullmatrix_high, heatmap_high)
 ```
+
+
+#### ActiGraph
+```{r Heatmap high sampling frequency experiment AG, echo=FALSE, fig.width=14, fig.height=14}
+matrix_high_AG <- correlation_matrices$high$correlationMatrix[grep("AG",rownames(correlation_matrices$high$correlationMatrix)), grep("AG", colnames(correlation_matrices$high$correlationMatrix))] 
+heatmap_high_AG <- corrplot::corrplot(pmax(matrix_high_AG, t(matrix_high_AG), na.rm = TRUE), 
+                                      type = 'lower', method = 'color', order = "alphabet",
+                                      number.cex = 1.25, cl.cex = 2, tl.cex = 2,
+                                      col.lim = c(0,1), addCoef.col = 'black', tl.srt=45, diag = TRUE, 
+                                      tl.col = "black")
+rm(matrix_high_AG, heatmap_high_AG)
+```
+
+#### Axivity
+```{r Heatmap high sampling frequency experiment Ax, echo=FALSE, fig.width=14, fig.height=14}
+matrix_high_Ax <- correlation_matrices$high$correlationMatrix[grep("Ax",rownames(correlation_matrices$high$correlationMatrix)), grep("Ax", colnames(correlation_matrices$high$correlationMatrix))] 
+heatmap_high_Ax <- corrplot::corrplot(pmax(matrix_high_Ax, t(matrix_high_Ax), na.rm = TRUE), 
+                                      type = 'lower', method = 'color', order = "alphabet",
+                                      number.cex = 1.25, cl.cex = 2, tl.cex = 2,
+                                      col.lim = c(0,1), addCoef.col = 'black', tl.srt=45, diag = TRUE, 
+                                      tl.col = "black")
+rm(matrix_high_Ax, heatmap_high_Ax)
+```
+
+#### GENEActiv
+```{r Heatmap high sampling frequency experiment GA, echo=FALSE, fig.width=14, fig.height=14}
+matrix_high_GA <- correlation_matrices$high$correlationMatrix[grep("GA",rownames(correlation_matrices$high$correlationMatrix)), grep("GA", colnames(correlation_matrices$high$correlationMatrix))] 
+heatmap_high_GA <- corrplot::corrplot(pmax(matrix_high_GA, t(matrix_high_GA), na.rm = TRUE), 
+                                      type = 'lower', method = 'color', order = "alphabet",
+                                      number.cex = 1.25, cl.cex = 2, tl.cex = 2,
+                                      col.lim = c(0,1), addCoef.col = 'black', tl.srt=45, diag = TRUE, 
+                                      tl.col = "black")
+rm(matrix_high_GA, heatmap_high_GA)
+```
+
+### Heatmap per shaker condition
+```{r Heatmap high shaking frequency experiment per shaker condition, echo=FALSE, fig.width=14, fig.height=15}
+fullmatrices_high <- correlation_matrices_perShakerCondition$high
+
+heatmaps_high <- list()
+for (condition in 1:length(fullmatrices_high)){
+  heatmaps_high[[condition]] <- corrplot::corrplot(pmax(fullmatrices_high[[condition]]$correlationMatrix,
+                          t(fullmatrices_high[[condition]]$correlationMatrix), na.rm = TRUE), 
+                            #title = paste0("shaker condition: ", names(fullmatrices_high)[condition]),
+                            type = 'lower', method = 'color', order = "alphabet", 
+                            number.cex = 1.25, cl.cex = 2, tl.cex = 2,
+                            col.lim = c(-1,1), addCoef.col = 'black', tl.srt = 45,  mar=c(0,0,2,0),
+                            diag = TRUE, tl.col = "black")
+}
+
+rm(fullmatrices_high, heatmaps_high)
+```
+
+### Comparison
+This section presents the average maximum lagged cross-correlation between and within brands separately per shaker condition.
+
+```{r Calculate average maximum cross lagged correlation coefficients high sampling frequency experiment per shaker condition, include=FALSE}
+avg_crosscor_high_between <- list()
+avg_crosscor_high_within <- list()
+
+for (condition in 1:length(correlation_matrices_perShakerCondition$high)){
+  avg_crosscor_high <- dataframeShapeComparisonBeween(correlation_matrices_perShakerCondition$high[[condition]], specifications_high) 
+  avg_crosscor_high_between[[condition]] <- avg_crosscor_high[avg_crosscor_high$same_brand == "0",]
+  avg_crosscor_high_within[[condition]] <- avg_crosscor_high[avg_crosscor_high$same_brand == "1",]
+}
+rm(avg_crosscor_high)
+names(avg_crosscor_high_between) <- names(correlation_matrices_perShakerCondition$high)
+names(avg_crosscor_high_within) <- names(correlation_matrices_perShakerCondition$high)
+```
+
+#### Between brands
+```{r Between brand comparison high sampling frequency experiment, echo=FALSE}
+table_between_high <- list()
+for(condition in 1:length(avg_crosscor_high_between)){
+  df_correlations_high <- avg_crosscor_high_between[[condition]]
+  df_correlations_high$correlation <- as.numeric(df_correlations_high$correlation)
+  avg_cor <- tapply(df_correlations_high$correlation, df_correlations_high$brands, summary)
+  
+  tab <- rbind(avg_cor$AxivityActigraph, avg_cor$GENEActivActigraph, avg_cor$GENEActivAxivity)
+  tab <- tab[,-1]
+  tab <- tab[,-5]
+  SD <- tapply(df_correlations_high$correlation, df_correlations_high$brands, sd)
+  SD <- c(SD[2], SD[4], SD[5])
+  tab <- cbind(tab, SD)
+  table_between_high[[condition]] <- tab
+}
+rm(avg_cor, tab, SD)
+names(table_between_high) <- names(correlation_matrices_perShakerCondition$low)
+```
+
+```{r Print between comparison tables high frequency experiment, echo = FALSE}
+for(condition in 1:length(table_between_high)){
+  print(paste0("Shaker condition: ", names(table_between_high)[condition]))
+  print(table_between_high[[condition]])
+}
+```
+
+#### Within brands
+```{r Within brand comparison high sampling frequency experiment, echo=FALSE}
+table_within_high <- list()
+for(condition in 1:length(avg_crosscor_high_within)){
+  df_correlations_high <- avg_crosscor_high_within[[condition]]
+  df_correlations_high$correlation <- as.numeric(df_correlations_high$correlation)
+  avg_cor <- tapply(df_correlations_high$correlation, df_correlations_high$brands, summary)
+  
+  tab <- rbind(avg_cor$ActigraphActigraph, avg_cor$AxivityAxivity, avg_cor$GENEActivGENEActiv)
+  tab <- tab[,-1]
+  tab <- tab[,-5]
+  SD <- tapply(df_correlations_high$correlation, df_correlations_high$brands, sd)
+  SD <- c(SD[1], SD[3], SD[6])
+  tab <- cbind(tab, SD)
+  table_within_high[[condition]] <- tab
+}
+rm(avg_cor, tab, SD)
+names(table_within_high) <- names(correlation_matrices_perShakerCondition$high)
+```
+
+```{r Print within comparison tables high frequency experiment, echo = FALSE}
+for(condition in 1:length(table_within_high)){
+  print(paste0("Shaker condition: ", names(table_within_high)[condition]))
+  print(table_within_high[[condition]])
+}
+```
+
+#### Heatmap table average cross-correlation coefficients per shaker condition
+```{r Heatmap table high sampling freqency}
+overview_tab_between <- data.frame()
+overview_tab_within <- data.frame()
+
+for(condition in 1:length(table_between_high)){
+  overview_tab_between <- rbind(overview_tab_between, table_between_high[[condition]][,3])
+  overview_tab_within <- rbind(overview_tab_within, table_within_high[[condition]][,3])
+}
+colnames(overview_tab_between) <- rownames(table_between_high[[condition]])
+colnames(overview_tab_within) <- rownames(table_within_high[[condition]])
+#overview_tab <- cbind(overview_tab_between, overview_tab_within)
+rownames(overview_tab_between) <- c(30, 40, 50, 62, 75, 87, 100, 112, 125, 137, 150, 160, 175, 187, 200, 212, 225, 237, 250)
+
+pheatmap::pheatmap(overview_tab_between, display_numbers = TRUE, cluster_rows = FALSE, cluster_cols = FALSE, angle_col = c("90"), row_names_side = c("left"))
+
+```
+
 ### Pairwise signal plots
-In this section pairwise plots are generated for cross-correlations that are 1 SD lower than the mean cross-correlation.
+In this section pairwise plots are generated for cross-correlations that are 1 SD lower than the mean cross-correlation (i.e., threshold).
 
 #### Descriptive statistics
 
@@ -254,151 +571,67 @@ In this section pairwise plots are generated for cross-correlations that are 1 S
 # cross-correlations
 M <- mean(correlation_matrices$high$correlationMatrix, na.rm = TRUE)
 SD <- sd(correlation_matrices$high$correlationMatrix, na.rm = TRUE)
-min <- min(correlation_matrices$high$correlationMatrix, na.rm = TRUE)
-max <- max(correlation_matrices$high$correlationMatrix, na.rm = TRUE)
+Q1 <- quantile(correlation_matrices$high$correlationMatrix, na.rm = TRUE)[2]
+Median <- median(correlation_matrices$high$correlationMatrix, na.rm = TRUE)
+Q3 <- quantile(correlation_matrices$high$correlationMatrix, na.rm = TRUE)[4]
 crosscorr_high_threshold <- M - SD
-cross_correlations <- c(M, SD, min, max, crosscorr_high_threshold)
+cross_correlations <- c(M, SD, Q1, Median, Q3, crosscorr_high_threshold)
 
 # lags
 M <- mean(correlation_matrices$high$lags, na.rm = TRUE)
 SD <- sd(correlation_matrices$high$lags, na.rm = TRUE)
-min <- min(correlation_matrices$high$lags, na.rm = TRUE)
-max <- max(correlation_matrices$high$lags, na.rm = TRUE)
+Q1 <- quantile(correlation_matrices$high$lags, na.rm = TRUE)[2]
+Median <- median(correlation_matrices$high$lags, na.rm = TRUE)
+Q3 <- quantile(correlation_matrices$high$lags, na.rm = TRUE)[4]
 threshold_high <- NA
-lags <- c(M, SD, min, max, threshold_high)
+lags <- c(M, SD, Q1, Median, Q3, threshold_high)
 
 tab <- rbind(cross_correlations, lags)
-colnames(tab) <- c("M", "SD", "min", "max", "threshold")
+colnames(tab) <- c("M", "SD", "Q1", "Median", "Q3", "threshold")
 tab
-rm(tab, M, SD, min, max, threshold_high)
+rm(tab, M, SD, Q1, Median, Q3, threshold_high)
 ```
 
 ```{r High Sampling Frequency Experiment: Pairwise plots, include=FALSE}
 plots_high <- pairwisePlots(correlationMatrix = correlation_matrices$high$correlationMatrix, 
-                            data = data_high_100, threshold = crosscorr_high_threshold)
+                            data = data_high, threshold = crosscorr_high_threshold)
 ```
 
 #### Pairwise plots
-
 ```{r Print pairwise plots: high sampling experiment, echo=FALSE}
 for(plot in 1:length(plots_high)){
   print(plots_high[[plot]])
 }
 ```
 
-### Data crop
-The pairwise plots indicate that the maximum lagged cross-corrlationas are low due to repetition of some measurements in the high sampling frequency experiment because one GENEActiv device got loose. Therefore, we repeated the analyses for cropped signals (i.e., data of the time points for which all devices were included during the shaking frequencies).
-
-```{r Crop signals, include=FALSE}
-data_high_100_crop <- list()
-
-tz <- "Europe/Amsterdam"
-#Times from experiment file where accelerometers_used = all
-start1 <- as.POSIXlt("2020-11-24 9:42:00", tz = tz)
-end1 <- as.POSIXlt("2020-11-24 10:13:00", tz = tz)
-start2 <- as.POSIXlt("2020-11-24 10:35:05", tz = tz)
-end2 <- as.POSIXlt("2020-11-24 10:47:00", tz = tz)
-
-for(file in 1:length(data_high_100)){
-  data_high_crop1 <- data_high_100[[file]][which(data_high_100[[file]]$time >= start1 & data_high_100[[file]]$time <= end1),]
-  data_high_crop2 <- data_high_100[[file]][which(data_high_100[[file]]$time >= start2 & data_high_100[[file]]$time <= end2),]
-  data_high_100_crop[[file]] <- rbind(data_high_crop1, data_high_crop2)
-}
-
-names(data_high_100_crop) <- names(data_high_100)
-
-save(data_high_100_crop, file = paste0(datadir, "data_high_100_cropped.RData"))
-```
-
-```{r Compute cross-correlation matrices for cropped signal, include = FALSE}
-correlations_high_crop <- computeCrossCorrelations(data_high_100_crop, plot = TRUE)
-save(correlations_high_crop, file = paste0(datadir, "cross_correlations_high_crop.RData"))
-```
-
-#### Cross-correlations
-In this section the maximum lagged cross-correlations between all cropped signal pairs are presented for the high sampling experiment.
-
-##### Heatmap
-```{r Heatmap high sampling frequency experiment cropped, echo=FALSE, fig.width=14, fig.height=14}
-fullmatrix_high_crop <- correlations_high_crop$correlationMatrix
-heatmap_high_crop <- corrplot::corrplot(pmax(fullmatrix_high_crop, t(fullmatrix_high_crop), na.rm = TRUE), 
-                                  type = 'lower', method = 'color', order = "alphabet", 
-                                  number.cex = 1.25, cl.cex = 2, tl.cex = 2,
-                                  col.lim = c(0,1), addCoef.col = 'black', tl.srt = 45, 
-                                  diag = TRUE, tl.col = "black")
-rm(fullmatrix_high_crop, heatmap_high_crop)
-```
-##### Pairwise signal plots
-In this section pairwise plots are generated for cross-correlations that are 1 SD lower than the mean cross-correlation.
-
-###### Descriptive statistics
-
-```{r Summary statistics high sampling frequency experiment cropped signals, echo=FALSE}
-# cross-correlations
-M <- mean(correlations_high_crop$correlationMatrix, na.rm = TRUE)
-SD <- sd(correlations_high_crop$correlationMatrix, na.rm = TRUE)
-min <- min(correlations_high_crop$correlationMatrix, na.rm = TRUE)
-max <- max(correlations_high_crop$correlationMatrix, na.rm = TRUE)
-crosscorr_high_crop_threshold <- M - SD
-cross_correlations <- c(M, SD, min, max, crosscorr_high_crop_threshold)
-
-# lags
-M <- mean(correlations_high_crop$lags, na.rm = TRUE)
-SD <- sd(correlations_high_crop$lags, na.rm = TRUE)
-min <- min(correlations_high_crop$lags, na.rm = TRUE)
-max <- max(correlations_high_crop$lags, na.rm = TRUE)
-threshold_high <- NA
-lags <- c(M, SD, min, max, threshold_high)
-
-tab <- rbind(cross_correlations, lags)
-colnames(tab) <- c("M", "SD", "min", "max", "threshold")
-tab
-rm(tab, M, SD, min, max, threshold_high)
-```
-
-```{r High Sampling Frequency Experiment: Pairwise plots cropped signals, include=FALSE}
-plots_high_crop <- pairwisePlots(correlationMatrix = correlations_high_crop$correlationMatrix, 
-                            data = data_high_100_crop, threshold = crosscorr_high_crop_threshold)
-```
-
-###### Pairwise plots
-
-```{r Print pairwise plots: high sampling experiment cropped signals, echo=FALSE}
-for(plot in 1:length(plots_high_crop)){
-  print(plots_high_crop[[plot]])
-}
-```
-
 # Between brand comparison
 In this section the average maximum lagged cross-correlation between the pair brands are presented separately for both experiments.
 
-## Descriptive statistics
+## Overall descriptive statistics
 ```{r  Derive data.frames required for comparison of the signal shape between brands, include=FALSE}
 df_correlations_low <- dataframeShapeComparisonBeween(correlation_matrices$low, specifications_low) 
 df_correlations_high <- dataframeShapeComparisonBeween(correlation_matrices$high, specifications_high) 
-df_correlations_high_crop <- dataframeShapeComparisonBeween(correlations_high_crop, specifications_high) 
 
 cat("\nSaving data...")
 correlation_df <- list(low = df_correlations_low, high = df_correlations_high)
 save(correlation_df, file = paste0(datadir, "cross_correlation_df.RData"))
-save(df_correlations_high_crop, file = paste0(datadir, "cross_correlation_df_high_crop.RData"))
 
-#Subset the data
+#Subset the data to include only between brand comparisons
 correlations_between_low <- correlation_df$low[correlation_df$low$same_brand =="0", ]
 correlations_between_high <- correlation_df$high[correlation_df$high$same_brand =="0", ]
-correlations_between_high_cropped <- df_correlations_high_crop[df_correlations_high_crop$same_brand =="0", ]
 ```
 
 ### Low sampling frequency experiment
 ```{r Descriptives low sampling frequency experiment, echo=FALSE}
-library(dplyr)
+#library(dplyr)
+
 correlations_between_low$correlation <- as.numeric(correlations_between_low$correlation)
 #table_between_low <- correlations_between_low %>% group_by(brands)
 avg_cor <- tapply(correlations_between_low$correlation, correlations_between_low$brands, summary)
 
 tab <- rbind(avg_cor$GENEActivAxivity, avg_cor$MOXAxivity, avg_cor$MOXGENEActiv)
-tab <- tab[,-2]
-tab <- tab[,-4]
+tab <- tab[,-1]
+tab <- tab[,-5]
 
 SD <- tapply(correlations_between_low$correlation, correlations_between_low$brands, sd)
 SD <- c(SD[2], SD[4], SD[5])
@@ -407,38 +640,47 @@ tab
 ```
 
 ### High sampling frequency experiment
-```{r Descriptives high sampling frequency experiment, echo=FALSE}
+During the high sampling frequency experiment ActiGraph IDLE sleep mode accidentally turned on in nine devices. We therefore decided to report the cross-correlation for this experiment with and without these devices.
+
+#### Including ActiGraphs with IDLE sleep mode
+```{r Descriptives high sampling frequency experiment incl IDLE, echo=FALSE}
+
 library(dplyr)
 correlations_between_high$correlation <- as.numeric(correlations_between_high$correlation)
 # table_between_high <- correlations_between_high %>% group_by(brands)
 avg_cor <- tapply(correlations_between_high$correlation, correlations_between_high$brands, summary)
 SD <- tapply(correlations_between_high$correlation, correlations_between_high$brands, sd)
 
-tab <- rbind(avg_cor$AxivityActigraph, avg_cor$GENEActivActigraph, avg_cor$GENEActivAxivity, avg_cor$MOXActigraph, avg_cor$MOXAxivity, avg_cor$MOXGENEActiv)
-rownames(tab) <- c("AxivityActigraph", "GENEActivActigraph", "GENEActivAxivity", "MOXActigraph", "MOXAxivity", "MOXGENEActiv")
-tab <- tab[,-2]
-tab <- tab[,-4]
+tab <- rbind(avg_cor$AxivityActigraph, avg_cor$GENEActivActigraph, avg_cor$GENEActivAxivity)
+rownames(tab) <- c("AxivityActigraph", "GENEActivActigraph", "GENEActivAxivity")
+tab <- tab[,-1]
+tab <- tab[,-5]
 
-SD <- c(SD[2], SD[4], SD[5], SD[7], SD[8], SD[9])
+SD <- c(SD[2], SD[4], SD[5])
 tab <- cbind(tab, SD)
 tab
-
 ```
 
-### High sampling frequency experiment cropped signals
-```{r Descriptives high sampling frequency experiment cropped, echo=FALSE}
-library(dplyr)
-correlations_between_high_cropped$correlation <- as.numeric(correlations_between_high_cropped$correlation)
-# table_between_high_crop <- correlations_between_high_cropped %>% group_by(brands)
-avg_cor <- tapply(correlations_between_high_cropped$correlation, correlations_between_high_cropped$brands, summary)
-SD <- tapply(correlations_between_high_cropped$correlation, correlations_between_high_cropped$brands, sd)
+#### Excluding ActiGraphs with IDLE sleep mode
+```{r Descriptives high sampling frequency experiment ActiGraph excl IDLE mode, echo=FALSE}
+IDLE_on <- c("AG_CLE_039", "AG_CLE_077", "AG_CLE_091", "AG_CLE_132", "AG_MOS_028", 
+             "AG_MOS_192", "AG_MOS_352", "AG_MOS_527", "AG_MOS_008") #
 
-tab <- rbind(avg_cor$AxivityActigraph, avg_cor$GENEActivActigraph, avg_cor$GENEActivAxivity, avg_cor$MOXActigraph, avg_cor$MOXAxivity, avg_cor$MOXGENEActiv)
-rownames(tab) <- c("AxivityActigraph", "GENEActivActigraph", "GENEActivAxivity", "MOXActigraph", "MOXAxivity", "MOXGENEActiv")
-tab <- tab[,-2]
-tab <- tab[,-4]
+correlation_df_exclIDLE <- correlation_df$high[!correlation_df$high$device1 %in% IDLE_on,]
+correlation_df_exclIDLE <- correlation_df_exclIDLE[!correlation_df_exclIDLE$device2 %in% IDLE_on,]
 
-SD <- c(SD[2], SD[4], SD[5], SD[7], SD[8], SD[9])
+correlations_between_high_exclIDLE <- correlation_df_exclIDLE[correlation_df_exclIDLE$same_brand =="0", ]
+
+correlations_between_high_exclIDLE$correlation <- as.numeric(correlations_between_high_exclIDLE$correlation)
+avg_cor <- tapply(correlations_between_high_exclIDLE$correlation, correlations_between_high_exclIDLE$brands, summary)
+SD <- tapply(correlations_between_high_exclIDLE$correlation, correlations_between_high_exclIDLE$brands, sd)
+
+tab <- rbind(avg_cor$AxivityActigraph, avg_cor$GENEActivActigraph, avg_cor$GENEActivAxivity)
+rownames(tab) <- c("AxivityActigraph", "GENEActivActigraph", "GENEActivAxivity")
+tab <- tab[,-1]
+tab <- tab[,-5]
+
+SD <- c(SD[2], SD[4], SD[5])
 tab <- cbind(tab, SD)
 tab
 
