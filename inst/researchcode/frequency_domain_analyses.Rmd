@@ -26,6 +26,7 @@ if (!dir.exists(datadir)) {
   stop(paste0("Directory does not exist: ", datadir))
 }
 
+
 # Load cleaned mechanical shaker machine data for both experiments
 filename_high = paste0(datadir, "ms_flat_HA_cleaned_high.RData") 
 filename_low = paste0(datadir, "ms_flat_HA_cleaned_low.RData") 
@@ -43,6 +44,7 @@ rm(filename_high, filename_low)
 ```{r Functions, include=FALSE}
 #' deriveSpectrum
 #'
+
 #' @description 'deriveSpectrum' derives the frequency spectrum of a signal
 #'
 #' @param x Vector that contains the values of the signal (i.e., acceleration)
@@ -162,6 +164,7 @@ deriveBins <- function(peaks, mean.spec, XLIM = c(0, 5), plot = TRUE) {
 #' @param spectrum An object of class "spec"
 #' @param freqBins Vector containing frequency values that define the frequency bins (can be derived using the function 'deriveBins') 
 #' @return Data.frame consisting of two columns: \item{domFreq}{The dominant frequency of the signal in each frequency bin, i.e. frequency associated with the maximum value} \item{meanPSD}{The mean power spectral density of the signal in each frequency bin}
+
 #' @export
 deriveComparisonValues <- function(spectrum, freqBins){
   df <- data.frame()
@@ -806,7 +809,6 @@ g <- gridExtra::arrangeGrob(bxp_psd_low, bxp_psd_high,legend,
 
 #ggplot2::ggsave(plot = g, filename = "boxplot_meanPSD")
 ggplot2::ggsave(file=paste0(datadir, "plots/boxplot_meanPSD.png"), g, width = 10, height = 8, dpi = 900) #saves g
-
 ```
 
 

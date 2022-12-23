@@ -8,6 +8,7 @@ output:
 ---
 
 ```{r Setup and load data, include=FALSE}
+
 knitr::opts_chunk$set(echo = TRUE)
 knitr::opts_chunk$set(dev = 'pdf')
 
@@ -37,6 +38,7 @@ if (!file.exists(filename_low)) {
 }
 load(filename_low)
 rm(filename_high, filename_low)
+
 ```
 
 ```{r Functions, include=FALSE}
@@ -376,6 +378,7 @@ Q3 <- quantile(correlation_matrices$low$correlationMatrix, na.rm = TRUE)[4]
 crosscorr_low_threshold <- M - SD
 cross_correlations <- c(M, SD, Q1, Median, Q3, crosscorr_low_threshold)
 
+
 # lags
 M <- mean(correlation_matrices$low$lags, na.rm = TRUE)
 SD <- sd(correlation_matrices$low$lags, na.rm = TRUE)
@@ -621,6 +624,7 @@ correlations_between_high <- correlation_df$high[correlation_df$high$same_brand 
 ### Low sampling frequency experiment
 ```{r Descriptives low sampling frequency experiment, echo=FALSE}
 #library(dplyr)
+
 correlations_between_low$correlation <- as.numeric(correlations_between_low$correlation)
 #table_between_low <- correlations_between_low %>% group_by(brands)
 avg_cor <- tapply(correlations_between_low$correlation, correlations_between_low$brands, summary)
@@ -640,6 +644,7 @@ During the high sampling frequency experiment ActiGraph IDLE sleep mode accident
 
 #### Including ActiGraphs with IDLE sleep mode
 ```{r Descriptives high sampling frequency experiment incl IDLE, echo=FALSE}
+
 library(dplyr)
 correlations_between_high$correlation <- as.numeric(correlations_between_high$correlation)
 # table_between_high <- correlations_between_high %>% group_by(brands)
@@ -680,4 +685,3 @@ tab <- cbind(tab, SD)
 tab
 
 ```
-
