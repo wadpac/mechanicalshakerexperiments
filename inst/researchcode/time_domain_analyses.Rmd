@@ -350,10 +350,13 @@ for(condition in 1:length(table_between_low)){
 }
 colnames(overview_tab_between) <- rownames(table_between_low[[condition]])
 colnames(overview_tab_within) <- rownames(table_within_low[[condition]])
-overview_tab <- cbind(overview_tab_between, overview_tab_within)
-rownames(overview_tab) <- c(30, 40, 50, 62, 75, 87, 100, 112, 125, 137, 150, 160, 175, 187, 200, 212, 225, 237, 250)
+#overview_tab <- cbind(overview_tab_between, overview_tab_within)
+rownames(overview_tab_between) <- c(30, 40, 50, 62, 75, 87, 100, 112, 125, 137, 150, 160, 175, 187, 200, 212, 225, 237, 250)
 
-pheatmap::pheatmap(overview_tab, display_numbers = TRUE, cluster_rows = FALSE, cluster_cols = FALSE, angle_col = c("90"), row_names_side = c("left"))
+pheatmap::pheatmap(overview_tab_between, display_numbers = TRUE, cluster_rows = FALSE, cluster_cols = FALSE, angle_col = c("90"), row_names_side = c("left"))
+setHook("grid.newpage", NULL, "replace")
+grid::grid.text("xlabel example", y=-0.07, gp=grid::gpar(fontsize=10))
+grid::grid.text("ylabel example", x=-0.07, rot=90, gp=grid::gpar(fontsize=10))
 
 ```
 
@@ -549,10 +552,10 @@ for(condition in 1:length(table_between_high)){
 }
 colnames(overview_tab_between) <- rownames(table_between_high[[condition]])
 colnames(overview_tab_within) <- rownames(table_within_high[[condition]])
-overview_tab <- cbind(overview_tab_between, overview_tab_within)
-rownames(overview_tab) <- c(30, 40, 50, 62, 75, 87, 100, 112, 125, 137, 150, 160, 175, 187, 200, 212, 225, 237, 250)
+#overview_tab <- cbind(overview_tab_between, overview_tab_within)
+rownames(overview_tab_between) <- c(30, 40, 50, 62, 75, 87, 100, 112, 125, 137, 150, 160, 175, 187, 200, 212, 225, 237, 250)
 
-pheatmap::pheatmap(overview_tab, display_numbers = TRUE, cluster_rows = FALSE, cluster_cols = FALSE, angle_col = c("90"), row_names_side = c("left"))
+pheatmap::pheatmap(overview_tab_between, display_numbers = TRUE, cluster_rows = FALSE, cluster_cols = FALSE, angle_col = c("90"), row_names_side = c("left"))
 
 ```
 

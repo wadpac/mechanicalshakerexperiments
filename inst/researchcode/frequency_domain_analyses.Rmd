@@ -60,12 +60,14 @@ rm(filename_high, filename_low)
 #' \item{method}{The method used to calculate the spectrum.} 
 #' @export
 deriveSpectrum <- function(x, sampling_frequency, file_name, plot = TRUE, XLIM = c(0, 5)) {
+  
   specd <- spectrum(x, log = "no", plot = FALSE) # Default calculate spectrum on log-scale, but we use raw data
   
   # Frequency axis of the spectrum, specd, is calculated in terms of cycles per sampling interval
-  delta <- 1/sampling_frequency
+  # We need to convert this to cyles per unit time (the same can be done using the MakePowerSpectralDensity function from the package psdr)
+  delta <- 1/sampling_frequency # Sampling interval
   specd$specx <- specd$freq/delta # Converts to cycles per unit time (divide by sampling interval)
-  specd$specy <- 2*specd$spec # Multiply the spectrum by 2 to make it actually equal to variance
+  specd$specy <- 2*specd$spec # Multiply the spectral density by 2 so that the area under the periodogram actually equals the variance of the time series.
   
   #Save the frequency spectrum plot and zoom in on low-frequencies (at most 5 based on max rpm)
   if (plot == TRUE){
@@ -159,7 +161,7 @@ deriveBins <- function(peaks, mean.spec, XLIM = c(0, 5), plot = TRUE) {
 #'
 #' @param spectrum An object of class "spec"
 #' @param freqBins Vector containing frequency values that define the frequency bins (can be derived using the function 'deriveBins') 
-#' @return Data.frame consisting of two columns: \item{domFreq}{The dominant frequency of the signal in each frequency bin} \item{meanPSD}{The mean power spectral density of the signal in each frequency bin}
+#' @return Data.frame consisting of two columns: \item{domFreq}{The dominant frequency of the signal in each frequency bin, i.e. frequency associated with the maximum value} \item{meanPSD}{The mean power spectral density of the signal in each frequency bin}
 #' @export
 deriveComparisonValues <- function(spectrum, freqBins){
   df <- data.frame()
@@ -217,17 +219,23 @@ createBoxplot <- function(data, freqBins, outcome = c("domFreq", "meanPSD"), exp
     }
     outcome = "rel"
   }
+  if(length(unique(data$brand)) == 5) {
+    palette = c("red", "orange", "green", "blue", "purple")
+  }
+  else if(length(unique(data$brand)) == 3) {
+    palette = c("red", "green", "blue")
+  }
   
-  boxplot <- ggpubr::ggboxplot(data, x = "bin", y = outcome, color = "brand",
+  boxplot <- ggpubr::ggboxplot(data, x = "bin", y = outcome, color = "brand", palette = palette,
                                xlab = "Shaker frequency (Hertz)", ylab = label, 
                                 order = bins,
-                               font.label = list(size = 8, color = "black")) +
-    ggpubr::font("xlab", size = 6, color = "black") +
-    ggpubr::font("x.text", size = 6, color = "black") + 
-    ggpubr::font("ylab", size = 6, color = "black") +
-    ggpubr::font("y.text", size = 6, color = "black") + 
-    ggpubr::font("legend.title", size = 8, color = "black") +
-    ggpubr::font("legend.text", size = 8, color = "black") + 
+                               font.label = list(size = 10, color = "black")) +
+    ggpubr::font("xlab", size = 10, color = "black") +
+    ggpubr::font("x.text", size = 10, color = "black") + 
+    ggpubr::font("ylab", size = 10, color = "black") +
+    ggpubr::font("y.text", size = 10, color = "black") + 
+    ggpubr::font("legend.title", size = 10, color = "black") +
+    ggpubr::font("legend.text", size = 10, color = "black") + 
     ggplot2::scale_x_discrete(breaks=bins,
                      labels= bin.labels)
   return(boxplot)
@@ -787,16 +795,30 @@ plot(domfreq_high)
 ```
 
 ```{r Create boxplot mean power spectral density, include=FALSE}
-gridExtra::grid.arrange(bxp_psd_high, bxp_psd_low, nrow=1) #arranges plots within grid
-g <- gridExtra::arrangeGrob(bxp_psd_high + ggplot2::theme(legend.position="none"), 
-                            bxp_psd_low + ggplot2::theme(legend.position="bottom"), nrow=2) #generates g
-ggplot2::ggsave(file=paste0(datadir, "plots/boxplot_meanPSD.pdf"), g) #saves g
+bxp_psd_high <- bxp_psd_high + ggplot2::labs(caption = "b) High sampling frequency experiment") + ggplot2::theme(legend.position="none", plot.caption=element_text(hjust = 0.5, size = 10)) 
+bxp_psd_low <- bxp_psd_low + ggplot2::labs(caption = "a) Low sampling frequency experiment") + ggplot2::theme(legend.position="bottom", plot.caption=element_text(hjust = 0.5, size = 10)) 
+legend <- ggpubr::get_legend(bxp_psd_low)
+  bxp_psd_low <- bxp_psd_low + ggplot2::theme(legend.position="none")
+
+g <- gridExtra::arrangeGrob(bxp_psd_low, bxp_psd_high,legend,
+                            nrow = 3,
+                            heights = c(3, 3, 0.2)) #generates g
+
+#ggplot2::ggsave(plot = g, filename = "boxplot_meanPSD")
+ggplot2::ggsave(file=paste0(datadir, "plots/boxplot_meanPSD.png"), g, width = 10, height = 8, dpi = 900) #saves g
+
 ```
 
 
 ```{r Create boxplot dominant frequency, include=FALSE}
-gridExtra::grid.arrange(bxp_domfreq_high, bxp_domfreq_low, nrow=1) #arranges plots within grid
-g <- gridExtra::arrangeGrob(bxp_domfreq_high + ggplot2::theme(legend.position="none"), 
-                            bxp_domfreq_low + ggplot2::theme(legend.position="bottom"), nrow=2) #generates g
-ggplot2::ggsave(file=paste0(datadir, "plots/boxplot_domFreq.pdf"), g) #saves g
+bxp_domfreq_high <- bxp_domfreq_high + ggplot2::labs(caption = "b) High sampling frequency experiment") + ggplot2::theme(legend.position="none", plot.caption=element_text(hjust = 0.5, size = 10)) 
+bxp_domfreq_low <- bxp_domfreq_low + ggplot2::labs(caption = "a) Low sampling frequency experiment") + ggplot2::theme(legend.position="bottom", plot.caption=element_text(hjust = 0.5, size = 10)) 
+legend <- ggpubr::get_legend(bxp_domfreq_low)
+  bxp_domfreq_low <- bxp_domfreq_low + ggplot2::theme(legend.position="none")
+
+g <- gridExtra::arrangeGrob(bxp_domfreq_low, bxp_domfreq_high, legend,
+                            nrow = 3,
+                            heights = c(2.5, 2.5, 0.2)) #generates g
+
+ggplot2::ggsave(file=paste0(datadir, "plots/boxplot_domFreq.png"), g, width = 10, height = 8, dpi = 900)
 ```
