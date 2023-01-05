@@ -14,7 +14,7 @@ outputdir = paste0(shaker_experiments_folder, "/analyses")
 if (!dir.exists(outputdir)) dir.create(outputdir)
 
 brands_to_load = c("Actigraph", "Activpal", "Axivity", "GENEActiv", "MOX")
-experiments_to_load = c("ms_hfcr", "ms_lfcr", "ms_mfcr", "ms_hfmr", "ms_lfmr") # for all five experiments
+experiments_to_load = c("ms_hfcr", "ms_lfcr", "ms_hfmr", "ms_lfmr", "ms_bag") # for all five experiments
 
 no_movement <- list()
 specifications <- data.frame()
