@@ -4,14 +4,15 @@
 #'
 #' @param path Path to the root of the experimental data (rawdatadir)
 #' @param brand Sensor brand: "Actigraph", "Activpal", "Acttrust", "Axivity", "GENEActiv", or "MOX".
-#' @param experiment Experiment to load: "timer_check", "ms_hfcr", "ms_lfcr", "ms_hfmr", "ms_lfmr", or "box".
+#' @param experiment Experiment to load: "timer_check", "ms_hfcr", "ms_lfcr", "ms_hfmr", "ms_lfmr", "ms_bag", or "box".
 #' @param windows Boolean, if TRUE then windows from the data_description file will be selected, FALSE: complete data file will be loaded;
 #' @param experimentfile xlsx file with protocol description
 #' @param actigraph_preprocessing Boolean,if  TRUE then sleepmode segments that jump by >1 sec are filled up using the function fill_sleep
 #' @return A list of: \item{data}{List of data.frames with the accelerometer time series where each list item represents 1 recording} \item{specifications}{Specifications for each recording}
 #' @importFrom utils read.csv
 #' @importFrom lubridate ymd
-#' @importFrom GGIR g.cwaread
+#' @importFrom GGIRread resample
+#' @importFrom GGIRread readAxivity
 #' @importFrom GENEAread read.bin
 #' @importFrom read.gt3x read.gt3x
 #' @import foreach
@@ -89,7 +90,7 @@ loaddata <- function(path, brand, experiment, windows = TRUE, experimentfile, ac
   
   `%myinfix%` = foreach::`%dopar%`
   parallelLoad <- function(file_path, file_list, brand, experiment, windows, path) {
-    foreach::foreach(i = 1:length(file_list), .packages = c("read.gt3x", "GGIR", "GENEAread"),
+    foreach::foreach(i = 1:length(file_list), .packages = c("read.gt3x", "GGIRread", "GENEAread"),
                      .export = "read.activpal") %myinfix% {
                        # for (i in 1:length(file_list)) {
                        # Load in the data
@@ -113,7 +114,7 @@ loaddata <- function(path, brand, experiment, windows = TRUE, experimentfile, ac
                          rawTime = as.numeric(rawdata$time)
                          time = seq(ceiling(min(rawTime)), floor(max(rawTime)), by = 1/sampling_frequency)
                          # resample
-                         rawdata2 = as.data.frame(GGIR::resample(raw = raw, rawTime = rawTime, time = time, nrow(raw), 2))
+                         rawdata2 = as.data.frame(GGIRread::resample(raw = raw, rawTime = rawTime, time = time, nrow(raw), 2))
                          # put data back into expected format
                          rawdata2$time = NA
                          colnames(rawdata2) = c("X", "Y", "Z", "time")
@@ -135,7 +136,7 @@ loaddata <- function(path, brand, experiment, windows = TRUE, experimentfile, ac
                          rawdata$time <- strptime(rawdata$DATE.TIME, format = "%d/%m/%Y %H:%M:%OS", tz = tz)
                          rawdata = rawdata[,c("time", "PIM", "PIMn", "TAT", "TATn", "ZCM", "ZCMn")] #Select variables
                        } else if (brand == "Axivity") {
-                         rawdata <- GGIR::g.cwaread(paste(file_path, file_list[i], sep = "/"),
+                         rawdata <- GGIRread::readAxivity(paste(file_path, file_list[i], sep = "/"),
                                                     start = 1, end = 1000000, desiredtz = tz, interpolationType = 2)
                          # rawdata = rawdata$data # ignore header already at this stage
                        } else if (brand == "GENEActiv") {

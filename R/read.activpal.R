@@ -2,12 +2,12 @@
 #'
 #' @description 'read.activpal' function adapted from package (activalProcessing), as the original function (activpal.file.reader) is not suitable for the raw data
 #'
-#' @param file.name.and.path Full file path to Acivpal file (.csv format)
+#' @param file.name.and.path Full file path to Activpal file (.csv format)
 #' @return Data.frame with acceleration timeseries and timestamps
 #' @export
 
 read.activpal <- function(file.name.and.path) {
-  #function adapted from package (activalProcessing), as the original function (activpal.file.reader) is not suitable for the raw data
+  #function adapted from package (activpalProcessing), as the original function (activpal.file.reader) is not suitable for the raw data
   data <- as.data.frame(data.table::fread(file.name.and.path, stringsAsFactors = FALSE, skip = 1, sep = ";"))
   #data <- data[,(1:5)]
   names(data) <- c("time","sample_index","X","Y","Z")
