@@ -1,7 +1,6 @@
-## Script to load the structured acceleration data for the five experiments: ms_hfcr, ms_lfcr, ms_hfmr, ms_lfmr, ms_bag
-## and to subset these data for the analyses of:
+## Script to load the structured acceleration data and to subset these data for the analyses of:
 # 1) visual_inspection: load all data for plotting
-# 2) noise: no-movement segments (shaking_frequency == 0) 
+# 2) noise: no-movement segments (shaking_frequency == 0)
 
 rm(list=ls())
 graphics.off()
@@ -16,15 +15,17 @@ outputdir = paste0(shaker_experiments_folder, "/analyses")
 if (!dir.exists(outputdir)) dir.create(outputdir)
 
 # Specify the analyses
-analyse <- "noise" # one of: visual_inspection, noise, ..
+analysis <- "noise" # one of: c("visual_inspection", "noise", ..)
 
 #===============================
 
 brands_to_load = c("Actigraph", "Activpal", "Axivity", "GENEActiv", "MOX")
 
-if(analyse == "visual_inspection" | analyse == "noise"){
+if(analysis == "visual_inspection"){
  experiments_to_load = c("ms_hfcr", "ms_lfcr", "ms_hfmr", "ms_lfmr", "ms_bag") # for all five experiments
-} 
+} else if(analysis == "noise") {
+  experiments_to_load = c("ms_hfcr", "ms_lfcr", "ms_hfmr", "ms_lfmr") # not for ms_bag because axes were oriented randomly
+}
 
 tz = "Europe/Amsterdam"
 
@@ -45,16 +46,16 @@ for (brand in 1:length(brands_to_load)){
         tmp <- extracteddata$data[[file]] #tmp is the structured data now
         if(length(which(tmp > 0))) {
           tmp$time = as.POSIXct(tmp$time, origin = "1970-01-01", tz = tz)
-          if (analyse == "visual_inspection") {
+          if (analysis == "visual_inspection") {
             tmp <- tmp
-          } else if (analyse == "noise"){
+          } else if (analysis == "noise"){
             tmp <- tmp[tmp$shaking_frequency == 0, ] #select no movement segments
+          }
           data$data[[counter]] <- tmp
           counter = counter + 1
           specs <- c(extracteddata$specifications[file, "label"], extracteddata$specifications[file, "serial_number"], brands_to_load[brand], experiments_to_load[experiment],
                      extracteddata$specifications[file, "sampling_frequency"], extracteddata$specifications[file, "dynamic_range"])
           specifications <- rbind(specifications, unname(specs))
-          }
         }
       }
     }
@@ -67,9 +68,9 @@ data$specifications <- specifications
 as.factor(data$specifications$brand)
 as.factor(data$specifications$experiment)
 
-if (analyse == "visual_inspection") {
+if (analysis == "visual_inspection") {
   filename <- "/complete_data.RData"
-} else if (analyse == "noise"){
+} else if (analysis == "noise"){
   filename <- "/no_movement.RData"
 }
 
