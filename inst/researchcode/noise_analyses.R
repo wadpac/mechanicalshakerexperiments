@@ -68,3 +68,23 @@ noise_plots <- gridExtra::arrangeGrob(plot_noise_x + ggplot2::theme(legend.posit
 plot(noise_plots) #print the plot
 
 ggplot2::ggsave(file=paste0(noise_output, "/boxplots_noise.pdf"), noise_plots) #saves plot
+
+# Statistical analyses
+sdx.aov <- aov(sd_x ~ brand*experiment, data = noise_data)
+summary(sdx.aov)
+sdx.aov <- aov(sd_x ~ brand + experiment, data = noise_data) # Differences between brands and experiments are not dependent on eachother
+posthoc.x <- TukeyHSD(sdx.aov)
+posthoc.x
+# Noise is highest in GENEActiv and MOX devices?
+
+sdy.aov <- aov(sd_y ~ brand * experiment, data = noise_data)
+summary(sdy.aov)
+sdy.aov <- aov(sd_y ~ brand + experiment, data = noise_data) # Differences between brands and experiments are not dependent on eachother
+posthoc.y <- TukeyHSD(sdy.aov)
+posthoc.y
+
+sdz.aov <- aov(sd_z ~ brand * experiment, data = noise_data)
+summary(sdz.aov)
+#Differences between brands are dependent on the experiment
+posthoc.z <- TukeyHSD(sdz.aov)
+posthoc.z
