@@ -47,16 +47,16 @@ rm(device, df, sd_x, sd_y, sd_z)
 save(noise_data, file = paste0(noise_output, "/noise.RData"))
 
 # Plot noise for the brands with separate panels for the axes
-positions <- c("ms_hfcr", "ms_lfcr", "ms_hfmr", "ms_lfmr")
+positions <- c("Actigraph", "Activpal", "Axivity", "GENEActiv", "MOX")
 
-plot_noise_x <- ggplot2::ggplot(noise_data, ggplot2::aes(x = experiment, y = sd_x)) +
-  ggplot2::geom_boxplot(ggplot2::aes(color = brand)) +
+plot_noise_x <- ggplot2::ggplot(noise_data, ggplot2::aes(x = brand, y = sd_x)) +
+  ggplot2::geom_boxplot(ggplot2::aes(color = experiment)) +
   ggplot2::theme_light() + ggplot2::scale_x_discrete(limits = positions)
-plot_noise_y <- ggplot2::ggplot(noise_data, ggplot2::aes(x = experiment, y = sd_y)) +
-  ggplot2::geom_boxplot(ggplot2::aes(color = brand)) +
+plot_noise_y <- ggplot2::ggplot(noise_data, ggplot2::aes(x = brand, y = sd_y)) +
+  ggplot2::geom_boxplot(ggplot2::aes(color = experiment)) +
   ggplot2::theme_light() + ggplot2::scale_x_discrete(limits = positions)
-plot_noise_z <- ggplot2::ggplot(noise_data, ggplot2::aes(x = experiment, y = sd_z)) +
-  ggplot2::geom_boxplot(ggplot2::aes(color = brand)) +
+plot_noise_z <- ggplot2::ggplot(noise_data, ggplot2::aes(x = brand, y = sd_z)) +
+  ggplot2::geom_boxplot(ggplot2::aes(color = experiment)) +
   ggplot2::theme_light() + ggplot2::scale_x_discrete(limits = positions)
 
 gridExtra::grid.arrange(plot_noise_x, plot_noise_y, plot_noise_z, nrow=3) #arranges plots within grid
@@ -69,30 +69,15 @@ plot(noise_plots) #print the plot
 
 ggplot2::ggsave(file=paste0(noise_output, "/boxplots_noise.jpeg"), noise_plots) #saves plot
 
-### Statistical analyses
-# Test for each brand if noise is different for the experiments
+### Statistical analyses: test for each brand if noise is different during the experiments (i.e. significant interaction-effect)
 # x-axis
 model.x <- lme4::lmer(sd_x ~ experiment * brand + (1 | label), data = noise_data)
 summary(model.x)
-
 car::Anova(model.x, type="II", test.statistic="F")
 require(lmerTest)
 test.x <- as(model.x, "merModLmerTest")
 print(summary(test.x, ddf="Kenward-Roger"), correlation = FALSE)
-#vcov(test.x, type = "random")
-# Differences in noise between experiments are not dependent on the brand. 
-
-# emmRes.x <- emmeans::emmeans(model.x, comparison="pairwise", 
-#                            specs= ~ experiment*brand, adjust="sidak", data = noise_data) # Compute estimated marginal means for the desired fixed effects
-# contrast.x <- emmeans::contrast(emmRes.x, "pairwise") # Show pairwise contrasts for the fixed effects
-# contrast_df.x <- as.data.frame(contrast.x)
-# focusOfInterest <- c()
-# check <- strsplit(contrast_df.x$contrast, " ")
-# for (row in 1:nrow(contrast_df.x)) {
-#   focusOfInterest <- c(focusOfInterest, (check[[row]][2] == check[[row]][5] 
-#                                          & check[[row]][1] !=   check[[row]][4])) #focus on rows where brand is the same, but the experiment differs.
-# }
-# ct.interest.x <- contrast_df.x[focusOfInterest,]
+# Differences in noise between experiments do not depend on brand
 
 # y-axis
 model.y <- lme4::lmer(sd_y ~ experiment * brand + (1 | label), data = noise_data)
