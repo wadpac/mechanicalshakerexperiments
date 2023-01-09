@@ -67,24 +67,73 @@ noise_plots <- gridExtra::arrangeGrob(plot_noise_x + ggplot2::theme(legend.posit
                                       nrow=3) # generates plot
 plot(noise_plots) #print the plot
 
-ggplot2::ggsave(file=paste0(noise_output, "/boxplots_noise.pdf"), noise_plots) #saves plot
+ggplot2::ggsave(file=paste0(noise_output, "/boxplots_noise.jpeg"), noise_plots) #saves plot
 
-# Statistical analyses
-sdx.aov <- aov(sd_x ~ brand*experiment, data = noise_data)
-summary(sdx.aov)
-sdx.aov <- aov(sd_x ~ brand + experiment, data = noise_data) # Differences between brands and experiments are not dependent on eachother
-posthoc.x <- TukeyHSD(sdx.aov)
-posthoc.x
-# Noise is highest in GENEActiv and MOX devices?
+### Statistical analyses
+# Test for each brand if noise is different for the experiments
+# x-axis
+model.x <- lme4::lmer(sd_x ~ experiment * brand + (1 | label), data = noise_data)
+summary(model.x)
 
-sdy.aov <- aov(sd_y ~ brand * experiment, data = noise_data)
-summary(sdy.aov)
-sdy.aov <- aov(sd_y ~ brand + experiment, data = noise_data) # Differences between brands and experiments are not dependent on eachother
-posthoc.y <- TukeyHSD(sdy.aov)
-posthoc.y
+car::Anova(model.x, type="II", test.statistic="F")
+require(lmerTest)
+test.x <- as(model.x, "merModLmerTest")
+print(summary(test.x, ddf="Kenward-Roger"), correlation = FALSE)
+#vcov(test.x, type = "random")
+# Differences in noise between experiments are not dependent on the brand. 
 
-sdz.aov <- aov(sd_z ~ brand * experiment, data = noise_data)
-summary(sdz.aov)
-#Differences between brands are dependent on the experiment
-posthoc.z <- TukeyHSD(sdz.aov)
-posthoc.z
+# emmRes.x <- emmeans::emmeans(model.x, comparison="pairwise", 
+#                            specs= ~ experiment*brand, adjust="sidak", data = noise_data) # Compute estimated marginal means for the desired fixed effects
+# contrast.x <- emmeans::contrast(emmRes.x, "pairwise") # Show pairwise contrasts for the fixed effects
+# contrast_df.x <- as.data.frame(contrast.x)
+# focusOfInterest <- c()
+# check <- strsplit(contrast_df.x$contrast, " ")
+# for (row in 1:nrow(contrast_df.x)) {
+#   focusOfInterest <- c(focusOfInterest, (check[[row]][2] == check[[row]][5] 
+#                                          & check[[row]][1] !=   check[[row]][4])) #focus on rows where brand is the same, but the experiment differs.
+# }
+# ct.interest.x <- contrast_df.x[focusOfInterest,]
+
+# y-axis
+model.y <- lme4::lmer(sd_y ~ experiment * brand + (1 | label), data = noise_data)
+summary(model.y)
+car::Anova(model.y, type="II", test.statistic="F")
+require(lmerTest)
+test.y <- as(model.y, "merModLmerTest")
+print(summary(test.y, ddf="Kenward-Roger"), correlation = FALSE)
+
+# Differences in noise between experiments are dependent on brand
+emmRes.y <- emmeans::emmeans(model.y, comparison="pairwise", 
+                             specs= ~ experiment*brand, adjust="sidak", data = noise_data) # Compute estimated marginal means for the desired fixed effects
+contrast.y <- emmeans::contrast(emmRes.y, "pairwise") # Show pairwise contrasts for the fixed effects
+contrast_df.y <- as.data.frame(contrast.y)
+focusOfInterest <- c()
+check <- strsplit(contrast_df.y$contrast, " ")
+for (row in 1:nrow(contrast_df.y)) {
+  focusOfInterest <- c(focusOfInterest, (check[[row]][2] == check[[row]][5] 
+                                         & check[[row]][1] !=   check[[row]][4])) #focus on rows where brand is the same, but the experiment differs.
+}
+ct.interest.y <- contrast_df.y[focusOfInterest,]
+# There were no differences between experiments for the same brand
+
+# z-axis
+model.z <- lme4::lmer(sd_z ~ experiment * brand + (1 | label), data = noise_data)
+summary(model.z)
+car::Anova(model.z, type="II", test.statistic="F")
+require(lmerTest)
+test.z <- as(model.z, "merModLmerTest")
+print(summary(test.z, ddf="Kenward-Roger"), correlation = FALSE)
+
+# Differences in noise between experiments are dependent on brand
+emmRes.z <- emmeans::emmeans(model.z, comparison="pairwise", 
+                             specs= ~ experiment*brand, adjust="sidak", data = noise_data) # Compute estimated marginal means for the desired fixed effects
+contrast.z <- emmeans::contrast(emmRes.z, "pairwise") # Show pairwise contrasts for the fixed effects
+contrast_df.z <- as.data.frame(contrast.z)
+focusOfInterest <- c()
+check <- strsplit(contrast_df.z$contrast, " ")
+for (row in 1:nrow(contrast_df.z)) {
+  focusOfInterest <- c(focusOfInterest, (check[[row]][2] == check[[row]][5] 
+                                         & check[[row]][1] !=   check[[row]][4])) #focus on rows where brand is the same, but the experiment differs.
+}
+ct.interest.z <- contrast_df.z[focusOfInterest,]
+#noise in z-axis is significantly different between experiments for GENEActiv
