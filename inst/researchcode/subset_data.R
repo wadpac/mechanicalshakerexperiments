@@ -39,7 +39,9 @@ for (brand in 1:length(brands_to_load)){
       cat(paste0("\nThis device was not included in experiment:"), experiments_to_load[experiment])
       next
     } else if (brands_to_load[brand] == "Activpal" & endsWith(experiments_to_load[experiment], "hfcr")) {
-      next # Do not load Activpal data for the ms_hfcr experiment 
+      if(!analysis == "noise"){
+        next # Do not load Activpal data for the ms_hfcr experiment 
+      }
     } else{
       load(paste0(structured_data_dir, "/", brands_to_load[brand], "_", experiments_to_load[experiment], ".RData"))
       for (file in 1:length(extracteddata$data)) {
