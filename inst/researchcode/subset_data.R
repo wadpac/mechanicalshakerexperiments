@@ -48,7 +48,7 @@ for (brand in 1:length(brands_to_load)){
           tmp$time = as.POSIXct(tmp$time, origin = "1970-01-01", tz = tz)
           if (analysis == "visual_inspection") {
             tmp <- tmp
-          } else if (analysis == "noise"){
+          } else if (){
             tmp <- tmp[tmp$shaking_frequency == 0, ] #select no movement segments
           }
           data$data[[counter]] <- tmp
