@@ -77,7 +77,7 @@ car::Anova(model.x, type="II", test.statistic="F")
 require(lmerTest)
 test.x <- as(model.x, "merModLmerTest")
 print(summary(test.x, ddf="Kenward-Roger"), correlation = FALSE)
-# Differences in noise between experiments do not depend on brand
+# Differences in noise between experiments and brand are not dependent on each other
 
 # y-axis
 model.y <- lme4::lmer(sd_y ~ experiment * brand + (1 | label), data = noise_data)
