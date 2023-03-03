@@ -1,6 +1,6 @@
 ## Script to load the structured acceleration data and to subset these data for the analyses of:
 # 1) visual_inspection: load all data for plotting
-# 2) noise: no-movement segments (shaking_frequency == 0)
+# 2) noise: select the no-movement segments (shaking_frequency == 0), but omit data for the actigraph devices in which idle sleep mode was enabled
 
 rm(list=ls())
 graphics.off()
@@ -42,6 +42,13 @@ for (brand in 1:length(brands_to_load)){
       next # Do not load Activpal data for the ms_hfcr experiment 
     } else{
       load(paste0(structured_data_dir, "/", brands_to_load[brand], "_", experiments_to_load[experiment], ".RData"))
+      
+      if (analysis == "noise" & brands_to_load[brand] == "Actigraph" & experiments_to_load[experiment] == "ms_hfcr"){ # Omit data of devices in which idle.sleep.mode was enabled during ms_hfcr
+          sleep.mode.devices <- c("AG_CLE_039", "AG_CLE_077", "AG_CLE_091", "AG_CLE_132", "AG_MOS_028", "AG_MOS_192", "AG_MOS_352", "AG_MOS_527", "AG_MOS_008")
+          index.sleep.mode <- which(extracteddata$specifications[,c("label")] %in% sleep.mode.devices)
+          extracteddata$data[index.sleep.mode] <- NULL
+          extracteddata$specifications <- extracteddata$specifications[-index.sleep.mode,]
+      }
       for (file in 1:length(extracteddata$data)) {
         tmp <- extracteddata$data[[file]] #tmp is the structured data now
         if(length(which(tmp > 0))) {
