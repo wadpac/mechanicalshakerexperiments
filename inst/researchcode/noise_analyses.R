@@ -19,57 +19,42 @@ if (!dir.exists(noise_output)) {
 }
 
 #======================================================================================
-# Load no movement data
+# Load no-movement segment data
 load(datafile)
 
-# Exclude two devices (aP_490 and aP_254) from the low sampling frequency experiment (ms_lfcr)
-#deviates <- c("aP_490", "aP_254")
-#index_deviates <- which(names(data$data) %in% deviates & data$specifications$experiment == "ms_lfcr")
-#specifications <- data$specifications[-index_deviates,]
-#data <- data$data
-#data[index_deviates] <- NULL
-#data <- list(data = data, specifications = specifications)
-#rm(specifications, deviates, index_deviates)
-
-# Calculate the standard deviation for all three axes for each device
-sd_x <- c()
-sd_y <- c()
-sd_z <- c()
-for (device in 1:length(data$data)) {
-  df <- data$data[[device]]
-  sd_x <- c(sd_x, sd(df$x))
-  sd_y <- c(sd_y, sd(df$y))
-  sd_z <- c(sd_z, sd(df$z))
-}
-
-noise_data <- cbind(data$specifications, sd_x, sd_y, sd_z)
-#noise_data$brand <- as.factor(noise_data$brand)
-#noise_data$experiment <- as.factor(noise_data$experiment)
-noise_data$sampling_frequency <- round(as.integer(noise_data$sampling_frequency))
-rm(device, df, sd_x, sd_y, sd_z)
-save(noise_data, file = paste0(noise_output, "/noise.RData"))
-
-#Create descriptive table by aggregating per brand
 # Aggregate per unique combination of brand, dynamic range and sampling frequency
-combinations <- unique(noise_data[c("brand", "dynamic_range", "sampling_frequency")])
+combinations <- unique(data$specifications[c("brand", "dynamic_range", "sampling_frequency")])
 results_agg <- data.frame()
 for(combination in 1:nrow(combinations)){
-  index <- which(noise_data$brand == combinations$brand[combination] & 
-                   noise_data$dynamic_range == combinations$dynamic_range[combination] &
-                   noise_data$sampling_frequency == combinations$sampling_frequency[combination])
-  tmp <- noise_data[index,]
+  index <- which(data$specifications$brand == combinations$brand[combination] & 
+                   data$specifications$dynamic_range == combinations$dynamic_range[combination] &
+                   data$specifications$sampling_frequency == combinations$sampling_frequency[combination])
+  tmp <- data$specifications[index,]
+  sub <- data$data[index]
+  
+  # Calculate the standard deviation for all three axes for each device
+  sd_x <- c()
+  sd_y <- c()
+  sd_z <- c()
+  for (device in 1:length(sub)) {
+    df <- sub[[device]]
+    sd_x <- c(sd_x, sd(df$x))
+    sd_y <- c(sd_y, sd(df$y))
+    sd_z <- c(sd_z, sd(df$z))
+  }
+  # Create descriptive table by aggregating
   if(length(tmp) != 0) {
     results <- c(brand = unique(tmp$brand), dynamic_range = unique(tmp$dynamic_range), sampling_frequency = unique(tmp$sampling_frequency),
-                     mean_x = mean(tmp$sd_x), mean_y = mean(tmp$sd_y), mean_z = mean(tmp$sd_z), 
-                     median_x = median(tmp$sd_x), median_y = median(tmp$sd_y), median_z = median(tmp$sd_z), 
-                     percentile_x = quantile(tmp$sd_x, .95), percentile_y = quantile(tmp$sd_y, .95), percentile_z = quantile(tmp$sd_z, .95))
+                 mean_x = mean(sd_x), mean_y = mean(sd_y), mean_z = mean(sd_z), 
+                 median_x = median(sd_x), median_y = median(sd_y), median_z = median(sd_z), 
+                 percentile_x = quantile(sd_x, .95), percentile_y = quantile(sd_y, .95), percentile_z = quantile(sd_z, .95))
     results_agg <- rbind(results_agg, results)
   }
 }
+
 colnames(results_agg) <- c("brand", "dynamic_range", "sampling_frequency", "mean_x", "mean_y", "mean_z",
                            "median_x", "median_y", "median_z", "percentile95_x", "percentile95_y", "percentile95_z")
 save(results_agg, file = paste0(noise_output, "/noise_aggregated_results.RData"))
-
 
 # Plot noise for the brands with separate panels for the axes
 positions <- c("Actigraph", "Activpal", "Axivity", "GENEActiv", "MOX")
