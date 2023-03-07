@@ -32,4 +32,12 @@ load(filename_experiment)
 # Load functions
 source("frequency_domain_functions.R")
 source("time_domain_functions.R")
+
+# Select data with low sampling frequency (25 Hz) only
+index_low <- which(data$specifications$experiment == "ms_lfmr" & data$specifications$sampling_frequency == "25")
+setdiff(data$specifications$label, data$specifications$label[index_low]) # Ax_215 excluded, was set to 100 Hz
+
+data_low <- list(data = data$data[index_low], 
+                  specifications = data$specifications[index_low,])
+rm(data)
 ```
