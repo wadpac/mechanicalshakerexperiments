@@ -262,7 +262,6 @@ residuals_domFreq <- resid(domFreq_interaction_id)
 hist(residuals_domFreq) # approximately normally distributed
 rm(residuals_domFreq)
 ```
-
 #### Model summary
 ```{r Model summary domFreq low sampling frequency experiment, echo=FALSE}
 car::Anova(domFreq_interaction_id, type="II", test.statistic="F")
@@ -300,5 +299,156 @@ plot(bxp_psd)
 
 ```{r Print boxplot for dominant frequency, echo=FALSE}
 plot(bxp_domFreq)
+```
+# Time domain analyses
+
+## Cross-correlation coefficients
+
+```{r Compute cross-correlation matrices, include=FALSE}
+correlation_matrices <- computeCrossCorrelations(data_high$data, plot = TRUE) 
+save(correlation_matrices, file = paste0(datadir, "E2_cross_correlations_overall.RData"))
+
+correlations_perShakerCondition <- computeCrossCorrelationsPerShakerCondition(data_high$data) 
+save(correlations_perShakerCondition, file = paste0(datadir, "E2_cross_correlations_perShakerCondition.RData"))
+
+```
+
+### Overall heatmap
+```{r Heatmap high sampling frequency experiment, echo=FALSE, fig.width=14, fig.height=14}
+fullmatrix <- correlation_matrices$correlationMatrix
+
+# Add the dynamic range to the labels
+labels <- rownames(fullmatrix)
+dr_labels <- c()
+for(lab in 1:length(labels)){
+  dr_labels <- c(dr_labels, paste(data_high$specifications[data_high$specifications$label == labels[lab], 6], labels[lab], sep = "_"))
+}
+colnames(fullmatrix) <- dr_labels
+rownames(fullmatrix) <- dr_labels
+
+
+heatmap <- corrplot::corrplot(pmax(fullmatrix, t(fullmatrix), na.rm = TRUE), 
+                                  type = 'lower', method = 'color', order = "alphabet", 
+                                  number.cex = 1.25, cl.cex = 2, tl.cex = 2,
+                                  col.lim = c(0,1), addCoef.col = 'black', tl.srt = 45, 
+                                  diag = TRUE, tl.col = "black")
+rm(fullmatrix, heatmap)
+```
+### Heatmap per shaker condition
+```{r Heatmap high sampling frequency experiment per shaker condition, echo=FALSE, fig.width=14, fig.height=15}
+fullmatrices <- correlations_perShakerCondition
+
+# Add the dynamic range to the labels
+for(matrix in 1:length(fullmatrices)){
+  colnames(fullmatrices[[matrix]]$correlationMatrix) <- dr_labels
+  rownames(fullmatrices[[matrix]]$correlationMatrix) <- dr_labels
+}
+
+heatmaps <- list()
+for (condition in 1:length(fullmatrices)){
+  heatmaps[[condition]] <- corrplot::corrplot(pmax(fullmatrices[[condition]]$correlationMatrix,
+                          t(fullmatrices[[condition]]$correlationMatrix), na.rm = TRUE), 
+                            title = paste0("shaker condition: ", names(fullmatrices)[condition]),
+                            type = 'lower', method = 'color', order = "alphabet", 
+                            number.cex = 1.25, cl.cex = 2, tl.cex = 2,
+                            col.lim = c(-1,1), addCoef.col = 'black', tl.srt = 45, mar=c(0,0,2,0),
+                            diag = TRUE, tl.col = "black")
+}
+
+rm(fullmatrices, heatmaps)
+```
+
+## Comparison of cross-correlation coefficients between dynamic ranges
+
+```{r Calculate average maximum cross lagged correlation coefficients high sampling frequency experiment per shaker condition, include=FALSE}
+avg_crosscor_between <- list()
+avg_crosscor_within <- list()
+
+for (condition in 1:length(correlations_perShakerCondition)){
+  avg_crosscor <- dataframeShapeComparisonBeween(correlations_perShakerCondition[[condition]], data_high$specifications, between = "dynamic_range") 
+  avg_crosscor_between[[condition]] <- avg_crosscor[avg_crosscor$same_group == "0",]
+  avg_crosscor_within[[condition]] <- avg_crosscor[avg_crosscor$same_group == "1",]
+}
+rm(avg_crosscor, condition)
+names(avg_crosscor_between) <- names(correlations_perShakerCondition)
+names(avg_crosscor_within) <- names(correlations_perShakerCondition)
+```
+
+```{r Between dynamic range comparison high sampling frequency experiment, echo=FALSE}
+table_between <- list()
+
+for(condition in 1:length(avg_crosscor_between)){
+  df_correlations <- avg_crosscor_between[[condition]]
+  df_correlations$correlation <- as.numeric(df_correlations$correlation)
+
+    
+  cor24 <- rbind(df_correlations[which(df_correlations$between1 == 2 & df_correlations$between2 == 4) ,],
+                 df_correlations[which(df_correlations$between1 == 4 & df_correlations$between2 == 2) ,])
+  cor28 <- rbind(df_correlations[which(df_correlations$between1 == 2 & df_correlations$between2 == 8) ,],
+                 df_correlations[which(df_correlations$between1 == 8 & df_correlations$between2 == 2) ,])
+  cor216 <- rbind(df_correlations[which(df_correlations$between1 == 2 & df_correlations$between2 == 16) ,],
+                 df_correlations[which(df_correlations$between1 == 16 & df_correlations$between2 == 2) ,])
+  cor48 <- rbind(df_correlations[which(df_correlations$between1 == 4 & df_correlations$between2 == 8) ,],
+                 df_correlations[which(df_correlations$between1 == 8 & df_correlations$between2 == 4) ,])
+  cor416 <- rbind(df_correlations[which(df_correlations$between1 == 4 & df_correlations$between2 == 16) ,],
+                 df_correlations[which(df_correlations$between1 == 16 & df_correlations$between2 == 4) ,])
+  cor816 <- rbind(df_correlations[which(df_correlations$between1 == 8 & df_correlations$between2 == 16) ,],
+                 df_correlations[which(df_correlations$between1 == 16 & df_correlations$between2 == 8) ,])
+  
+  tab <- rbind(summary(cor24$correlation), summary(cor28$correlation), summary(cor216$correlation), 
+               summary(cor48$correlation), summary(cor416$correlation), summary(cor816$correlation))
+  sd <- c(sd(cor24$correlation), sd(cor28$correlation), sd(cor216$correlation), 
+               sd(cor48$correlation), sd(cor416$correlation), sd(cor816$correlation))
+  tab <- cbind(tab, sd)
+  groups <- c("2_vs_4", "2_vs_8", "2_vs_18", "4_vs_8", "4_vs_16", "8_vs_16")
+  tab <- tab[,-1]
+  tab <- tab[,-5]
+  tab <- cbind(groups, tab)
+  table_between[[condition]] <- tab
+}
+rm(tab, cor24, cor28, cor216, cor48, cor416, cor816, sd, groups, condition)
+names(table_between) <- names(correlations_perShakerCondition)
+```
+
+```{r Print between comparison tables high frequency experiment, echo = FALSE}
+for(condition in 1:length(table_between)){
+  print(paste0("Shaker condition: ", names(table_between)[condition]))
+  print(table_between[[condition]])
+}
+```
+
+```{r Line graph high sampling frequency, echo=TRUE}
+shaker_frequencies <- c(30, 40, 50, 62, 75, 87, 100, 112, 125, 137, 150, 160, 175, 187, 200, 212, 225, 237, 250)
+groups <- c("2_vs_4", "2_vs_8", "2_vs_18", "4_vs_8", "4_vs_16", "8_vs_16")
+comparison <- rep(groups, length(shaker_frequencies))
+correlations <- c()
+sd <- c()
+shaker_frequency <- c()
+
+for(condition in 1:length(table_between)){
+  correlations <- c(correlations, table_between[[condition]][,4])
+  sd <- c(sd, table_between[[condition]][,6])
+  shaker_frequency <- c(shaker_frequency, rep(shaker_frequencies[condition], length(table_between[[condition]][,4])))
+}
+overview_tab_between <- cbind(comparison, correlations, shaker_frequency, sd)
+overview_tab_between <- as.data.frame(overview_tab_between)
+
+ # ggplot2::geom_errorbar(ggplot2::aes(ymin = as.numeric(correlations) - (1.96 * as.numeric(sd)),
+  #                                    ymax = as.numeric(correlations) + (1.96*as.numeric(sd))), 
+   #                      width=.1, position=ggplot2::position_dodge(0.5)) +
+
+line_plot <- ggplot2::ggplot(data = overview_tab_between, ggplot2::aes(x = as.factor(shaker_frequency), y = as.numeric(correlations), group = as.factor(comparison))) +
+  ggplot2::geom_line(ggplot2::aes(color = as.factor(comparison)))+
+  ggplot2::geom_point(ggplot2::aes(color = as.factor(comparison))) +
+  ggplot2::labs(x="Shaker frequency (rpm)", y = "Cross-correlation coefficient", color = "Dynamic range comparison") +
+  ggplot2::scale_x_discrete(limits = c("30", "40", "50", "62", "75", "87", "100", "112", "125", "137", "150", "160", "175", "187", "200", "212", "225", "237", "250")) +
+  ggplot2::theme_classic() +
+  ggplot2::theme(legend.position="bottom")
+
+ggplot2::ggsave(file=paste0(datadir, "plots/linegraph_E2_crosscorrelations.png"), line_plot, width = 10, height = 8, dpi = 900) #saves g
+```
+
+```{r Plot line graph, echo=TRUE}
+plot(line_plot)
 ```
 
