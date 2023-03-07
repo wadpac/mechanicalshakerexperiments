@@ -67,3 +67,238 @@ for(plot in 1:length(plot_list)){
 }
 rm(plot, plot_list, p)
 ```
+# Frequency domain analyses
+```{r Settings for frequency spectra, include=FALSE}
+# Plot parameters
+plot = TRUE
+xlabel = "Frequency (Hertz)"
+ylabel = "Spectral Density (g2/Hertz)"
+XLIM = c(0, 5) # Limit frequency content to 5 Hz (as 250 rpm / 60 = 4.1667 Hz is the expected max)
+```
+
+```{r Derive frequency spectra high sampling frequency experiment, echo=FALSE}
+# DERIVE RAW FREQUENCY SPECTRA (for visual inspection and save data for further analysis)
+raw.spectra_high <- list() 
+
+for (file in 1:length(data_high$data)) { # for all accelerometer files
+  sampling_frequency <- as.numeric(data_high$specifications$sampling_frequency[file])  
+  SD <- data_high$data[[file]]$SD #axis in shaking direction
+  rawSpectrum <- deriveSpectrum(SD, sampling_frequency, file_name = names(data_high$data)[[file]])
+  raw.spectra_high[[file]] <- rawSpectrum
+}
+rm(rawSpectrum, file)
+names(raw.spectra_high) <- data_high$specifications$label  
+
+mean.freqspec_high <- deriveMeanSpectrum(raw.spectra_high)
+```
+
+```{r Save raw spectra, include=FALSE}
+raw_spectra <- list(spectra = raw.spectra_high, mean_spectrum = mean.freqspec_high, specifications = data_high$specifications) # Save derived raw spectra
+
+save(raw_spectra, file = paste0(datadir, "E2_frequency_spectra.RData"))
+rm(raw.spectra_high, SD, sampling_frequency)
+
+#load(paste0(datadir, "E2_frequency_spectra.RData"))
+```
+
+## Mean frequency spectra
+
+```{r Plot mean frequency spectrum high sampling frequency, echo=FALSE}
+plot(raw_spectra$mean_spectrum$x, raw_spectra$mean_spectrum$y, xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l", main = "Mean frequency spectrum low sampling frequency and mixed dynamic range")
+rm(mean.freqspec_high)
+```
+
+## Derive frequency bins
+```{r Derive frequency bins high sampling frequency, echo=FALSE}
+peaks_high <- derivePeaks(raw_spectra$mean_spectrum, 100, XLIM, plot = TRUE)
+bins_high <- deriveBins(peaks_high, raw_spectra$mean_spectrum, XLIM = c(0, 5), plot = TRUE) 
+```
+
+## Frequency spectra plots
+
+### Overlay all frequency spectra
+```{r Overlay all spectra high sampling frequency experiment, echo=FALSE}
+plot <- plot(raw_spectra$spectra[[1]]$specx, raw_spectra$spectra[[1]]$specy, main = "Overlay all frequency spectra", 
+       xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l")
+for(i in 1:length(bins_high)){
+    plot <- plot + abline(v=bins_high[i], col = "red")
+  }  
+
+for (spec in 2:length(raw_spectra$spectra)) {
+  plot + lines(raw_spectra$spectra[[spec]]$specx, raw_spectra$spectra[[spec]]$specy, type = "l")
+  
+}
+rm(spec, i)
+```
+
+### Seperate plots for frequency spectra 
+
+```{r Plot spectra high sampling frequency experiment, echo=FALSE}
+for (spec in 1:length(raw_spectra$spectra)) {
+  spectrum <- raw_spectra$spectra[[spec]]
+  title <- paste("Frequency spectrum plot: ", raw_spectra$specifications$label[[spec]])
+  plot(spectrum$specx, spectrum$specy, main = title, 
+       xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l")
+  for(i in 1:length(bins_high)){
+    abline(v=bins_high[i], col = "red")
+  }  
+}
+rm(spec, title, spectrum, i)
+```
+
+```{r Compute dominant frequency (domFreq) and mean power spectral density (meanPSD) for the axis in the shaking direction, include = FALSE}
+comparison_values <- list()
+for(spectrum in 1:length(raw_spectra$spectra)){ 
+  comparison_values[[spectrum]] <- deriveComparisonValues(raw_spectra$spectra[[spectrum]], bins_high)
+}
+names(comparison_values) <- names(raw_spectra$spectra)
+
+#cat("\nSaving data...")
+save(comparison_values, file = paste0(datadir, "E2_comparison_values.RData")) 
+
+rm(spectrum)
+```
+
+```{r WIDE FORMAT: Prepare data set for statistical analyses, include = FALSE}
+# Wide format: for both experiments and outcomes domFreq and meanPSD
+
+df_wide <- data.frame()
+id <- names(comparison_values)
+df_wide <- cbind(id, data_high$specifications$brand, data_high$specifications$sampling_frequency,
+                 data_high$specifications$dynamic_range)
+domFreq_wide <- data.frame() 
+meanPSD_wide <- data.frame()
+for (accelerometer in 1:length(comparison_values)) {
+  domFreq_wide <- rbind(domFreq_wide, comparison_values[[accelerometer]]$domFreq)
+  meanPSD_wide <- rbind(meanPSD_wide, comparison_values[[accelerometer]]$meanPSD)
+}
+domFreq_ms_wide <- cbind(df_wide, domFreq_wide)
+colnames(domFreq_ms_wide) <- c("serialnumber", "brand", "sampling_frequency", "dynamic_range", 
+                               "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14")
+meanPSD_ms_wide <- cbind(df_wide, meanPSD_wide)
+colnames(meanPSD_ms_wide) <- c("serialnumber", "brand", "sampling_frequency", "dynamic_range", 
+                               "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14")
+rm(df_wide, id, domFreq_wide, meanPSD_wide, accelerometer)
+```
+
+```{r LONG FORMAT: Prepare data set for statistical analyses, include = FALSE}
+# Combining domFreq and meanPSD (gather columns for outcome variables)
+library(tidyverse)
+
+domFreq_long <- domFreq_ms_wide %>%
+  gather(key = "bin", value = "domFreq", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14") %>%
+  rstatix::convert_as_factor(serialnumber, bin, brand, sampling_frequency, dynamic_range)
+meanPSD_long <- meanPSD_ms_wide %>%
+  gather(key = "bin", value = "meanPSD", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14") %>%
+  rstatix::convert_as_factor(serialnumber, bin, brand, sampling_frequency, dynamic_range)
+df_long <- merge(domFreq_long, meanPSD_long) # Join both data.frame objects to derive a single dataset
+rm(domFreq_long, domFreq_ms_wide, meanPSD_long, meanPSD_ms_wide)
+df_long <- df_long[order(df_long$serialnumber),]
+
+#cat("\nSaving data...")
+save(df_long, file = paste0(datadir, "E2_comparison_values_long.RData"))
+rm(peaks_high, index_high)
+
+#load(datadir, "E2_comparison_values_long.RData")
+```
+
+# Statistical comparison: Mixed model analyses
+
+## Mean power spectral density: meanPSD ~ dynamic_range + bin + dynamic_range * bin
+```{r Fit model meanPSD for low sampling frequency experiment, echo=FALSE}
+meanPSD_interaction_id <- lme4::lmer(meanPSD ~ bin*dynamic_range + (1 | serialnumber), REML = TRUE, data = df_long)
+
+# Evaluate if adding a random intercept for frequency bin is necessary
+meanPSD_interaction_id_bin <- lme4::lmer(meanPSD ~ bin*dynamic_range + (1 | serialnumber) + (1 | bin), REML = TRUE, data = df_long) # No convergence, so use the simpler model
+anova(meanPSD_interaction_id, meanPSD_interaction_id_bin, refit = FALSE) # This is not necessary, so use simplest model
+rm(meanPSD_interaction_id_bin)
+```
+### Model assumption: normal distribution of residuals
+```{r Mean PSD Model assumptions low sampling frequency experiment, echo=FALSE}
+ggpubr::ggqqplot(df_long, "meanPSD", facet.by = "bin", title = "QQ-plot mean power spectral density")
+residuals_meanPSD <- resid(meanPSD_interaction_id)
+#summary(residuals_meanPSD)
+hist(residuals_meanPSD)
+rm(residuals_meanPSD)
+```
+
+### Model summary
+```{r Model summary meanPSD low sampling frequency experiment, echo=FALSE}
+car::Anova(meanPSD_interaction_id, type="II", test.statistic="F")
+require(lmerTest)
+test.meanPSD <- as(meanPSD_interaction_id, "merModLmerTest")
+print(summary(test.meanPSD, ddf="Kenward-Roger"), correlation = FALSE)
+#summary(meanPSD_interaction_id)
+vcov(meanPSD_interaction_id, type = "random")
+rm(test.meanPSD)
+#report::report(meanPSD_interaction_id)
+```
+
+### Pairwise comparisons
+#### Bin
+```{r Calculate contrasts bin meanPSD for low sampling frequency experiment, echo=FALSE}
+maineffect_bin <- emmeans::emmeans(meanPSD_interaction_id, comparison="pairwise", 
+                                         specs= ~ bin, adjust="sidak", data = df_long)
+maineffect_bin
+emmeans::contrast(maineffect_bin, "pairwise")
+rm(maineffect_bin)
+```
+
+# Dominant frequency: domFreq ~ dynamic_range + bin + dynamic_range*bin
+```{r Fit model domFreq for low sampling frequency experiment, echo=FALSE}
+domFreq_interaction_id <- lme4::lmer(domFreq ~ bin*dynamic_range + (1 | serialnumber), REML = TRUE, data = df_long)
+
+# Evaluate if adding a random intercept for frequency bin is necessary
+domFreq_interaction_id__bin <- lme4::lmer(domFreq ~ bin*dynamic_range + (1 | serialnumber) + (1 | bin), REML = TRUE, data = df_long)
+anova(domFreq_interaction_id, domFreq_interaction_id__bin, refit = FALSE) # This is not necessary, so use simplest model
+rm(domFreq_interaction_id__bin)
+```
+
+#### Model assumption: normal distribution of residuals
+```{r Dominant frequency Model assumptions low sampling frequency experiment, echo=FALSE}
+ggpubr::ggqqplot(df_long, "domFreq", facet.by = "bin", title = "QQ-plot dominant frequency")
+residuals_domFreq <- resid(domFreq_interaction_id)
+#summary(residuals_domFreq)
+hist(residuals_domFreq) # approximately normally distributed
+rm(residuals_domFreq)
+```
+
+#### Model summary
+```{r Model summary domFreq low sampling frequency experiment, echo=FALSE}
+car::Anova(domFreq_interaction_id, type="II", test.statistic="F")
+require(lmerTest)
+test.domFreq <- as(domFreq_interaction_id, "merModLmerTest")
+print(summary(test.domFreq, ddf="Kenward-Roger"), correlation = FALSE)
+#summary(domFreq_interaction_id)
+vcov(domFreq_interaction_id, type = "random")
+#report::report(domFreq_interaction_id)
+rm(test.domFreq)
+```
+
+### Pairwise comparisons
+#### Bin
+```{r Calculate contrasts bin domFreq for low sampling frequency experiment, echo=FALSE}
+maineffect_bin <- emmeans::emmeans(domFreq_interaction_id, comparison="pairwise", 
+                                         specs= ~ bin, adjust="sidak", data = df_long)
+maineffect_bin
+emmeans::contrast(maineffect_bin, "pairwise")
+rm(maineffect_bin)
+```
+
+### Boxplot
+```{r Create boxplots for the experiments, include=FALSE}
+bxp_psd <- createBoxplot(df_long, bins_high, outcome = "meanPSD", group = "dynamic_range") 
+bxp_domFreq <- createBoxplot(df_long, bins_high, outcome = "domFreq", group = "dynamic_range")
+
+ggplot2::ggsave(file=paste0(datadir, "plots/boxplot_E2_meanPSD.png"), bxp_psd, width = 10, height = 8, dpi = 900) #saves g
+ggplot2::ggsave(file=paste0(datadir, "plots/boxplot_E2_domFreq.png"), bxp_domFreq, width = 10, height = 8, dpi = 900) #saves g
+```
+
+```{r Print boxplot for mean power spectral density, echo=FALSE}
+plot(bxp_psd)
+```
+
+```{r Print boxplot for dominant frequency, echo=FALSE}
+plot(bxp_domFreq)
+```
+
