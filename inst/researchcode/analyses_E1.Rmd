@@ -6,6 +6,7 @@ output:
   html_notebook:
     toc: true
     toc_depth: 3 # upto three depths of headings (specified by #, ##, and ###)---
+---
 
 ```{r setup, include=FALSE}
 
@@ -40,4 +41,30 @@ setdiff(data$specifications$label, data$specifications$label[index_low]) # Ax_21
 data_low <- list(data = data$data[index_low], 
                   specifications = data$specifications[index_low,])
 rm(data)
+```
+
+# Plot selected axis shaking direction 
+```{r plot signals shaking direction lf, echo=FALSE}
+plot_list <- list()
+  for(signal in 1:length(data_low$data)) {
+    file_name <- paste0("acceleration data: ", names(data_low$data)[signal])
+
+    jpeg(paste0(paste0(datadir, "plots"), paste0(file_name, ".jpeg")), width=600, height=500, res=120) 
+
+    p <- ggplot2::ggplot() + ggplot2::geom_point(data = data_low$data[[signal]], ggplot2::aes(x = time, y = SD,) , alpha = 0.2, size = 0.25) + ggplot2::theme_bw() +
+      ggplot2::labs(title = file_name, y = "acceleration (g)") +
+      ggplot2::scale_color_manual(values = colors)
+    
+    p
+    dev.off()
+    plot_list[[signal]] <- p
+  }
+```
+
+```{r Plot signals ms_lfmr, echo =FALSE}
+# Save and print the plot for each signal
+for(plot in 1:length(plot_list)){
+  print(plot_list[[plot]])
+}
+rm(plot, plot_list)
 ```
