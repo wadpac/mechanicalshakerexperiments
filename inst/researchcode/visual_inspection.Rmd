@@ -1,0 +1,192 @@
+---
+title: "Visual data inspection"
+author: "Annelinde Lettink"
+output: 
+  html_notebook:
+    toc: true
+    toc_depth: 3 # upto four depths of headings (specified by #, ##, and ###)
+---
+
+This file presents the data from the five mechanical shaker experiments: ms_hfcr, ms_lfcr, ms_hfmr, ms_lfmr, ms_bag. Raw acceleration signals of each device per experiment are plotted for visual inspection.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+rm(list=ls())
+graphics.off()
+
+#==============================================================================
+# Specify file paths and load data
+shaker_experiments_folder = "/Users/annelindelettink/Documents/Work MacBook Pro Annelinde/Mechanical Shaker Machine"
+
+datadir = paste0(shaker_experiments_folder, "/analyses/")
+if (!dir.exists(datadir)) {
+  stop(paste0("Directory does not exist: ", datadir))
+}
+# Load mechanical shaker data for all five experiments
+filename_five_experiments = paste0(datadir, "complete_data.RData") 
+if (!file.exists(filename_five_experiments)) {
+  stop(paste0("File does not exist: ", filename_five_experiments))
+}
+load(filename_five_experiments)
+```
+
+```{r Functions, include=FALSE}
+#' plotSignals
+#'
+#' @description 'plotSignals' plots the signals in the data set
+#'
+#' @param outputdir A string that indicates the file path of folder (where the signal plot will be stored); not stored yet
+#' @param data List of elements representing a data.frame for one signal, consisting of: 
+#' \item{time}{Time stamps}
+#' \item{x}{Acceleration signal of the x-axis}
+#' \item{y}{Acceleration signal of the y-axis}
+#' \item{z}{Acceleration signal of the z-axis}
+#' \item{shaking_frequency}{Indicating the movement applied by the shaker machine in rpm}
+#' \item{condition}{Indicating the attatchment of the accelerometers}
+#' @param axes A vector of characters, one of c("x", "y", "z"), to indicate which axes are required for signal plotting
+#' @return A list with the signal plots
+#' 
+#' @export
+#' 
+plotSignals <- function(outputdir, d, axes){
+  plot_list <- list()
+  for(signal in 1:length(d)) {
+    file_name <- paste0("acceleration data: ", names(d)[signal])
+
+    jpeg(paste0(outputdir, paste0(file_name, ".jpeg")), width=600, height=500, res=120) 
+    colors  <- c( "x-axis" = "red", "y-axis" = "black", "z-axis" = "green")
+
+    p <- ggplot2::ggplot()
+    for(axis in 1:length(axes)){
+      if(axes[axis] == "x"){
+        p <- p + ggplot2::geom_point(data = d[[signal]], ggplot2::aes(x = time, y = x, color = "x-axis") , alpha = 0.2, size = 0.25)
+      } else if(axes[axis] == "y"){
+        p <- p + ggplot2::geom_point(data = d[[signal]], ggplot2::aes(x = time, y = y, color = "y-axis"), alpha = 0.2, size = 0.25) 
+      } else if(axes[axis] == "z"){
+        p <- p + ggplot2::geom_point(data = d[[signal]], ggplot2::aes(x = time, y = z, color = "z-axis"), alpha = 0.2, size = 0.25) }
+    }
+    
+    
+    p <- p + ggplot2::theme_bw() +
+      ggplot2::labs(title = file_name, y = "acceleration (g)", color = "Axis") +
+      ggplot2::scale_color_manual(values = colors)
+    
+    p
+    dev.off()
+    plot_list[[signal]] <- p
+  }
+  return(plot_list)
+}
+```
+
+# Five mechanical shaker experiments
+For each device we plotted and inspected the raw acceleration data separately for each experiment.
+
+## Experiment 1 (E1): Low sampling frequency and mixed dynamic range (lfmr)
+```{r Signal plots ms_lfmr, include = FALSE}
+index <- which(data$specifications$experiment == "ms_lfmr")
+ms_lfmr <- list()
+for (signal in 1:length(index)){
+  ms_lfmr[[signal]] <- data$data[[index[signal]]]
+}
+names(ms_lfmr) <- data$specifications$label[index]
+
+# Save a plot for each signal
+plots.ms_lfmr <- plotSignals(outputdir = paste0(datadir, "plots"), d = ms_lfmr, axes = c("x", "y", "z"))
+```
+
+```{r Plot signals ms_lfmr, echo = FALSE}
+# Save and print the plot for each signal
+for(plot in 1:length(plots.ms_lfmr)){
+  print(plots.ms_lfmr[[plot]])
+}
+rm(plot, plots.ms_lfmr)
+```
+
+## Experiment 2 (E2): High sampling frequency and mixed dynamic range (hfmr)
+```{r Signal plots ms_hfmr, include = FALSE}
+index <- which(data$specifications$experiment == "ms_hfmr")
+ms_hfmr <- list()
+for (signal in 1:length(index)){
+  ms_hfmr[[signal]] <- data$data[[index[signal]]]
+}
+names(ms_hfmr) <- data$specifications$label[index]
+
+# Save a plot for each signal
+plots.ms_hfmr <- plotSignals(outputdir = paste0(datadir, "plots"), d = ms_hfmr, axes = c("x", "y", "z"))
+```
+
+```{r Plot signals ms_hfmr, echo = FALSE}
+# Save and print the plot for each signal
+for(plot in 1:length(plots.ms_hfmr)){
+  print(plots.ms_hfmr[[plot]])
+}
+rm(plot, plots.ms_hfmr)
+```
+
+## Experiment 3 (E3): Low sampling frequency and constant dynamic range (lfcr)
+Visual inspection shows no typical shaker movements for acceleration signals of aP_490 and aP_254.
+
+```{r Signal plots ms_lfcr, include = FALSE}
+index <- which(data$specifications$experiment == "ms_lfcr")
+ms_lfcr <- list()
+for (signal in 1:length(index)){
+  ms_lfcr[[signal]] <- data$data[[index[signal]]]
+}
+names(ms_lfcr) <- data$specifications$label[index]
+
+# Save a plot for each signal
+plots.ms_lfcr <- plotSignals(outputdir = paste0(datadir, "plots"), d = ms_lfcr, axes = c("x", "y", "z"))
+```
+
+```{r Plot signals ms_lfcr, echo = FALSE}
+# Save and print the plot for each signal
+for(plot in 1:length(plots.ms_lfcr)){
+  print(plots.ms_lfcr[[plot]])
+}
+rm(plot, plots.ms_lfcr)
+```
+
+# Experiment 4 (E4): High sampling frequency and constant dynamic range (hfcr)
+Note that we restarted this experiment, as we noticed that one GENEActiv device (GA_301) had come loose. MOX devices quit recording around 30 minutes before the end of the experiment.
+
+```{r Signal plots ms_hfcr, include = FALSE}
+index <- which(data$specifications$experiment == "ms_hfcr")
+ms_hfcr <- list()
+for (signal in 1:length(index)){
+  ms_hfcr[[signal]] <- data$data[[index[signal]]]
+}
+names(ms_hfcr) <- data$specifications$label[index]
+
+# Save a plot for each signal
+plots.ms_hfcr <- plotSignals(outputdir = paste0(datadir, "plots"), d = ms_hfcr, axes = c("x", "y", "z"))
+```
+
+```{r Plot signals ms_hfcr, echo = FALSE}
+# Save and print the plot for each signal
+for(plot in 1:length(plots.ms_hfcr)){
+  print(plots.ms_hfcr[[plot]])
+}
+rm(plot, plots.ms_hfcr)
+```
+# Experiment 5 (E5): High sampling frequency and lack of standardized orientation (bag)
+```{r Signal plots ms_bag, include = FALSE}
+index <- which(data$specifications$experiment == "ms_bag")
+ms_bag <- list()
+for (signal in 1:length(index)){
+  ms_bag[[signal]] <- data$data[[index[signal]]]
+}
+names(ms_bag) <- data$specifications$label[index]
+
+# Save a plot for each signal
+plots.ms_bag <- plotSignals(outputdir = paste0(datadir, "plots"), d = ms_bag, axes = c("x", "y", "z"))
+```
+
+```{r Plot signals ms_bag, echo = FALSE}
+# Save and print the plot for each signal
+for(plot in 1:length(plots.ms_bag)){
+  print(plots.ms_bag[[plot]])
+}
+rm(plot, plots.ms_bag)
+```

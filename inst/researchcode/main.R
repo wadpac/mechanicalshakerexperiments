@@ -16,6 +16,7 @@ rawdatadir = paste0(shaker_experiments_folder, "/unstructured_raw_data")
 
 library(remotes)
 remotes::install_github("wadpac/GGIR")
+remotes::install_github("wadpac/GGIRread")
 
 # Load all packages
 packages = c("gdata", "doParallel", "remotes", "GENEAread", "THLfi/read.gt3x", "data.table") #"GGIR",
@@ -28,7 +29,6 @@ lapply(packages, FUN = function(X) {
 
 #===================================================================================================
 
-# brands = c("MOX") # "Shimmer")
-brands = c("Actigraph", "MOX", "GENEActiv", "Axivity", "Activpal") #, "Acttrust") # "Shimmer")
-experiments <- c("box", "ms_hfcr", "ms_lfcr", "ms_mfcr", "ms_hfmr", "ms_lfmr") #, "timer_check") #, ) #, "ms_bag")
+brands = c("Actigraph", "Activpal", "Axivity", "GENEActiv", "MOX") #, "Acttrust", "Shimmer")
+experiments <- c("ms_hfcr", "ms_lfcr", "ms_hfmr", "ms_lfmr", "ms_bag") #, "ms_mfcr", "timer_check", "box")
 structure_data(brands = brands, experiments, rawdatadir, outputdir)
