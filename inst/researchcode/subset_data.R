@@ -1,6 +1,7 @@
 ## Script to load the structured acceleration data and to subset these data for the analyses of:
 # 1) visual_inspection: load all data for plotting
 # 2) noise: select the no-movement segments (shaking_frequency == 0), but omit data for the actigraph devices in which idle sleep mode was enabled
+# 3) E1: analyse differences between dynamic ranges with low sampling frequency (lfmr)
 
 rm(list=ls())
 graphics.off()
@@ -15,7 +16,7 @@ outputdir = paste0(shaker_experiments_folder, "/analyses")
 if (!dir.exists(outputdir)) dir.create(outputdir)
 
 # Specify the analyses
-analysis <- "noise" # one of: c("visual_inspection", "noise", ..)
+analysis <- "E1" # one of: c("visual_inspection", "noise", "E1")
 
 #===============================
 
@@ -25,6 +26,8 @@ if(analysis == "visual_inspection"){
  experiments_to_load = c("ms_hfcr", "ms_lfcr", "ms_hfmr", "ms_lfmr", "ms_bag") # for all five experiments
 } else if(analysis == "noise") {
   experiments_to_load = c("ms_hfcr", "ms_lfcr", "ms_hfmr", "ms_lfmr") # not for ms_bag because axes were oriented randomly
+} else if(analysis == "E1") {
+  experiments_to_load = c("ms_lfmr") # not for ms_bag because axes were oriented randomly
 }
 
 tz = "Europe/Amsterdam"
@@ -52,12 +55,20 @@ for (brand in 1:length(brands_to_load)){
       for (file in 1:length(extracteddata$data)) {
         tmp <- extracteddata$data[[file]] #tmp is the structured data now
         if(length(which(tmp > 0))) {
+          tmp <- tmp[which(tmp$shaking_frequency != "-1"),] # Remove data outside experiments (shaking frequency -1)
           tmp$time = as.POSIXct(tmp$time, origin = "1970-01-01", tz = tz)
           if (analysis == "visual_inspection") {
             tmp <- tmp
           } else if (analysis == "noise"){
             tmp <- tmp[tmp$shaking_frequency == 0, ] #select no movement segments
+          } else if (analysis == "E1") {
+            # Select the axis that measures the acceleration signal in the shaking direction
+            maxAxes <- c(sd(tmp$x), sd(tmp$y), sd(tmp$z)) # calculate the standard deviation of the axes
+            SD <- unlist(tmp[which.max(maxAxes) + 1]) # select the axis with the highest SD as this will be the shaking direction
+            tmp = tmp[, c("shaking_frequency", "time")] # select data for the correct axis, time, and shaking_frequency
+            tmp$SD <- SD
           }
+          
           data$data[[counter]] <- tmp
           counter = counter + 1
           specs <- c(extracteddata$specifications[file, "label"], extracteddata$specifications[file, "serial_number"], brands_to_load[brand], experiments_to_load[experiment],
@@ -79,6 +90,8 @@ if (analysis == "visual_inspection") {
   filename <- "/complete_data.RData"
 } else if (analysis == "noise"){
   filename <- "/no_movement.RData"
+} else if (analysis == "E1"){
+  filename <- "/E1_lfmr.RData"
 }
 
 save(data, file = paste0(outputdir, filename))
