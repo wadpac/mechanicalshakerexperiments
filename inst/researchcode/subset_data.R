@@ -2,6 +2,7 @@
 # 1) visual_inspection: load all data for plotting
 # 2) noise: select the no-movement segments (shaking_frequency == 0), but omit data for the actigraph devices in which idle sleep mode was enabled
 # 3) E1: analyse differences between dynamic ranges with low sampling frequency (lfmr)
+# 4) E2: analyse differences between dynamic ranges with high sampling frequency (hfmr)
 
 rm(list=ls())
 graphics.off()
@@ -16,7 +17,7 @@ outputdir = paste0(shaker_experiments_folder, "/analyses")
 if (!dir.exists(outputdir)) dir.create(outputdir)
 
 # Specify the analyses
-analysis <- "E1" # one of: c("visual_inspection", "noise", "E1")
+analysis <- "E2" # one of: c("visual_inspection", "noise", "E1", "E2")
 
 #===============================
 
@@ -27,7 +28,9 @@ if(analysis == "visual_inspection"){
 } else if(analysis == "noise") {
   experiments_to_load = c("ms_hfcr", "ms_lfcr", "ms_hfmr", "ms_lfmr") # not for ms_bag because axes were oriented randomly
 } else if(analysis == "E1") {
-  experiments_to_load = c("ms_lfmr") # not for ms_bag because axes were oriented randomly
+  experiments_to_load = c("ms_lfmr") 
+} else if(analysis == "E2") {
+  experiments_to_load = c("ms_hfmr") 
 }
 
 tz = "Europe/Amsterdam"
@@ -61,7 +64,7 @@ for (brand in 1:length(brands_to_load)){
             tmp <- tmp
           } else if (analysis == "noise"){
             tmp <- tmp[tmp$shaking_frequency == 0, ] #select no movement segments
-          } else if (analysis == "E1") {
+          } else if (analysis == "E1" | analysis == "E2") {
             # Select the axis that measures the acceleration signal in the shaking direction
             maxAxes <- c(sd(tmp$x), sd(tmp$y), sd(tmp$z)) # calculate the standard deviation of the axes
             SD <- unlist(tmp[which.max(maxAxes) + 1]) # select the axis with the highest SD as this will be the shaking direction
@@ -92,6 +95,8 @@ if (analysis == "visual_inspection") {
   filename <- "/no_movement.RData"
 } else if (analysis == "E1"){
   filename <- "/E1_lfmr.RData"
+} else if (analysis == "E2"){
+  filename <- "/E2_hfmr.RData"
 }
 
 save(data, file = paste0(outputdir, filename))
