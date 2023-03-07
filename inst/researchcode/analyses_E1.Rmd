@@ -28,4 +28,8 @@ if (!file.exists(filename_experiment)) {
   stop(paste0("File does not exist: ", filename_experiment))
 }
 load(filename_experiment)
+
+# Load functions
+source("frequency_domain_functions.R")
+source("time_domain_functions.R")
 ```
