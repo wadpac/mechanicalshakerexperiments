@@ -1,0 +1,69 @@
+---
+title: 'Analyses Experiment 2: High sampling frequency mixed dynamic range'
+author: "Annelinde Lettink"
+date: "3/7/2023"
+output: 
+  html_notebook:
+    toc: true
+    toc_depth: 3 # upto three depths of headings (specified by #, ##, and ###)---
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+
+rm(list=ls())
+graphics.off()
+
+#==============================================================================
+# Specify file paths and load data
+shaker_experiments_folder = "/Users/annelindelettink/Documents/Work MacBook Pro Annelinde/Mechanical Shaker Machine"
+
+datadir = paste0(shaker_experiments_folder, "/analyses/")
+if (!dir.exists(datadir)) {
+  stop(paste0("Directory does not exist: ", datadir))
+}
+# Load mechanical shaker data for experiment 2
+filename_experiment = paste0(datadir, "E2_hfmr.RData") 
+if (!file.exists(filename_experiment)) {
+  stop(paste0("File does not exist: ", filename_experiment))
+}
+load(filename_experiment)
+
+# Load functions
+source("frequency_domain_functions.R")
+source("time_domain_functions.R")
+
+# Select data with low sampling frequency (100 Hz) only
+index_high <- which(data$specifications$experiment == "ms_hfmr" & data$specifications$sampling_frequency == "100")
+
+data_high <- list(data = data$data[index_high], 
+                  specifications = data$specifications[index_high,])
+rm(data)
+```
+
+# Plot selected axis shaking direction 
+```{r plot signals shaking direction hf, echo=FALSE}
+plot_list <- list()
+  for(signal in 1:length(data_high$data)) {
+    file_name <- paste0("acceleration data: ", names(data_high$data)[signal])
+
+    jpeg(paste0(paste0(datadir, "plots"), paste0(file_name, ".jpeg")), width=600, height=500, res=120) 
+
+    p <- ggplot2::ggplot() + ggplot2::geom_point(data = data_high$data[[signal]], ggplot2::aes(x = time, y = SD,) , alpha = 0.2, size = 0.25) + ggplot2::theme_bw() +
+      ggplot2::labs(title = file_name, y = "acceleration (g)") +
+      ggplot2::scale_color_manual(values = colors)
+    
+    p
+    dev.off()
+    plot_list[[signal]] <- p
+  }
+```
+
+```{r Plot signals ms_hfmr, echo =FALSE}
+# Save and print the plot for each signal
+for(plot in 1:length(plot_list)){
+  print(plot_list[[plot]])
+}
+rm(plot, plot_list, p)
+```
