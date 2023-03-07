@@ -451,3 +451,7 @@ line_plot <- ggplot2::ggplot(data = overview_tab_between, ggplot2::aes(x = as.fa
 
 ggplot2::ggsave(file=paste0(datadir, "plots/linegraph_E1_crosscorrelations.png"), line_plot, width = 10, height = 8, dpi = 900) #saves g
 ```
+
+```{r Plot line graph, echo=TRUE}
+plot(line_plot)
+```
