@@ -66,5 +66,83 @@ plot_list <- list()
 for(plot in 1:length(plot_list)){
   print(plot_list[[plot]])
 }
-rm(plot, plot_list)
+rm(plot, plot_list, p)
+```
+# Frequency domain analyses
+```{r Settings for frequency spectra, include=FALSE}
+# Plot parameters
+plot = TRUE
+xlabel = "Frequency (Hertz)"
+ylabel = "Spectral Density (g2/Hertz)"
+XLIM = c(0, 5) # Limit frequency content to 5 Hz (as 250 rpm / 60 = 4.1667 Hz is the expected max)
+```
+
+```{r Derive frequency spectra low sampling frequency experiment, echo=FALSE}
+# DERIVE RAW FREQUENCY SPECTRA (for visual inspection and save data for further analysis)
+raw.spectra_low <- list() 
+
+for (file in 1:length(data_low$data)) { # for all accelerometer files
+  sampling_frequency <- as.numeric(data_low$specifications$sampling_frequency[file])  
+  SD <- data_low$data[[file]]$SD #axis in shaking direction
+  rawSpectrum <- deriveSpectrum(SD, sampling_frequency, file_name = names(data_low$data)[[file]])
+  raw.spectra_low[[file]] <- rawSpectrum
+}
+rm(rawSpectrum, file)
+names(raw.spectra_low) <- data_low$specifications$label  
+
+mean.freqspec_low <- deriveMeanSpectrum(raw.spectra_low)
+```
+
+```{r Save raw spectra, include=FALSE}
+raw_spectra <- list(spectra = raw.spectra_low, mean_spectrum = mean.freqspec_low, specifications = data_low$specifications) # Save derived raw spectra
+
+save(raw_spectra, file = paste0(datadir, "E1_frequency_spectra.RData"))
+rm(raw.spectra_low, SD, sampling_frequency)
+
+#load(paste0(datadir, "E1_frequency_spectra.RData"))
+```
+
+## Mean frequency spectra
+
+```{r Plot mean frequency spectrum low sampling frequency, echo=FALSE}
+plot(raw_spectra$mean_spectrum$x, raw_spectra$mean_spectrum$y, xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l", main = "Mean frequency spectrum low sampling frequency and mixed dynamic range")
+rm(mean.freqspec_low)
+```
+
+## Derive frequency bins
+```{r Derive frequency bins low sampling frequency, echo=FALSE}
+peaks_low <- derivePeaks(raw_spectra$mean_spectrum, 25, XLIM, plot = TRUE)
+bins_low <- deriveBins(peaks_low, raw_spectra$mean_spectrum, XLIM = c(0, 5), plot = TRUE) 
+```
+
+## Frequency spectra plots
+
+### Overlay all frequency spectra
+```{r Overlay all spectra low sampling frequency experiment, echo=FALSE}
+plot <- plot(raw_spectra$spectra[[1]]$specx, raw_spectra$spectra[[1]]$specy, main = "Overlay all frequency spectra", 
+       xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l")
+for(i in 1:length(bins_low)){
+    plot <- plot + abline(v=bins_low[i], col = "red")
+  }  
+
+for (spec in 2:length(raw_spectra$spectra)) {
+  plot + lines(raw_spectra$spectra[[spec]]$specx, raw_spectra$spectra[[spec]]$specy, type = "l")
+  
+}
+rm(spec, i)
+```
+
+### Seperate plots for frequency spectra 
+
+```{r Plot spectra low sampling frequency experiment, echo=FALSE}
+for (spec in 1:length(raw_spectra$spectra)) {
+  spectrum <- raw_spectra$spectra[[spec]]
+  title <- paste("Frequency spectrum plot: ", raw_spectra$specifications$label[[spec]])
+  plot(spectrum$specx, spectrum$specy, main = title, 
+       xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l")
+  for(i in 1:length(bins_low)){
+    abline(v=bins_low[i], col = "red")
+  }  
+}
+rm(spec, title, spectrum, i)
 ```
