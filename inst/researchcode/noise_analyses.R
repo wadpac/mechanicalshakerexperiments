@@ -34,12 +34,6 @@ data$data[index_lfcr] <- NULL
 #index_hfcr <- which(data$specifications %in% deviates_hfcr & noise_data$experiment == "ms_hfcr")
 #noise_data <- noise_data[-index_hfcr,]
 
-# -Assumption MANOVA: repeated/related measurements of one variable my be collected from a single replicate, but this must be accounted for
-#remove double activPAL observations (exact same settings during two experiments, therefore only use those for the lfcr experiment) 
-activpalIndex <- which(data$specifications$brand == "Activpal" & data$specifications$experiment == "ms_hfcr")
-data$specifications <- data$specifications[-activpalIndex,]
-data$data[activpalIndex] <- NULL
-
 # Aggregate per unique combination of brand, dynamic range and sampling frequency
 combinations <- unique(data$specifications[c("brand", "dynamic_range", "sampling_frequency")])
 sds <- data.frame()
@@ -96,11 +90,6 @@ noise_data %>%
 noise_data %>%
   group_by(brand, dynamic_range, sampling_frequency) %>%
   rstatix::identify_outliers(sd_z)
-noise_data %>%
-  group_by(brand, dynamic_range, sampling_frequency) %>%
-  rstatix::mahalanobis_distance(-label, -serial_number, -experiment) %>%
-  filter(is.outlier == TRUE) %>%
-  as.data.frame()
 
 # -Assumption: multivariate normality
 ggpubr::ggqqplot(noise_data, "sd_x", facet.by = "brand",
@@ -156,7 +145,7 @@ results$plots
 rstatix::box_m(noise_data[, c("sd_x", "sd_y", "sd_z")], noise_data$brand)
 rstatix::box_m(noise_data[, c("sd_x", "sd_y", "sd_z")], noise_data$dynamic_range)
 rstatix::box_m(noise_data[, c("sd_x", "sd_y", "sd_z")], noise_data$sampling_frequency)
-# violated: using Pillai's statistics instead ok Willks'
+# violated: using Pillai's statistics instead of Willks'
 
 # -Assumption: homogeneity of variance-covariance matrices. The Box’s M Test can be used to check the equality of covariance between the groups. This is the equivalent of a multivariate homogeneity of variance. This test is considered as highly sensitive. Therefore, significance for this test is determined at alpha = 0.001.
 noise_data %>% 
