@@ -1,0 +1,31 @@
+---
+title: 'Analyses Experiment 1: Low sampling frequency mixed dynamic range'
+author: "Annelinde Lettink"
+date: "3/7/2023"
+output: 
+  html_notebook:
+    toc: true
+    toc_depth: 3 # upto three depths of headings (specified by #, ##, and ###)---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+
+rm(list=ls())
+graphics.off()
+
+#==============================================================================
+# Specify file paths and load data
+shaker_experiments_folder = "/Users/annelindelettink/Documents/Work MacBook Pro Annelinde/Mechanical Shaker Machine"
+
+datadir = paste0(shaker_experiments_folder, "/analyses/")
+if (!dir.exists(datadir)) {
+  stop(paste0("Directory does not exist: ", datadir))
+}
+# Load mechanical shaker data for experiment 1
+filename_experiment = paste0(datadir, "E1_lfmr.RData") 
+if (!file.exists(filename_experiment)) {
+  stop(paste0("File does not exist: ", filename_experiment))
+}
+load(filename_experiment)
+```
