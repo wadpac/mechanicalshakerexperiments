@@ -2,10 +2,14 @@
 title: 'Analyses Experiment 3: Low sampling frequency constant dynamic range'
 author: "Annelinde Lettink"
 date: "3/7/2023"
-output: 
+output:
+  html_document:
+    toc: yes
+    toc_depth: '3'
+    df_print: paged
   html_notebook:
-    toc: true
-    toc_depth: 3 # upto three depths of headings (specified by #, ##, and ###)
+    toc: yes
+    toc_depth: 3
 ---
 
 ```{r setup, include=FALSE}
