@@ -73,6 +73,7 @@ for(plot in 1:length(plot_list)){
 rm(plot, plot_list, p)
 ```
 # Frequency domain analyses
+
 ```{r Settings for frequency spectra, include=FALSE}
 # Plot parameters
 plot = TRUE
