@@ -60,6 +60,7 @@ for (brand in 1:length(brands_to_load)){
       }
       for (file in 1:length(extracteddata$data)) {
         tmp <- extracteddata$data[[file]] #tmp is the structured data now
+        tmp = tmp[, c("time", "x", "y", "z","shaking_frequency", "condition")] # ensure the data format is equal for all devices
         if(length(which(tmp > 0))) {
           tmp <- tmp[which(tmp$shaking_frequency != "-1"),] # Remove data outside experiments (shaking frequency -1)
           tmp$time = as.POSIXct(tmp$time, origin = "1970-01-01", tz = tz)
