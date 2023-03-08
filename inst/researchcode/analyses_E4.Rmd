@@ -1,0 +1,78 @@
+---
+title: 'Analyses Experiment 4: High sampling frequency constant dynamic range'
+author: "Annelinde Lettink"
+date: "3/7/2023"
+output:
+  html_document:
+    toc: yes
+    toc_depth: '3'
+    df_print: paged
+  html_notebook:
+    toc: yes
+    toc_depth: 3
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+rm(list=ls())
+graphics.off()
+
+#==============================================================================
+# Specify file paths and load data
+shaker_experiments_folder = "/Users/annelindelettink/Documents/Work MacBook Pro Annelinde/Mechanical Shaker Machine"
+
+datadir = paste0(shaker_experiments_folder, "/analyses/")
+if (!dir.exists(datadir)) {
+  stop(paste0("Directory does not exist: ", datadir))
+}
+# Load mechanical shaker data for experiment 4
+filename_experiment = paste0(datadir, "E4_hfcr.RData") 
+if (!file.exists(filename_experiment)) {
+  stop(paste0("File does not exist: ", filename_experiment))
+}
+load(filename_experiment)
+
+# Load functions
+source("frequency_domain_functions.R")
+source("time_domain_functions.R")
+
+# Select data with high sampling frequency (100 Hz) only
+index <- which(data$specifications$experiment == "ms_hfcr" & round(as.numeric(data$specifications$sampling_frequency)) == "100")
+
+data_high <- list(data = data$data[index], 
+                  specifications = data$specifications[index,])
+
+# MOX devices stopped recording 31 minutes earlier than the end experiment 4, therefore exclude from analyses 
+removeMOX <- which(names(data_high$data) %in% c("MOX_365", "MOX_366", "MOX_475", "MOX_828"))
+data_high$data[removeMOX] <- NULL
+data_high$specifications <- data_high$specifications[-removeMOX,]
+
+setdiff(data$specifications$label, data_high$specifications$label)
+```
+
+# Plot selected axis shaking direction 
+```{r plot signals shaking direction lfcr, echo=FALSE}
+plot_list <- list()
+  for(signal in 1:length(data_high$data)) {
+    file_name <- paste0("acceleration data: ", names(data_high$data)[signal])
+
+    jpeg(paste0(paste0(datadir, "plots"), paste0(file_name, ".jpeg")), width=600, height=500, res=120) 
+
+    p <- ggplot2::ggplot() + ggplot2::geom_point(data = data_high$data[[signal]], ggplot2::aes(x = time, y = SD,) , alpha = 0.2, size = 0.25) + ggplot2::theme_bw() +
+      ggplot2::labs(title = file_name, y = "acceleration (g)") +
+      ggplot2::scale_color_manual(values = colors)
+    
+    p
+    dev.off()
+    plot_list[[signal]] <- p
+  }
+```
+
+```{r Plot signals ms_hfcr, echo =FALSE}
+# Save and print the plot for each signal
+for(plot in 1:length(plot_list)){
+  print(plot_list[[plot]])
+}
+rm(plot, plot_list, p)
+```

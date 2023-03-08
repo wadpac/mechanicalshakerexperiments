@@ -3,7 +3,9 @@
 # 2) noise: select the no-movement segments (shaking_frequency == 0), but omit data for the actigraph devices in which idle sleep mode was enabled
 # 3) E1: analyse differences between dynamic ranges with low sampling frequency (lfmr)
 # 4) E2: analyse differences between dynamic ranges with high sampling frequency (hfmr)
-# 4) E3: analyse differences between brands with low sampling frequency (lfcr)
+# 5) E3: analyse differences between brands with low sampling frequency (lfcr)
+# 6) E4: analyse differences between brands with high sampling frequency (hfcr)
+
 
 rm(list=ls())
 graphics.off()
@@ -18,7 +20,7 @@ outputdir = paste0(shaker_experiments_folder, "/analyses")
 if (!dir.exists(outputdir)) dir.create(outputdir)
 
 # Specify the analyses
-analysis <- "" # one of: c("visual_inspection", "noise", "E1", "E2", "E3")
+analysis <- "E4" # one of: c("visual_inspection", "noise", "E1", "E2", "E3", "E4")
 
 #===============================
 
@@ -34,6 +36,8 @@ if(analysis == "visual_inspection"){
   experiments_to_load = c("ms_hfmr") 
 } else if(analysis == "E3") {
   experiments_to_load = c("ms_lfcr") 
+} else if(analysis == "E4") {
+  experiments_to_load = c("ms_hfcr") 
 }
 
 tz = "Europe/Amsterdam"
@@ -68,7 +72,17 @@ for (brand in 1:length(brands_to_load)){
             tmp <- tmp
           } else if (analysis == "noise"){
             tmp <- tmp[tmp$shaking_frequency == 0, ] #select no movement segments
-          } else if (analysis == "E1" | analysis == "E2" | analysis == "E3") {
+          } else if (analysis == "E1" | analysis == "E2" | analysis == "E3"| analysis == "E4") {
+            if(experiments_to_load[experiment] == "ms_hfcr"){ # Remove the data due to repetition of the experiment
+              # These are the start and end times from the description file where accelerometers_used = all_except_one_GENEActiv
+              start1 <- as.POSIXlt("2020-11-24 9:42:00", tz = "Europe/Amsterdam")
+              end1 <- as.POSIXlt("2020-11-24 10:13:00", tz = "Europe/Amsterdam")
+              start2 <- as.POSIXlt("2020-11-24 10:35:05", tz = "Europe/Amsterdam")
+              end2 <- as.POSIXlt("2020-11-24 10:47:00", tz = "Europe/Amsterdam")
+              cleaned_signala <- tmp[which(tmp$time >= start1 & tmp$time <= end1),]
+              cleaned_signalb <- tmp[which(tmp$time >= start2 & tmp$time <= end2),]
+              tmp <- rbind(cleaned_signala, cleaned_signalb)
+            }
             # Select the axis that measures the acceleration signal in the shaking direction
             maxAxes <- c(sd(tmp$x), sd(tmp$y), sd(tmp$z)) # calculate the standard deviation of the axes
             SD <- unlist(tmp[which.max(maxAxes) + 1]) # select the axis with the highest SD as this will be the shaking direction
@@ -102,6 +116,8 @@ if (analysis == "visual_inspection") {
   filename <- "/E2_hfmr.RData"
 } else if (analysis == "E3"){
   filename <- "/E3_lfcr.RData"
+} else if (analysis == "E4"){
+  filename <- "/E4_hfcr.RData"
 }
 
 save(data, file = paste0(outputdir, filename))
