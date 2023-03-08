@@ -18,7 +18,7 @@ outputdir = paste0(shaker_experiments_folder, "/analyses")
 if (!dir.exists(outputdir)) dir.create(outputdir)
 
 # Specify the analyses
-analysis <- "E3" # one of: c("visual_inspection", "noise", "E1", "E2", "E3")
+analysis <- "" # one of: c("visual_inspection", "noise", "E1", "E2", "E3")
 
 #===============================
 
@@ -75,7 +75,6 @@ for (brand in 1:length(brands_to_load)){
             tmp = tmp[, c("shaking_frequency", "time")] # select data for the correct axis, time, and shaking_frequency
             tmp$SD <- SD
           }
-          
           data$data[[counter]] <- tmp
           counter = counter + 1
           specs <- c(extracteddata$specifications[file, "label"], extracteddata$specifications[file, "serial_number"], brands_to_load[brand], experiments_to_load[experiment],

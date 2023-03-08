@@ -37,19 +37,19 @@ source("time_domain_functions.R")
 # Select data with low sampling frequency (25 Hz) only
 index <- which(data$specifications$experiment == "ms_lfcr" & round(as.numeric(data$specifications$sampling_frequency)) == "25")
 
-data <- list(data = data$data[index], 
+data_low <- list(data = data$data[index], 
                   specifications = data$specifications[index,])
 ```
 
 # Plot selected axis shaking direction 
 ```{r plot signals shaking direction lfcr, echo=FALSE}
 plot_list <- list()
-  for(signal in 1:length(data$data)) {
-    file_name <- paste0("acceleration data: ", names(data$data)[signal])
+  for(signal in 1:length(data_low$data)) {
+    file_name <- paste0("acceleration data: ", names(data_low$data)[signal])
 
     jpeg(paste0(paste0(datadir, "plots"), paste0(file_name, ".jpeg")), width=600, height=500, res=120) 
 
-    p <- ggplot2::ggplot() + ggplot2::geom_point(data = data$data[[signal]], ggplot2::aes(x = time, y = SD,) , alpha = 0.2, size = 0.25) + ggplot2::theme_bw() +
+    p <- ggplot2::ggplot() + ggplot2::geom_point(data = data_low$data[[signal]], ggplot2::aes(x = time, y = SD,) , alpha = 0.2, size = 0.25) + ggplot2::theme_bw() +
       ggplot2::labs(title = file_name, y = "acceleration (g)") +
       ggplot2::scale_color_manual(values = colors)
     
@@ -65,11 +65,5 @@ for(plot in 1:length(plot_list)){
   print(plot_list[[plot]])
 }
 rm(plot, plot_list, p)
-```
-```{r Remove devices with no apparent shaking movement in the selected signal, include =FALSE}
-# Ax_406 did not show apparent movement signal after selection of the axis with the highest SD
-removeAx <- which(names(data$data) %in% c("Ax_406"))
-data$data[removeAx] <- NULL
-data$specifications <- data$specifications[-removeAx,]
 ```
 
