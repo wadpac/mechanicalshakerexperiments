@@ -1,5 +1,5 @@
 ---
-title: 'Analyses Experiment 3: Low sampling frequency constant dynamic range'
+title: 'Analyses Experiment 1: Low sampling frequency mixed dynamic range'
 author: "Annelinde Lettink"
 date: "3/7/2023"
 output:
@@ -28,7 +28,7 @@ if (!dir.exists(datadir)) {
   stop(paste0("Directory does not exist: ", datadir))
 }
 # Load mechanical shaker data for experiment 3
-filename_experiment = paste0(datadir, "E3_lfcr.RData") 
+filename_experiment = paste0(datadir, "E3_lfmr.RData") 
 if (!file.exists(filename_experiment)) {
   stop(paste0("File does not exist: ", filename_experiment))
 }
@@ -39,16 +39,16 @@ source("frequency_domain_functions.R")
 source("time_domain_functions.R")
 
 # Select data with low sampling frequency (25 Hz) only
-index <- which(data$specifications$experiment == "ms_lfcr" & round(as.numeric(data$specifications$sampling_frequency)) == "25")
+index_low <- which(data$specifications$experiment == "ms_lfmr" & data$specifications$sampling_frequency == "25")
+setdiff(data$specifications$label, data$specifications$label[index_low]) # Ax_215 excluded, configuration mistake: 100 instead of 25 Hz
 
-data_low <- list(data = data$data[index], 
-                  specifications = data$specifications[index,])
-
-setdiff(data$specifications$label, data_low$specifications$label)
+data_low <- list(data = data$data[index_low], 
+                  specifications = data$specifications[index_low,])
+rm(data)
 ```
 
 # Plot selected axis shaking direction 
-```{r plot signals shaking direction lfcr, echo=FALSE}
+```{r plot signals shaking direction lf, echo=FALSE}
 plot_list <- list()
   for(signal in 1:length(data_low$data)) {
     file_name <- paste0("acceleration data: ", names(data_low$data)[signal])
@@ -65,14 +65,13 @@ plot_list <- list()
   }
 ```
 
-```{r Plot signals ms_lfcr, echo =FALSE}
+```{r Plot signals ms_lfmr, echo =FALSE}
 # Save and print the plot for each signal
 for(plot in 1:length(plot_list)){
   print(plot_list[[plot]])
 }
 rm(plot, plot_list, p)
 ```
-
 # Frequency domain analyses
 
 ```{r Settings for frequency spectra, include=FALSE}
@@ -111,13 +110,13 @@ rm(raw.spectra_low, SD, sampling_frequency)
 ## Mean frequency spectra
 
 ```{r Plot mean frequency spectrum low sampling frequency, echo=FALSE}
-plot(raw_spectra$mean_spectrum$x, raw_spectra$mean_spectrum$y, xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l", main = "Mean frequency spectrum low sampling frequency and constant dynamic range")
+plot(raw_spectra$mean_spectrum$x, raw_spectra$mean_spectrum$y, xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l", main = "Mean frequency spectrum low sampling frequency and mixed dynamic range")
 rm(mean.freqspec_low)
 ```
 
 ## Derive frequency bins
 ```{r Derive frequency bins low sampling frequency, echo=FALSE}
-peaks_low <- derivePeaks(raw_spectra$mean_spectrum, 100, XLIM, plot = TRUE)
+peaks_low <- derivePeaks(raw_spectra$mean_spectrum, 25, XLIM, plot = TRUE)
 bins_low <- deriveBins(peaks_low, raw_spectra$mean_spectrum, XLIM = c(0, 5), plot = TRUE) 
 ```
 
@@ -209,19 +208,17 @@ rm(peaks_low, index_low)
 #load(datadir, "E3_comparison_values_long.RData")
 ```
 
-# Statistical comparison: Mixed model analyses
+## Statistical comparison: Mixed model analyses
 
-## Mean power spectral density: meanPSD ~ brand + bin + brand * bin
-
+### Mean power spectral density: meanPSD ~ dynamic_range + bin + dynamic_range * bin
 ```{r Fit model meanPSD for low sampling frequency experiment, echo=FALSE}
-meanPSD_interaction_id <- lme4::lmer(meanPSD ~ bin*brand + (1 | serialnumber), REML = TRUE, data = df_long)
+meanPSD_interaction_id <- lme4::lmer(meanPSD ~ bin*dynamic_range + (1 | serialnumber), REML = TRUE, data = df_long)
 
 # Evaluate if adding a random intercept for frequency bin is necessary
-meanPSD_interaction_id_bin <- lme4::lmer(meanPSD ~ bin*brand + (1 | serialnumber) + (1 | bin), REML = TRUE, data = df_long) # No convergence, so use the simpler model
+meanPSD_interaction_id_bin <- lme4::lmer(meanPSD ~ bin*dynamic_range + (1 | serialnumber) + (1 | bin), REML = TRUE, data = df_long) # No convergence, so use the simpler model
 anova(meanPSD_interaction_id, meanPSD_interaction_id_bin, refit = FALSE) # This is not necessary, so use simplest model
 rm(meanPSD_interaction_id_bin)
 ```
-
 ### Model assumption: normal distribution of residuals
 ```{r Mean PSD Model assumptions low sampling frequency experiment, echo=FALSE}
 ggpubr::ggqqplot(df_long, "meanPSD", facet.by = "bin", title = "QQ-plot mean power spectral density")
@@ -253,40 +250,12 @@ emmeans::contrast(maineffect_bin, "pairwise")
 rm(maineffect_bin)
 ```
 
-#### Brand
-```{r Calculate contrasts brand meanPSD for low sampling frequency experiment, echo=FALSE}
-maineffect_brand <- emmeans::emmeans(meanPSD_interaction_id, comparison="pairwise", 
-                                         specs= ~ brand, adjust="sidak", data = df_long)
-maineffect_brand
-emmeans::contrast(maineffect_brand, "pairwise")
-rm(maineffect_brand)
-```
-
-#### Interaction effect
-```{r Calculate contrasts interaction effect meanPSD for low sampling frequency experiment, echo=FALSE}
-interactioneffect <- emmeans::emmeans(meanPSD_interaction_id, comparison="pairwise", 
-                                         specs= ~ bin * brand, adjust="sidak", data = df_long)
-
-ct <- emmeans::contrast(interactioneffect, "pairwise")
-ct.df <- as.data.frame(ct)
-
-focusOfInterest <- c()
-  check <- strsplit(ct.df$contrast, " ")
-  for (row in 1:nrow(ct.df)) {
-    focusOfInterest <- c(focusOfInterest, (check[[row]][1] == check[[row]][4] 
-                                           & check[[row]][2] !=   check[[row]][5])) #focus on rows where bin is the same, but the brand differs.
-  }
-ct.df[focusOfInterest,]
-rm(ct, interactioneffect)
-
-```
-
-# Dominant frequency: domFreq ~ brand + bin + brand*bin
+# Dominant frequency: domFreq ~ dynamic_range + bin + dynamic_range*bin
 ```{r Fit model domFreq for low sampling frequency experiment, echo=FALSE}
-domFreq_interaction_id <- lme4::lmer(domFreq ~ bin*brand + (1 | serialnumber), REML = TRUE, data = df_long)
+domFreq_interaction_id <- lme4::lmer(domFreq ~ bin*dynamic_range + (1 | serialnumber), REML = TRUE, data = df_long)
 
 # Evaluate if adding a random intercept for frequency bin is necessary
-domFreq_interaction_id_bin <- lme4::lmer(domFreq ~ bin*brand + (1 | serialnumber) + (1 | bin), REML = TRUE, data = df_long)
+domFreq_interaction_id_bin <- lme4::lmer(domFreq ~ bin*dynamic_range + (1 | serialnumber) + (1 | bin), REML = TRUE, data = df_long)
 anova(domFreq_interaction_id, domFreq_interaction_id_bin, refit = FALSE) # This is not necessary, so use simplest model
 rm(domFreq_interaction_id_bin)
 ```
@@ -299,11 +268,9 @@ residuals_domFreq <- resid(domFreq_interaction_id)
 hist(residuals_domFreq) # approximately normally distributed
 rm(residuals_domFreq)
 ```
+
 #### Model summary
 ```{r Model summary domFreq low sampling frequency experiment, echo=FALSE}
-#refit the model, to resolve "Warning: Model failed to converge with 1 negative eigenvalue: -5.1e+00"
-domFreq_interaction_id <- lme4::lmer(domFreq ~ bin*brand + (1 | serialnumber), REML = TRUE, data = df_long, control=lmerControl(optimizer="bobyqa")) #https://stats.stackexchange.com/questions/242109/model-failed-to-converge-warning-in-lmer
-
 car::Anova(domFreq_interaction_id, type="II", test.statistic="F")
 require(lmerTest)
 test.domFreq <- as(domFreq_interaction_id, "merModLmerTest")
@@ -313,7 +280,6 @@ vcov(domFreq_interaction_id, type = "random")
 #report::report(domFreq_interaction_id)
 rm(test.domFreq)
 ```
-
 
 ### Pairwise comparisons
 #### Bin
@@ -327,8 +293,8 @@ rm(maineffect_bin)
 
 ### Boxplot
 ```{r Create boxplots for the experiments, include=FALSE}
-bxp_psd <- createBoxplot(df_long, bins_low, outcome = "meanPSD", group = "brand") 
-bxp_domFreq <- createBoxplot(df_long, bins_low, outcome = "domFreq", group = "brand")
+bxp_psd <- createBoxplot(df_long, bins_low, outcome = "meanPSD", group = "dynamic_range") 
+bxp_domFreq <- createBoxplot(df_long, bins_low, outcome = "domFreq", group = "dynamic_range")
 
 ggplot2::ggsave(file=paste0(datadir, "plots/boxplot_E3_meanPSD.png"), bxp_psd, width = 10, height = 8, dpi = 900) #saves g
 ggplot2::ggsave(file=paste0(datadir, "plots/boxplot_E3_domFreq.png"), bxp_domFreq, width = 10, height = 8, dpi = 900) #saves g
@@ -358,6 +324,16 @@ save(correlations_perShakerCondition, file = paste0(datadir, "E3_cross_correlati
 ```{r Heatmap low sampling frequency experiment, echo=FALSE, fig.width=14, fig.height=14}
 fullmatrix <- correlation_matrices$correlationMatrix
 
+# Add the dynamic range to the labels
+labels <- rownames(fullmatrix)
+dr_labels <- c()
+for(lab in 1:length(labels)){
+  dr_labels <- c(dr_labels, paste(data_low$specifications[data_low$specifications$label == labels[lab], 6], labels[lab], sep = "_"))
+}
+colnames(fullmatrix) <- dr_labels
+rownames(fullmatrix) <- dr_labels
+
+
 heatmap <- corrplot::corrplot(pmax(fullmatrix, t(fullmatrix), na.rm = TRUE), 
                                   type = 'lower', method = 'color', order = "alphabet", 
                                   number.cex = 1.25, cl.cex = 2, tl.cex = 2,
@@ -365,10 +341,15 @@ heatmap <- corrplot::corrplot(pmax(fullmatrix, t(fullmatrix), na.rm = TRUE),
                                   diag = TRUE, tl.col = "black")
 rm(fullmatrix, heatmap)
 ```
-
 ### Heatmap per shaker condition
 ```{r Heatmap low sampling frequency experiment per shaker condition, echo=FALSE, fig.width=14, fig.height=15}
 fullmatrices <- correlations_perShakerCondition
+
+# Add the dynamic range to the labels
+for(matrix in 1:length(fullmatrices)){
+  colnames(fullmatrices[[matrix]]$correlationMatrix) <- dr_labels
+  rownames(fullmatrices[[matrix]]$correlationMatrix) <- dr_labels
+}
 
 heatmaps <- list()
 for (condition in 1:length(fullmatrices)){
@@ -384,14 +365,14 @@ for (condition in 1:length(fullmatrices)){
 rm(fullmatrices, heatmaps)
 ```
 
-## Comparison of cross-correlation coefficients between brands
+## Comparison of cross-correlation coefficients between dynamic ranges
 
 ```{r Calculate average maximum cross lagged correlation coefficients low sampling frequency experiment per shaker condition, include=FALSE}
 avg_crosscor_between <- list()
 avg_crosscor_within <- list()
 
 for (condition in 1:length(correlations_perShakerCondition)){
-  avg_crosscor <- dataframeShapeComparisonBeween(correlations_perShakerCondition[[condition]], data_low$specifications, between = "brand") 
+  avg_crosscor <- dataframeShapeComparisonBeween(correlations_perShakerCondition[[condition]], data_low$specifications, between = "dynamic_range") 
   avg_crosscor_between[[condition]] <- avg_crosscor[avg_crosscor$same_group == "0",]
   avg_crosscor_within[[condition]] <- avg_crosscor[avg_crosscor$same_group == "1",]
 }
@@ -400,23 +381,40 @@ names(avg_crosscor_between) <- names(correlations_perShakerCondition)
 names(avg_crosscor_within) <- names(correlations_perShakerCondition)
 ```
 
-```{r Between brand comparison low sampling frequency experiment, echo=FALSE}
+```{r Between dynamic range comparison low sampling frequency experiment, echo=FALSE}
 table_between <- list()
 
 for(condition in 1:length(avg_crosscor_between)){
   df_correlations <- avg_crosscor_between[[condition]]
   df_correlations$correlation <- as.numeric(df_correlations$correlation)
-  avg_cor <- tapply(df_correlations$correlation, df_correlations$between, summary)
-  SD <- tapply(df_correlations$correlation, df_correlations$between, sd)
-  sd <- c(SD[2], SD[4], SD[5])
-  tab <- rbind(avg_cor$GENEActivAxivity, avg_cor$MOXAxivity, avg_cor$MOXGENEActiv)
+
+    
+  cor24 <- rbind(df_correlations[which(df_correlations$between1 == 2 & df_correlations$between2 == 4) ,],
+                 df_correlations[which(df_correlations$between1 == 4 & df_correlations$between2 == 2) ,])
+  cor28 <- rbind(df_correlations[which(df_correlations$between1 == 2 & df_correlations$between2 == 8) ,],
+                 df_correlations[which(df_correlations$between1 == 8 & df_correlations$between2 == 2) ,])
+  cor216 <- rbind(df_correlations[which(df_correlations$between1 == 2 & df_correlations$between2 == 16) ,],
+                 df_correlations[which(df_correlations$between1 == 16 & df_correlations$between2 == 2) ,])
+  cor48 <- rbind(df_correlations[which(df_correlations$between1 == 4 & df_correlations$between2 == 8) ,],
+                 df_correlations[which(df_correlations$between1 == 8 & df_correlations$between2 == 4) ,])
+  cor416 <- rbind(df_correlations[which(df_correlations$between1 == 4 & df_correlations$between2 == 16) ,],
+                 df_correlations[which(df_correlations$between1 == 16 & df_correlations$between2 == 4) ,])
+  cor816 <- rbind(df_correlations[which(df_correlations$between1 == 8 & df_correlations$between2 == 16) ,],
+                 df_correlations[which(df_correlations$between1 == 16 & df_correlations$between2 == 8) ,])
+  
+  tab <- rbind(summary(cor24$correlation), summary(cor28$correlation), summary(cor216$correlation), 
+               summary(cor48$correlation), summary(cor416$correlation), summary(cor816$correlation))
+  sd <- c(sd(cor24$correlation), sd(cor28$correlation), sd(cor216$correlation), 
+               sd(cor48$correlation), sd(cor416$correlation), sd(cor816$correlation))
   tab <- cbind(tab, sd)
+  groups <- c("2_vs_4", "2_vs_8", "2_vs_18", "4_vs_8", "4_vs_16", "8_vs_16")
   tab <- tab[,-1]
   tab <- tab[,-5]
+  tab <- cbind(groups, tab)
   table_between[[condition]] <- tab
 }
-rm(avg_cor, tab, SD, sd, condition)
-names(table_between) <- names(correlations_perShakerCondition$low)
+rm(tab, cor24, cor28, cor216, cor48, cor416, cor816, sd, groups, condition)
+names(table_between) <- names(correlations_perShakerCondition)
 ```
 
 ```{r Print between comparison tables low frequency experiment, echo = FALSE}
@@ -426,18 +424,19 @@ for(condition in 1:length(table_between)){
 }
 ```
 
-```{r Line graph low sampling frequency, echo=FALSE}
+
+```{r Line graph low sampling frequency, echo=TRUE}
 shaker_frequencies <- c(30, 40, 50, 62, 75, 87, 100, 112, 125, 137, 150, 160, 175, 187, 200, 212, 225, 237, 250)
-groups <- rownames(table_between[[1]])
+groups <- c("2_vs_4", "2_vs_8", "2_vs_18", "4_vs_8", "4_vs_16", "8_vs_16")
 comparison <- rep(groups, length(shaker_frequencies))
 correlations <- c()
 sd <- c()
 shaker_frequency <- c()
 
 for(condition in 1:length(table_between)){
-  correlations <- c(correlations, table_between[[condition]][,3])
-  sd <- c(sd, table_between[[condition]][,5])
-  shaker_frequency <- c(shaker_frequency, rep(shaker_frequencies[condition], length(table_between[[condition]][,3])))
+  correlations <- c(correlations, table_between[[condition]][,4])
+  sd <- c(sd, table_between[[condition]][,6])
+  shaker_frequency <- c(shaker_frequency, rep(shaker_frequencies[condition], length(table_between[[condition]][,4])))
 }
 overview_tab_between <- cbind(comparison, correlations, shaker_frequency, sd)
 overview_tab_between <- as.data.frame(overview_tab_between)
@@ -449,9 +448,8 @@ overview_tab_between <- as.data.frame(overview_tab_between)
 line_plot <- ggplot2::ggplot(data = overview_tab_between, ggplot2::aes(x = as.factor(shaker_frequency), y = as.numeric(correlations), group = as.factor(comparison))) +
   ggplot2::geom_line(ggplot2::aes(color = as.factor(comparison)))+
   ggplot2::geom_point(ggplot2::aes(color = as.factor(comparison))) +
-  ggplot2::labs(x="Shaker frequency (rpm)", y = "Cross-correlation coefficient", color = "Brand comparison") +
+  ggplot2::labs(x="Shaker frequency (rpm)", y = "Cross-correlation coefficient", color = "Dynamic range comparison") +
   ggplot2::scale_x_discrete(limits = c("30", "40", "50", "62", "75", "87", "100", "112", "125", "137", "150", "160", "175", "187", "200", "212", "225", "237", "250")) +
-  scale_color_manual(values = c("orange", "green", "blue")) +
   ggplot2::theme_classic() +
   ggplot2::theme(legend.position="bottom") +
   ggplot2::geom_hline(yintercept=0.25, linetype="dashed") +
