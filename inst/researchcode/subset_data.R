@@ -1,11 +1,10 @@
 ## Script to load the structured acceleration data and to subset these data for the analyses of:
 # 1) visual_inspection: load all data for plotting
 # 2) noise: select the no-movement segments (shaking_frequency == 0), but omit data for the actigraph devices in which idle sleep mode was enabled
-# 3) E1: analyse differences between dynamic ranges with low sampling frequency (lfmr)
-# 4) E2: analyse differences between dynamic ranges with high sampling frequency (hfmr)
-# 5) E3: analyse differences between brands with low sampling frequency (lfcr)
-# 6) E4: analyse differences between brands with high sampling frequency (hfcr)
-
+# 3) E1: analyse differences between brands with low sampling frequency (lfcr)
+# 4) E2: analyse differences between brands with high sampling frequency (hfcr)
+# 5) E3: analyse differences between dynamic ranges with low sampling frequency (lfmr)
+# 6) E4: analyse differences between dynamic ranges with high sampling frequency (hfmr)
 
 rm(list=ls())
 graphics.off()
@@ -30,13 +29,13 @@ if(analysis == "visual_inspection"){
  experiments_to_load = c("ms_hfcr", "ms_lfcr", "ms_hfmr", "ms_lfmr", "ms_bag") # for all five experiments
 } else if(analysis == "noise") {
   experiments_to_load = c("ms_hfcr", "ms_lfcr", "ms_hfmr", "ms_lfmr") # not for ms_bag because axes were oriented randomly
-} else if(analysis == "E1") {
-  experiments_to_load = c("ms_lfmr") 
-} else if(analysis == "E2") {
-  experiments_to_load = c("ms_hfmr") 
 } else if(analysis == "E3") {
-  experiments_to_load = c("ms_lfcr") 
+  experiments_to_load = c("ms_lfmr") 
 } else if(analysis == "E4") {
+  experiments_to_load = c("ms_hfmr") 
+} else if(analysis == "E1") {
+  experiments_to_load = c("ms_lfcr") 
+} else if(analysis == "E2") {
   experiments_to_load = c("ms_hfcr") 
 }
 
@@ -110,14 +109,14 @@ if (analysis == "visual_inspection") {
   filename <- "/complete_data.RData"
 } else if (analysis == "noise"){
   filename <- "/no_movement.RData"
-} else if (analysis == "E1"){
-  filename <- "/E1_lfmr.RData"
-} else if (analysis == "E2"){
-  filename <- "/E2_hfmr.RData"
 } else if (analysis == "E3"){
-  filename <- "/E3_lfcr.RData"
+  filename <- "/E3_lfmr.RData"
 } else if (analysis == "E4"){
-  filename <- "/E4_hfcr.RData"
+  filename <- "/E4_hfmr.RData"
+} else if (analysis == "E1"){
+  filename <- "/E1_lfcr.RData"
+} else if (analysis == "E2"){
+  filename <- "/E2_hfcr.RData"
 }
 
 save(data, file = paste0(outputdir, filename))
