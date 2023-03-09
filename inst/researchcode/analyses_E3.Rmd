@@ -1,5 +1,5 @@
 ---
-title: 'Analyses Experiment 1: Low sampling frequency mixed dynamic range'
+title: 'Analyses Experiment 3: Low sampling frequency mixed dynamic range'
 author: "Annelinde Lettink"
 date: "3/7/2023"
 output:
