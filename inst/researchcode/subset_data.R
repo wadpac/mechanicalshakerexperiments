@@ -5,6 +5,8 @@
 # 4) E2: analyse differences between brands with high sampling frequency (hfcr)
 # 5) E3: analyse differences between dynamic ranges with low sampling frequency (lfmr)
 # 6) E4: analyse differences between dynamic ranges with high sampling frequency (hfmr)
+# 7) E5: lack of standard orientation analyse differences between brands with high sampling frequency (bag)
+
 
 rm(list=ls())
 graphics.off()
@@ -19,7 +21,7 @@ outputdir = paste0(shaker_experiments_folder, "/analyses")
 if (!dir.exists(outputdir)) dir.create(outputdir)
 
 # Specify the analyses
-analysis <- "E4" # one of: c("visual_inspection", "noise", "E1", "E2", "E3", "E4")
+analysis <- "E5" # one of: c("visual_inspection", "noise", "E1", "E2", "E3", "E4", "E5")
 
 #===============================
 
@@ -29,15 +31,17 @@ if(analysis == "visual_inspection"){
  experiments_to_load = c("ms_hfcr", "ms_lfcr", "ms_hfmr", "ms_lfmr", "ms_bag") # for all five experiments
 } else if(analysis == "noise") {
   experiments_to_load = c("ms_hfcr", "ms_lfcr", "ms_hfmr", "ms_lfmr") # not for ms_bag because axes were oriented randomly
-} else if(analysis == "E3") {
-  experiments_to_load = c("ms_lfmr") 
-} else if(analysis == "E4") {
-  experiments_to_load = c("ms_hfmr") 
 } else if(analysis == "E1") {
   experiments_to_load = c("ms_lfcr") 
 } else if(analysis == "E2") {
   experiments_to_load = c("ms_hfcr") 
-}
+} else if(analysis == "E3") {
+  experiments_to_load = c("ms_lfmr") 
+} else if(analysis == "E4") {
+  experiments_to_load = c("ms_hfmr") 
+} else if(analysis == "E5") {
+  experiments_to_load = c("ms_bag") 
+} 
 
 tz = "Europe/Amsterdam"
 
@@ -71,7 +75,7 @@ for (brand in 1:length(brands_to_load)){
             tmp <- tmp
           } else if (analysis == "noise"){
             tmp <- tmp[tmp$shaking_frequency == 0, ] #select no movement segments
-          } else if (analysis == "E1" | analysis == "E2" | analysis == "E3"| analysis == "E4") {
+          } else if (analysis == "E1" | analysis == "E2" | analysis == "E3"| analysis == "E4" | analysis == "E5") {
             if(experiments_to_load[experiment] == "ms_hfcr"){ # Remove the data due to repetition of the experiment
               # These are the start and end times from the description file where accelerometers_used = all_except_one_GENEActiv
               start1 <- as.POSIXlt("2020-11-24 9:42:00", tz = "Europe/Amsterdam")
@@ -85,8 +89,14 @@ for (brand in 1:length(brands_to_load)){
             # Select the axis that measures the acceleration signal in the shaking direction
             maxAxes <- c(sd(tmp$x), sd(tmp$y), sd(tmp$z)) # calculate the standard deviation of the axes
             SD <- unlist(tmp[which.max(maxAxes) + 1]) # select the axis with the highest SD as this will be the shaking direction
+            if(analysis == "E5") {
+              VM <- sqrt(tmp$x^2 + tmp$y^2 + tmp$z^2) # calculate the vector magnitude
+            }
             tmp = tmp[, c("shaking_frequency", "time")] # select data for the correct axis, time, and shaking_frequency
             tmp$SD <- SD
+            if(analysis == "E5") {
+              tmp$VM <- VM # add VM to the data
+            }
           }
           data$data[[counter]] <- tmp
           counter = counter + 1
@@ -117,6 +127,8 @@ if (analysis == "visual_inspection") {
   filename <- "/E1_lfcr.RData"
 } else if (analysis == "E2"){
   filename <- "/E2_hfcr.RData"
+} else if (analysis == "E5"){
+  filename <- "/E5_bag.RData"
 }
 
 save(data, file = paste0(outputdir, filename))
