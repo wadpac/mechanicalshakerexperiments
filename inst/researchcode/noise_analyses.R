@@ -215,5 +215,27 @@ noise_plots <- gridExtra::arrangeGrob(plot_noise_x + ggplot2::theme(legend.posit
                                       plot_noise_z + ggplot2::theme(legend.position="none"), 
                                       nrow=3) # generates plot
 plot(noise_plots) #print the plot
-ggplot2::ggsave(file=paste0(noise_output, "/plots/boxplot_noise.png"), noise_plots, width = 10, height = 8, dpi = 900) #saves g
+ggplot2::ggsave(file=paste0(noise_output, "/plots/boxplot_noise_sampling_frequency.png"), noise_plots, width = 10, height = 8, dpi = 900) #saves g
 
+
+noise_data$dynamic_range <- as.factor(noise_data$dynamic_range)
+
+plot_noise_x <- ggplot2::ggplot(noise_data, ggplot2::aes(x = brand, y = sd_middle_x*1000)) +
+  ggplot2::geom_boxplot(ggplot2::aes(color = dynamic_range)) +
+  ggplot2::theme_light() + ggplot2::scale_x_discrete(limits = positions) + ylab("x-axis (mg)") +
+  scale_fill_discrete(name="sampling frequency (Hz)")
+
+plot_noise_y <- ggplot2::ggplot(noise_data, ggplot2::aes(x = brand, y = sd_max_y*1000)) +
+  ggplot2::geom_boxplot(ggplot2::aes(color = dynamic_range)) +
+  ggplot2::theme_light() + ggplot2::scale_x_discrete(limits = positions) + ylab("y-axis (mg)")
+
+plot_noise_z <- ggplot2::ggplot(noise_data, ggplot2::aes(x = brand, y = sd_min_z*1000)) +
+  ggplot2::geom_boxplot(ggplot2::aes(color = dynamic_range)) +
+  ggplot2::theme_light() + ggplot2::scale_x_discrete(limits = positions) + ylab("z-axis (mg)")
+
+noise_plots_dr <- gridExtra::arrangeGrob(plot_noise_x + ggplot2::theme(legend.position="top"), 
+                                      plot_noise_y + ggplot2::theme(legend.position="none"), 
+                                      plot_noise_z + ggplot2::theme(legend.position="none"), 
+                                      nrow=3) # generates plot
+
+ggplot2::ggsave(file=paste0(noise_output, "/plots/boxplot_noise_dynamic_range.png"), noise_plots_dr, width = 10, height = 8, dpi = 900) #saves g
