@@ -171,7 +171,7 @@ noise_data %>%
 # For dynamic range (sd_y) the Levene’s test is significant (p < 0.05), so there was no homogeneity of variances.
 # Use different post hoc to test for differences between dynamic ranges (sd_y)
 
-#Build MANOVA mocel
+#Build MANOVA model
 model <- lm(cbind(sd_middle_x, sd_max_y, sd_min_z) ~ brand + dynamic_range + sampling_frequency, data = noise_data)
 car::Manova(model, test.statistic = "Pillai")
 
@@ -190,7 +190,6 @@ require(dplyr)
 results_agg_brand <- noise_data %>%
   group_by(brand) %>%
   summarize(N = n(), mean_x = mean(sd_middle_x*1000), mean_y = mean(sd_max_y*1000), mean_z = mean(sd_min_z*1000))
-
 
 # Visualize results
 positions <- c("Actigraph", "Activpal", "Axivity", "GENEActiv", "MOX")
@@ -215,7 +214,6 @@ noise_plots <- gridExtra::arrangeGrob(plot_noise_x + ggplot2::theme(legend.posit
                                       plot_noise_y + ggplot2::theme(legend.position="none"), 
                                       plot_noise_z + ggplot2::theme(legend.position="none"), 
                                       nrow=3) # generates plot
-
-ggplot2::ggsave(file=paste0(noise_output, "plots/boxplot_noise.png"), noise_plots, width = 10, height = 8, dpi = 900) #saves g
-
 plot(noise_plots) #print the plot
+ggplot2::ggsave(file=paste0(noise_output, "/plots/boxplot_noise.png"), noise_plots, width = 10, height = 8, dpi = 900) #saves g
+
