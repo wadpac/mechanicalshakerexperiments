@@ -155,8 +155,8 @@ for (file in 1:length(data_high$data)) { # for all accelerometer files
   rawSpectrum_SD_corrected <- deriveSpectrum(data_high$data[[file]]$SD/correction, sampling_frequency, 
                                              file_name = names(data_high$data)[[file]])
   raw.spectra_sd[[file]] <- rawSpectrum_SD
-  raw.spectra_sd_corrected[[file]] <- rawSpectrum_VM
-  raw.spectra_vm [[file]]<- rawSpectrum_SD_corrected
+  raw.spectra_sd_corrected[[file]] <- rawSpectrum_SD_corrected
+  raw.spectra_vm [[file]]<- rawSpectrum_VM
 }
 rm(rawSpectrum_SD, rawSpectrum_VM, rawSpectrum_SD_corrected, file)
 names(raw.spectra_sd) <- data_high$specifications$label  
@@ -170,10 +170,317 @@ mean.freqspec_vm <- deriveMeanSpectrum(raw.spectra_vm)
 ```
 
 ```{r Save raw spectra, include=FALSE}
-raw_spectra <- list(spectra_SD = raw.spectra_sd, mean_spectrumSD = mean.freqspec_sd, spectra_SDcorrected = raw.spectra_sd, mean_spectrumSDcorrected = raw.spectra_sd_corrected, spectra_VM = raw.spectra_vm, mean_spectrumVM = mean.freqspec_vm, specifications = data_high$specifications) # Save derived raw spectra
+raw_spectra <- list(spectra_SD = raw.spectra_sd, mean_spectrumSD = mean.freqspec_sd, spectra_SDcorrected = raw.spectra_sd, mean_spectrumSDcorrected = mean.freqspec_sd_corrected, spectra_VM = raw.spectra_vm, mean_spectrumVM = mean.freqspec_vm, specifications = data_high$specifications) # Save derived raw spectra
 
-save(raw_spectra, file = paste0(datadir, "E4_frequency_spectra.RData"))
+save(raw_spectra, file = paste0(datadir, "E5_frequency_spectra.RData"))
 rm(raw.spectra_sd, raw.spectra_sd_corrected, raw.spectra_vm, SD, sampling_frequency)
 
 #load(paste0(datadir, "E5_frequency_spectra.RData"))
 ```
+
+
+## Axis in the shaking direction
+
+### Mean frequency spectra
+
+```{r Plot mean frequency spectrum sd high sampling frequency, echo=FALSE}
+plot(raw_spectra$mean_spectrumSD$x, raw_spectra$mean_spectrumSD$y, xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l", main = "Mean frequency spectrum (SD) high sampling frequency and mixed dynamic range")
+rm(mean.freqspec_sd)
+```
+### Derive frequency bins
+```{r Derive frequency bins high sampling frequency, echo=FALSE}
+peaks_sd <- derivePeaks(raw_spectra$mean_spectrumSD, 100, XLIM, plot = TRUE)
+bins_sd <- deriveBins(peaks_sd, raw_spectra$mean_spectrumSD, XLIM = c(0, 5), plot = TRUE) 
+```
+### Frequency spectra plots
+
+#### Overlay all frequency spectra
+```{r Overlay all spectra sd high sampling frequency experiment, echo=FALSE}
+plot <- plot(raw_spectra$spectra_SD[[1]]$specx, raw_spectra$spectra_SD[[1]]$specy, main = "Overlay all frequency spectra", 
+       xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l")
+for(i in 1:length(bins_sd)){
+    plot <- plot + abline(v=bins_sd[i], col = "red")
+  }  
+
+for (spec in 2:length(raw_spectra$spectra_SD)) {
+  plot + lines(raw_spectra$spectra_SD[[spec]]$specx, raw_spectra$spectra_SD[[spec]]$specy, type = "l")
+  
+}
+rm(spec, i)
+```
+
+### Seperate plots for frequency spectra 
+
+```{r Plot spectra sd high sampling frequency experiment, echo=FALSE}
+for (spec in 1:length(raw_spectra$spectra_SD)) {
+  spectrum <- raw_spectra$spectra_SD[[spec]]
+  title <- paste("Frequency spectrum plot: ", raw_spectra$specifications$label[[spec]])
+  plot(spectrum$specx, spectrum$specy, main = title, 
+       xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l")
+  for(i in 1:length(bins_sd)){
+    abline(v=bins_sd[i], col = "red")
+  }  
+}
+rm(spec, title, spectrum, i)
+```
+```{r Compute dominant frequency (domFreq) and mean power spectral density (meanPSD) for the axis in the shaking direction, include = FALSE}
+comparison_values_sd <- list()
+for(spectrum in 1:length(raw_spectra$spectra_SD)){ 
+  comparison_values_sd[[spectrum]] <- deriveComparisonValues(raw_spectra$spectra_SD[[spectrum]], bins_sd)
+}
+names(comparison_values_sd) <- names(raw_spectra$spectra_SD)
+
+#cat("\nSaving data...")
+save(comparison_values_sd, file = paste0(datadir, "E5_comparison_values_sd.RData")) 
+
+rm(spectrum)
+```
+
+```{r WIDE FORMAT sd: Prepare data set for statistical analyses, include = FALSE}
+# Wide format: for both outcomes domFreq and meanPSD
+
+df_wide <- data.frame()
+id <- names(comparison_values_sd)
+df_wide <- cbind(id, data_high$specifications$brand, data_high$specifications$sampling_frequency,
+                 data_high$specifications$dynamic_range)
+domFreq_wide <- data.frame() 
+meanPSD_wide <- data.frame()
+for (accelerometer in 1:length(comparison_values_sd)) {
+  domFreq_wide <- rbind(domFreq_wide, comparison_values_sd[[accelerometer]]$domFreq)
+  meanPSD_wide <- rbind(meanPSD_wide, comparison_values_sd[[accelerometer]]$meanPSD)
+}
+domFreq_ms_wide <- cbind(df_wide, domFreq_wide)
+colnames(domFreq_ms_wide) <- c("serialnumber", "brand", "sampling_frequency", "dynamic_range", 
+                               "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13")
+meanPSD_ms_wide <- cbind(df_wide, meanPSD_wide)
+colnames(meanPSD_ms_wide) <- c("serialnumber", "brand", "sampling_frequency", "dynamic_range", 
+                               "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13")
+rm(df_wide, id, domFreq_wide, meanPSD_wide, accelerometer)
+```
+
+```{r LONG FORMAT sd: Prepare data set for statistical analyses, include = FALSE}
+# Combining domFreq and meanPSD (gather columns for outcome variables)
+library(tidyverse)
+
+domFreq_long <- domFreq_ms_wide %>%
+  gather(key = "bin", value = "domFreq", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13") %>%
+  rstatix::convert_as_factor(serialnumber, bin, brand, sampling_frequency, dynamic_range)
+meanPSD_long <- meanPSD_ms_wide %>%
+  gather(key = "bin", value = "meanPSD", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13") %>%
+  rstatix::convert_as_factor(serialnumber, bin, brand, sampling_frequency, dynamic_range)
+df_long <- merge(domFreq_long, meanPSD_long) # Join both data.frame objects to derive a single dataset
+rm(domFreq_long, domFreq_ms_wide, meanPSD_long, meanPSD_ms_wide)
+df_long <- df_long[order(df_long$serialnumber),]
+
+#cat("\nSaving data...")
+save(df_long, file = paste0(datadir, "E5_comparison_values_long_sd.RData"))
+rm(peaks_sd)
+
+#load(datadir, "E5_comparison_values_long_sd.RData")
+```
+
+## Corrected axis in the shaking direction
+
+### Mean frequency spectra
+
+```{r Plot mean frequency spectrum sd corrected high sampling frequency, echo=FALSE}
+plot(raw_spectra$mean_spectrumSDcorrected$x, raw_spectra$mean_spectrumSDcorrected$y, xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l", main = "Mean frequency spectrum (SD corrected) high sampling frequency and mixed dynamic range")
+rm(mean.freqspec_sd_corrected)
+```
+### Derive frequency bins
+```{r Derive frequency bins sd corrected high sampling frequency, echo=FALSE}
+peaks_sdCorrected <- derivePeaks(raw_spectra$mean_spectrumSDcorrected, 100, XLIM, plot = TRUE)
+bins_sdCorrected <- deriveBins(peaks_sdCorrected, raw_spectra$mean_spectrumSDcorrected, XLIM = c(0, 5), plot = TRUE) 
+```
+
+### Frequency spectra plots
+
+#### Overlay all frequency spectra
+```{r Overlay all spectra sd corrected high sampling frequency experiment, echo=FALSE}
+plot <- plot(raw_spectra$spectra_SDcorrected[[1]]$specx, raw_spectra$spectra_SDcorrected[[1]]$specy, main = "Overlay all frequency spectra", 
+       xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l")
+for(i in 1:length(bins_sdCorrected)){
+    plot <- plot + abline(v=bins_sdCorrected[i], col = "red")
+  }  
+
+for (spec in 2:length(raw_spectra$spectra_SDcorrected)) {
+  plot + lines(raw_spectra$spectra_SDcorrected[[spec]]$specx, raw_spectra$spectra_SDcorrected[[spec]]$specy, type = "l")
+  
+}
+rm(spec, i)
+```
+
+### Seperate plots for frequency spectra 
+
+```{r Plot spectra sd corrected high sampling frequency experiment, echo=FALSE}
+for (spec in 1:length(raw_spectra$spectra_SDcorrected)) {
+  spectrum <- raw_spectra$spectra_SDcorrected[[spec]]
+  title <- paste("Frequency spectrum plot: ", raw_spectra$specifications$label[[spec]])
+  plot(spectrum$specx, spectrum$specy, main = title, 
+       xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l")
+  for(i in 1:length(bins_sdCorrected)){
+    abline(v=bins_sdCorrected[i], col = "red")
+  }  
+}
+rm(spec, title, spectrum, i)
+```
+```{r Compute dominant frequency (domFreq) and mean power spectral density (meanPSD) for the corrected axis in the shaking direction, include = FALSE}
+comparison_values_sdCorrected <- list()
+for(spectrum in 1:length(raw_spectra$spectra_SDcorrected)){ 
+  comparison_values_sdCorrected[[spectrum]] <- deriveComparisonValues(raw_spectra$spectra_SDcorrected[[spectrum]], bins_sdCorrected)
+}
+names(comparison_values_sdCorrected) <- names(raw_spectra$spectra_SDcorrected)
+
+#cat("\nSaving data...")
+save(comparison_values_sdCorrected, file = paste0(datadir, "E5_comparison_values_sdCorrected.RData")) 
+
+rm(spectrum)
+```
+
+
+```{r WIDE FORMAT sd corrected: Prepare data set for statistical analyses, include = FALSE}
+# Wide format: for both outcomes domFreq and meanPSD
+
+df_wide <- data.frame()
+id <- names(comparison_values_sdCorrected)
+df_wide <- cbind(id, data_high$specifications$brand, data_high$specifications$sampling_frequency,
+                 data_high$specifications$dynamic_range)
+domFreq_wide <- data.frame() 
+meanPSD_wide <- data.frame()
+for (accelerometer in 1:length(comparison_values_sdCorrected)) {
+  domFreq_wide <- rbind(domFreq_wide, comparison_values_sdCorrected[[accelerometer]]$domFreq)
+  meanPSD_wide <- rbind(meanPSD_wide, comparison_values_sdCorrected[[accelerometer]]$meanPSD)
+}
+domFreq_ms_wide <- cbind(df_wide, domFreq_wide)
+colnames(domFreq_ms_wide) <- c("serialnumber", "brand", "sampling_frequency", "dynamic_range", 
+                               "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13")
+meanPSD_ms_wide <- cbind(df_wide, meanPSD_wide)
+colnames(meanPSD_ms_wide) <- c("serialnumber", "brand", "sampling_frequency", "dynamic_range", 
+                               "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13")
+rm(df_wide, id, domFreq_wide, meanPSD_wide, accelerometer)
+```
+
+```{r LONG FORMAT sd corrected: Prepare data set for statistical analyses, include = FALSE}
+# Combining domFreq and meanPSD (gather columns for outcome variables)
+library(tidyverse)
+
+domFreq_long <- domFreq_ms_wide %>%
+  gather(key = "bin", value = "domFreq", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13") %>%
+  rstatix::convert_as_factor(serialnumber, bin, brand, sampling_frequency, dynamic_range)
+meanPSD_long <- meanPSD_ms_wide %>%
+  gather(key = "bin", value = "meanPSD", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13") %>%
+  rstatix::convert_as_factor(serialnumber, bin, brand, sampling_frequency, dynamic_range)
+df_long <- merge(domFreq_long, meanPSD_long) # Join both data.frame objects to derive a single dataset
+rm(domFreq_long, domFreq_ms_wide, meanPSD_long, meanPSD_ms_wide)
+df_long <- df_long[order(df_long$serialnumber),]
+
+#cat("\nSaving data...")
+save(df_long, file = paste0(datadir, "E5_comparison_values_long_sd_corrected.RData"))
+rm(peaks_sdCorrected)
+
+#load(datadir, "E5_comparison_values_long_sd_corrected.RData")
+```
+
+## Vector magnitude
+
+### Mean frequency spectra
+
+```{r Plot mean frequency spectrum high sampling frequency, echo=FALSE}
+plot(raw_spectra$mean_spectrumVM$x, raw_spectra$mean_spectrumVM$y, xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l", main = "Mean frequency spectrum high sampling frequency and mixed dynamic range")
+rm(mean_spectrumVM)
+```
+
+### Derive frequency bins
+```{r Derive frequency bins high sampling frequency, echo=FALSE}
+peaks_VM <- derivePeaks(raw_spectra$mean_spectrumVM, 100, XLIM, plot = TRUE)
+bins_VM <- deriveBins(peaks_VM, raw_spectra$mean_spectrumVM, XLIM = c(0, 5), plot = TRUE) 
+```
+### Frequency spectra plots
+
+#### Overlay all frequency spectra
+```{r Overlay all spectra vm high sampling frequency experiment, echo=FALSE}
+plot <- plot(raw_spectra$spectra_VM[[1]]$specx, raw_spectra$spectraspectra_VM$specy, main = "Overlay all frequency spectra", 
+       xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l")
+for(i in 1:length(bins_VM)){
+    plot <- plot + abline(v=bins_VM[i], col = "red")
+  }  
+
+for (spec in 2:length(raw_spectra$spectra_VM)) {
+  plot + lines(raw_spectra$spectra_VM[[spec]]$specx, raw_spectra$spectra_VM[[spec]]$specy, type = "l")
+  
+}
+rm(spec, i)
+```
+
+### Seperate plots for frequency spectra 
+
+```{r Plot spectra vm high sampling frequency experiment, echo=FALSE}
+for (spec in 1:length(raw_spectra$spectra_VM)) {
+  spectrum <- raw_spectra$spectra_VM[[spec]]
+  title <- paste("Frequency spectrum plot: ", raw_spectra$specifications$label[[spec]])
+  plot(spectrum$specx, spectrum$specy, main = title, 
+       xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l")
+  for(i in 1:length(bins_VM)){
+    abline(v=bins_VM[i], col = "red")
+  }  
+}
+rm(spec, title, spectrum, i)
+```
+
+```{r Compute dominant frequency (domFreq) and mean power spectral density (meanPSD) for the VM, include = FALSE}
+comparison_values_VM <- list()
+for(spectrum in 1:length(raw_spectra$spectra_VM)){ 
+  comparison_values_VM[[spectrum]] <- deriveComparisonValues(raw_spectra$spectra_VM[[spectrum]], bins_VM)
+}
+names(comparison_values_VM) <- names(raw_spectra$spectra_VM)
+
+#cat("\nSaving data...")
+save(comparison_values_VM, file = paste0(datadir, "E4_comparison_values_VM.RData")) 
+
+rm(spectrum)
+```
+
+```{r WIDE FORMAT vm: Prepare data set for statistical analyses, include = FALSE}
+# Wide format: for both outcomes domFreq and meanPSD
+
+df_wide <- data.frame()
+id <- names(comparison_values_VM)
+df_wide <- cbind(id, data_high$specifications$brand, data_high$specifications$sampling_frequency,
+                 data_high$specifications$dynamic_range)
+domFreq_wide <- data.frame() 
+meanPSD_wide <- data.frame()
+for (accelerometer in 1:length(comparison_values_VM)) {
+  domFreq_wide <- rbind(domFreq_wide, comparison_values_VM[[accelerometer]]$domFreq)
+  meanPSD_wide <- rbind(meanPSD_wide, comparison_values_VM[[accelerometer]]$meanPSD)
+}
+domFreq_ms_wide <- cbind(df_wide, domFreq_wide)
+colnames(domFreq_ms_wide) <- c("serialnumber", "brand", "sampling_frequency", "dynamic_range", 
+                               "1", "2")
+meanPSD_ms_wide <- cbind(df_wide, meanPSD_wide)
+colnames(meanPSD_ms_wide) <- c("serialnumber", "brand", "sampling_frequency", "dynamic_range", 
+                               "1", "2")
+rm(df_wide, id, domFreq_wide, meanPSD_wide, accelerometer)
+```
+
+```{r LONG FORMAT vm: Prepare data set for statistical analyses, include = FALSE}
+# Combining domFreq and meanPSD (gather columns for outcome variables)
+library(tidyverse)
+
+domFreq_long <- domFreq_ms_wide %>%
+  gather(key = "bin", value = "domFreq", "1", "2") %>%
+  rstatix::convert_as_factor(serialnumber, bin, brand, sampling_frequency, dynamic_range)
+meanPSD_long <- meanPSD_ms_wide %>%
+  gather(key = "bin", value = "meanPSD", "1", "2") %>%
+  rstatix::convert_as_factor(serialnumber, bin, brand, sampling_frequency, dynamic_range)
+df_long <- merge(domFreq_long, meanPSD_long) # Join both data.frame objects to derive a single dataset
+rm(domFreq_long, domFreq_ms_wide, meanPSD_long, meanPSD_ms_wide)
+df_long <- df_long[order(df_long$serialnumber),]
+
+#cat("\nSaving data...")
+save(df_long, file = paste0(datadir, "E5_comparison_values_long_VM.RData"))
+rm(peaks_VM)
+
+#load(datadir, "E5_comparison_values_long_VM.RData")
+```
+
+# Statistical comparison: Mixed model analyses
