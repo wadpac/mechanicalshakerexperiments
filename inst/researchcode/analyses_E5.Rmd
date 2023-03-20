@@ -46,3 +46,134 @@ setdiff(data$specifications$label, data_high$specifications$label)
 rm(index_high, data)
 ```
 
+# Plot acceleration signals
+
+## Plot the selected axis shaking direction 
+
+```{r plot signals shaking direction E5, echo=FALSE}
+plot_list <- list()
+  for(signal in 1:length(data_high$data)) {
+    file_name <- paste0("acceleration data: ", names(data_high$data)[signal])
+
+    jpeg(paste0(paste0(datadir, "plots"), paste0(file_name, ".jpeg")), width=600, height=500, res=120) 
+
+    p <- ggplot2::ggplot() + ggplot2::geom_point(data = data_high$data[[signal]], ggplot2::aes(x = time, y = SD,) , alpha = 0.2, size = 0.25) + ggplot2::theme_bw() +
+      ggplot2::labs(title = file_name, y = "acceleration (g)") +
+      ggplot2::scale_color_manual(values = colors)
+    
+    p
+    dev.off()
+    plot_list[[signal]] <- p
+  }
+```
+
+```{r Plot signals ms_bag, echo =FALSE}
+# Save and print the plot for each signal
+for(plot in 1:length(plot_list)){
+  print(plot_list[[plot]])
+}
+rm(plot, plot_list, p)
+```
+
+## Plot standardised signal (acceleration devided by the standard deviation)
+
+```{r plot standardised signal, echo=FALSE}
+plot_list <- list()
+  for(signal in 1:length(data_high$data)) {
+    file_name <- paste0("acceleration data: ", names(data_high$data)[signal])
+
+    jpeg(paste0(paste0(datadir, "plots"), paste0(file_name, ".jpeg")), width=600, height=500, res=120) 
+    correction <- sd(data_high$data[[signal]]$SD)
+    p <- ggplot2::ggplot() + ggplot2::geom_point(data = data_high$data[[signal]], ggplot2::aes(x = time, y = SD/correction,) , alpha = 0.2, size = 0.25) + ggplot2::theme_bw() +
+      ggplot2::labs(title = file_name, y = "acceleration (g)") +
+      ggplot2::scale_color_manual(values = colors)
+    
+    p
+    dev.off()
+    plot_list[[signal]] <- p
+  }
+```
+
+```{r Plot standardised signal , echo =FALSE}
+# Save and print the plot for each signal
+for(plot in 1:length(plot_list)){
+  print(plot_list[[plot]])
+}
+rm(plot, plot_list, p)
+```
+
+## Plot standardised signal: vector magnitude
+
+```{r plot VM, echo=FALSE}
+plot_list <- list()
+  for(signal in 1:length(data_high$data)) {
+    file_name <- paste0("acceleration data: ", names(data_high$data)[signal])
+
+    jpeg(paste0(paste0(datadir, "plots"), paste0(file_name, ".jpeg")), width=600, height=500, res=120) 
+
+    p <- ggplot2::ggplot() + ggplot2::geom_point(data = data_high$data[[signal]], ggplot2::aes(x = time, y = VM,) , alpha = 0.2, size = 0.25) + ggplot2::theme_bw() +
+      ggplot2::labs(title = file_name, y = "acceleration (g)") +
+      ggplot2::scale_color_manual(values = colors)
+    
+    p
+    dev.off()
+    plot_list[[signal]] <- p
+  }
+```
+
+```{r Plot VM , echo =FALSE}
+# Save and print the plot for each signal
+for(plot in 1:length(plot_list)){
+  print(plot_list[[plot]])
+}
+rm(plot, plot_list, p)
+```
+
+# Frequency spectra
+
+```{r Settings for frequency spectra, include=FALSE}
+# Plot parameters
+plot = TRUE
+xlabel = "Frequency (Hertz)"
+ylabel = "Spectral Density (g2/Hertz)"
+XLIM = c(0, 5) # Limit frequency content to 5 Hz (as 250 rpm / 60 = 4.1667 Hz is the expected max)
+```
+
+```{r Derive frequency spectra bag experiment shaker direction corrected sd and vm, echo=FALSE}
+# DERIVE RAW FREQUENCY SPECTRA (for visual inspection and save data for further analysis)
+raw.spectra_sd <- list() 
+raw.spectra_sd_corrected <- list() 
+raw.spectra_vm <- list() 
+
+for (file in 1:length(data_high$data)) { # for all accelerometer files
+  sampling_frequency <- as.numeric(data_high$specifications$sampling_frequency[file])  
+  rawSpectrum_SD <- deriveSpectrum(data_high$data[[file]]$SD, sampling_frequency, 
+                                   file_name = names(data_high$data)[[file]])
+  rawSpectrum_VM <- deriveSpectrum(data_high$data[[file]]$VM, sampling_frequency, 
+                                   file_name = names(data_high$data)[[file]])
+  correction <- sd(data_high$data[[file]]$SD)
+  rawSpectrum_SD_corrected <- deriveSpectrum(data_high$data[[file]]$SD/correction, sampling_frequency, 
+                                             file_name = names(data_high$data)[[file]])
+  raw.spectra_sd[[file]] <- rawSpectrum_SD
+  raw.spectra_sd_corrected[[file]] <- rawSpectrum_VM
+  raw.spectra_vm [[file]]<- rawSpectrum_SD_corrected
+}
+rm(rawSpectrum_SD, rawSpectrum_VM, rawSpectrum_SD_corrected, file)
+names(raw.spectra_sd) <- data_high$specifications$label  
+names(raw.spectra_sd_corrected) <- data_high$specifications$label  
+names(raw.spectra_vm) <- data_high$specifications$label  
+
+
+mean.freqspec_sd <- deriveMeanSpectrum(raw.spectra_sd)
+mean.freqspec_sd_corrected <- deriveMeanSpectrum(raw.spectra_sd_corrected)
+mean.freqspec_vm <- deriveMeanSpectrum(raw.spectra_vm)
+```
+
+```{r Save raw spectra, include=FALSE}
+raw_spectra <- list(spectra_SD = raw.spectra_sd, mean_spectrumSD = mean.freqspec_sd, spectra_SDcorrected = raw.spectra_sd, mean_spectrumSDcorrected = raw.spectra_sd_corrected, spectra_VM = raw.spectra_vm, mean_spectrumVM = mean.freqspec_vm, specifications = data_high$specifications) # Save derived raw spectra
+
+save(raw_spectra, file = paste0(datadir, "E4_frequency_spectra.RData"))
+rm(raw.spectra_sd, raw.spectra_sd_corrected, raw.spectra_vm, SD, sampling_frequency)
+
+#load(paste0(datadir, "E5_frequency_spectra.RData"))
+```
