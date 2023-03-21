@@ -182,6 +182,13 @@ rm(raw.spectra_sd, raw.spectra_sd_corrected, raw.spectra_vm, SD, sampling_freque
 ## Axis in the shaking direction
 
 ### Frequency spectra
+```{r Settings for frequency spectra, include=FALSE}
+# Plot parameters
+plot = TRUE
+xlabel = "Frequency (Hertz)"
+ylabel = "Spectral Density (g2/Hertz)"
+XLIM = c(0, 5) # Limit frequency content to 5 Hz (as 250 rpm / 60 = 4.1667 Hz is the expected max)
+```
 #### Mean frequency spectra
 
 ```{r Plot mean frequency spectrum sd high sampling frequency, echo=FALSE}
@@ -532,3 +539,420 @@ ggplot2::ggsave(file=paste0(datadir, "plots/linegraph_E5_crosscorrelations_sd.pn
 ```{r Plot line graph sd, echo=TRUE}
 plot(line_plot)
 ```
+
+## Corrected axis in the shaking direction
+### Frequency 
+```{r Settings for frequency spectra, include=FALSE}
+# Plot parameters
+plot = TRUE
+xlabel = "Frequency (Hertz)"
+ylabel = "Spectral Density (g2/Hertz)"
+XLIM = c(0, 5) # Limit frequency content to 5 Hz (as 250 rpm / 60 = 4.1667 Hz is the expected max)
+```
+#### Mean frequency spectra
+```{r Plot mean frequency spectrum sd corrected high sampling frequency, echo=FALSE}
+plot(raw_spectra$mean_spectrumSDcorrected$x, raw_spectra$mean_spectrumSDcorrected$y, xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l", main = "Mean frequency spectrum (SD corrected) high sampling frequency and mixed dynamic range")
+rm(mean.freqspec_sd_corrected)
+```
+#### Derive frequency bins
+```{r Derive frequency bins sd corrected high sampling frequency, echo=FALSE}
+peaks_sdCorrected <- derivePeaks(raw_spectra$mean_spectrumSDcorrected, 100, XLIM, plot = TRUE)
+bins_sdCorrected <- deriveBins(peaks_sdCorrected, raw_spectra$mean_spectrumSDcorrected, XLIM = c(0, 5), plot = TRUE) 
+```
+#### Overlay all frequency spectra
+```{r Overlay all spectra sd corrected high sampling frequency experiment, echo=FALSE}
+plot <- plot(raw_spectra$spectra_SDcorrected[[1]]$specx, raw_spectra$spectra_SDcorrected[[1]]$specy, main = "Overlay all frequency spectra", 
+             xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l")
+for(i in 1:length(bins_sdCorrected)){
+  plot <- plot + abline(v=bins_sdCorrected[i], col = "red")
+}  
+
+for (spec in 2:length(raw_spectra$spectra_SDcorrected)) {
+  plot + lines(raw_spectra$spectra_SDcorrected[[spec]]$specx, raw_spectra$spectra_SDcorrected[[spec]]$specy, type = "l")
+  
+}
+rm(spec, i)
+```
+
+#### Seperate plots for frequency spectra 
+
+```{r Plot spectra sd corrected high sampling frequency experiment, echo=FALSE}
+for (spec in 1:length(raw_spectra$spectra_SDcorrected)) {
+  spectrum <- raw_spectra$spectra_SDcorrected[[spec]]
+  title <- paste("Frequency spectrum plot: ", raw_spectra$specifications$label[[spec]])
+  plot(spectrum$specx, spectrum$specy, main = title, 
+       xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l")
+  for(i in 1:length(bins_sdCorrected)){
+    abline(v=bins_sdCorrected[i], col = "red")
+  }  
+}
+rm(spec, title, spectrum, i)
+```
+```{r Compute dominant frequency (domFreq) and mean power spectral density (meanPSD) for the corrected axis in the shaking direction, include = FALSE}
+comparison_values_sdCorrected <- list()
+for(spectrum in 1:length(raw_spectra$spectra_SDcorrected)){ 
+  comparison_values_sdCorrected[[spectrum]] <- deriveComparisonValues(raw_spectra$spectra_SDcorrected[[spectrum]], bins_sdCorrected)
+}
+names(comparison_values_sdCorrected) <- names(raw_spectra$spectra_SDcorrected)
+
+#cat("\nSaving data...")
+save(comparison_values_sdCorrected, file = paste0(datadir, "E5_comparison_values_sdCorrected.RData")) 
+
+rm(spectrum)
+```
+
+```{r WIDE FORMAT sd corrected: Prepare data set for statistical analyses, include = FALSE}
+# Wide format: for both outcomes domFreq and meanPSD
+load(paste0(datadir, "E5_comparison_values_sdCorrected.RData"))
+df_wide <- data.frame()
+id <- names(comparison_values_sdCorrected)
+df_wide <- cbind(id, data_high$specifications$brand, data_high$specifications$sampling_frequency,
+                 data_high$specifications$dynamic_range)
+domFreq_wide <- data.frame() 
+meanPSD_wide <- data.frame()
+for (accelerometer in 1:length(comparison_values_sdCorrected)) {
+  domFreq_wide <- rbind(domFreq_wide, comparison_values_sdCorrected[[accelerometer]]$domFreq)
+  meanPSD_wide <- rbind(meanPSD_wide, comparison_values_sdCorrected[[accelerometer]]$meanPSD)
+}
+domFreq_ms_wide <- cbind(df_wide, domFreq_wide)
+colnames(domFreq_ms_wide) <- c("serialnumber", "brand", "sampling_frequency", "dynamic_range", 
+                               "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13")
+meanPSD_ms_wide <- cbind(df_wide, meanPSD_wide)
+colnames(meanPSD_ms_wide) <- c("serialnumber", "brand", "sampling_frequency", "dynamic_range", 
+                               "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13")
+rm(df_wide, id, domFreq_wide, meanPSD_wide, accelerometer)
+```
+
+```{r LONG FORMAT sd corrected: Prepare data set for statistical analyses, include = FALSE}
+# Combining domFreq and meanPSD (gather columns for outcome variables)
+library(tidyverse)
+
+domFreq_long <- domFreq_ms_wide %>%
+  gather(key = "bin", value = "domFreq", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13") %>%
+  rstatix::convert_as_factor(serialnumber, bin, brand, sampling_frequency, dynamic_range)
+meanPSD_long <- meanPSD_ms_wide %>%
+  gather(key = "bin", value = "meanPSD", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13") %>%
+  rstatix::convert_as_factor(serialnumber, bin, brand, sampling_frequency, dynamic_range)
+df_long <- merge(domFreq_long, meanPSD_long) # Join both data.frame objects to derive a single dataset
+rm(domFreq_long, domFreq_ms_wide, meanPSD_long, meanPSD_ms_wide)
+df_long <- df_long[order(df_long$serialnumber),]
+
+#cat("\nSaving data...")
+save(df_long, file = paste0(datadir, "E5_comparison_values_long_sd_corrected.RData"))
+rm(peaks_sdCorrected)
+
+#load(paste0(datadir, "E5_comparison_values_long_sd_corrected.RData"))
+```
+
+#### Statistical comparison: Mixed model analyses
+
+##### Mean power spectral density: meanPSD ~ brand + bin + brand * bin
+```{r Fit model meanPSD for high sd corrected sampling frequency experiment, echo=FALSE}
+#load(paste0(datadir, "E5_comparison_values_long_sd_corrected.RData"))
+meanPSD_interaction_id_sd_corrected <- lme4::lmer(meanPSD ~ bin*brand + (1 | serialnumber), REML = TRUE, data = df_long)
+
+# Evaluate if adding a random intercept for frequency bin is necessary
+meanPSD_interaction_id_bin <- lme4::lmer(meanPSD ~ bin*brand + (1 | serialnumber) + (1 | bin), REML = TRUE, data = df_long) 
+anova(meanPSD_interaction_id_sd_corrected, meanPSD_interaction_id_bin, refit = FALSE) # This is not necessary, so use simplest model
+rm(meanPSD_interaction_id_bin)
+```
+
+##### Model assumption: normal distribution of residuals
+```{r Mean PSD Model assumptions sd corrected high sampling frequency experiment, echo=FALSE}
+ggpubr::ggqqplot(df_long, "meanPSD", facet.by = "bin", title = "QQ-plot mean power spectral density")
+residuals_meanPSD_sd <- resid(meanPSD_interaction_id_sd_corrected)
+#summary(residuals_meanPSD)
+hist(residuals_meanPSD)
+rm(residuals_meanPSD)
+```
+
+##### Model summary
+```{r Model summary meanPSD sd corrected high sampling frequency experiment, echo=FALSE}
+car::Anova(meanPSD_interaction_id_sd_corrected, type="II", test.statistic="F")
+require(lmerTest)
+test.meanPSD <- as(meanPSD_interaction_id_sd_corrected, "merModLmerTest")
+print(summary(test.meanPSD, ddf="Kenward-Roger"), correlation = FALSE)
+#summary(meanPSD_interaction_id_sd_corrected)
+vcov(meanPSD_interaction_id_sd_corrected, type = "random")
+rm(test.meanPSD)
+#report::report(meanPSD_interaction_id_sd_corrected)
+```
+
+##### Pairwise comparisons
+###### Bin
+```{r Calculate contrasts bin meanPSD for sd corrected high sampling frequency, echo=FALSE}
+maineffect_bin <- emmeans::emmeans(meanPSD_interaction_id_sd_corrected, comparison="pairwise", 
+                                         specs= ~ bin, adjust="sidak", data = df_long)
+maineffect_bin
+emmeans::contrast(maineffect_bin, "pairwise")
+rm(maineffect_bin)
+```
+
+##### Dominant frequency: domFreq ~ dynamic_range + bin + dynamic_range*bin
+```{r Fit model domFreq for sd corrected high sampling frequency, echo=FALSE}
+domFreq_interaction_id_sd_corrected <- lme4::lmer(domFreq ~ bin*brand + (1 | serialnumber), REML = TRUE, data = df_long)
+
+# Evaluate if adding a random intercept for frequency bin is necessary
+domFreq_interaction_id_bin <- lme4::lmer(domFreq ~ bin*brand + (1 | serialnumber) + (1 | bin), REML = TRUE, data = df_long)
+anova(domFreq_interaction_id_sd_corrected, domFreq_interaction_id_bin, refit = FALSE) # This is not necessary, so use simplest model
+rm(domFreq_interaction_id_bin)
+```
+
+##### Model assumption: normal distribution of residuals
+```{r Dom freq Model assumptions sd corrected high sampling frequency experiment, echo=FALSE}
+ggpubr::ggqqplot(df_long, "domFreq", facet.by = "bin", title = "QQ-plot dominant frequency spectral density")
+residuals_domFreq_sd_corrected <- resid(domFreq_interaction_id_sd_corrected)
+#summary(residuals_meanPSD)
+hist(residuals_domFreq_sd_corrected)
+rm(residuals_domFreq_sd_corrected)
+```
+##### Model summary
+```{r Model summary domFreq sd corrected high sampling frequency experiment, echo=FALSE}
+car::Anova(domFreq_interaction_id_sd_corrected, type="II", test.statistic="F")
+require(lmerTest)
+test.domFreq <- as(domFreq_interaction_id_sd_corrected, "merModLmerTest")
+print(summary(test.domFreq, ddf="Kenward-Roger"), correlation = FALSE)
+#summary(domFreq_interaction_id_sd_corrected)
+vcov(domFreq_interaction_id_sd_corrected, type = "random")
+rm(test.domFreq)
+#report::report(domFreq_interaction_id_sd_corrected)
+```
+
+##### Pairwise comparisons
+###### Bin
+```{r Calculate contrasts bin domFreq for sd high sampling frequency experiment, echo=FALSE}
+maineffect_bin <- emmeans::emmeans(domFreq_interaction_id_sd, comparison="pairwise", 
+                                         specs= ~ bin, adjust="sidak", data = df_long)
+maineffect_bin
+emmeans::contrast(maineffect_bin, "pairwise")
+rm(maineffect_bin)
+```
+
+###### Brand
+```{r Calculate contrasts brand domFreq for sd corrected high sampling frequency experiment, echo=FALSE}
+maineffect_brand <- emmeans::emmeans(domFreq_interaction_id_sd_corrected, comparison="pairwise", 
+                                         specs= ~ brand, adjust="sidak", data = df_long)
+maineffect_brand
+emmeans::contrast(maineffect_brand, "pairwise")
+rm(maineffect_brand)
+```
+
+###### Interaction effect
+```{r Calculate contrasts interaction effect domFreq for sd corrected high sampling frequency experiment, echo=FALSE}
+interactioneffect <- emmeans::emmeans(domFreq_interaction_id_sd_corrected, comparison="pairwise", 
+                                         specs= ~ bin * brand, adjust="sidak", data = df_long)
+
+ct <- emmeans::contrast(interactioneffect, "pairwise")
+ct.df <- as.data.frame(ct)
+
+focusOfInterest <- c()
+  check <- strsplit(ct.df$contrast, " ")
+  for (row in 1:nrow(ct.df)) {
+    focusOfInterest <- c(focusOfInterest, (check[[row]][1] == check[[row]][4] 
+                                           & check[[row]][2] !=   check[[row]][5])) #focus on rows where bin is the same, but the brand differs.
+  }
+ct.df[focusOfInterest,]
+rm(ct, interactioneffect)
+
+```
+
+##### Boxplot
+```{r Create boxplots for the sd corrected, include=FALSE}
+bxp_psd <- createBoxplot(df_long, bins_sdCorrected, outcome = "meanPSD", group = "brand", sampling_frequency = "E5") 
+bxp_domFreq <- createBoxplot(df_long, bins_sdCorrected, outcome = "domFreq", group = "brand", sampling_frequency = "E5")
+
+ggplot2::ggsave(file=paste0(datadir, "plots/boxplot_E5_meanPSD_sd_corrected.png"), bxp_psd, width = 10, height = 8, dpi = 900) #saves g
+ggplot2::ggsave(file=paste0(datadir, "plots/boxplot_E5_domFreq_sd_corrected.png"), bxp_domFreq, width = 10, height = 8, dpi = 900) #saves g
+```
+
+```{r Print boxplot for sd mean power spectral density, echo=FALSE}
+plot(bxp_psd)
+```
+
+```{r Print boxplot for sd dominant frequency, echo=FALSE}
+plot(bxp_psd)
+```
+
+### Cross-correlation coefficients
+
+```{r Compute cross-correlation matrices sd, include=FALSE}
+computeCrossCorrelations_corrected <- function(data, plot) {
+  correlationMatrix <- matrix(data=NA,nrow=length(data),ncol=length(data)) # create empty matrix for max cross-correlations
+  lagMatrix <- matrix(data=NA,nrow=length(data),ncol=length(data)) # create empty matrix to save lags corresponding to max cross-correlations
+  for (x in 1:length(data)) {
+    for (y in 1:length(data)) {
+      #cat(paste0(y, "/",  x, "/", length(data), " "))
+      if (x==y) {
+        correlationMatrix[x,y] <- 1
+        x = x + 1
+      }
+      else {
+        #If one of the time series during the shaker condition(s) has a standard deviation of 0, cross-correlation coefficient = 0
+        if(sd(data[[x]]$SD) == 0 | sd(data[[y]]$SD) == 0){
+          correlationMatrix[x,y] <- 0
+          lagMatrix[x,y] <- NA
+        }
+        #If both time series during the shaker condition(s) have a standard deviation of 0, cross-correlation coefficient = 1
+        else if(sd(data[[x]]$SD) == 0 & sd(data[[y]]$SD) == 0){
+          correlationMatrix[x,y] <- 1
+        }
+        else{
+          correction_x <- sd(data[[x]]$SD)
+          correction_y <- sd(data[[y]]$SD)
+          crossCorr <- ccf(data[[x]]$SD/correction_x, data[[y]]$SD/correction_y, type = "correlation", plot = plot)
+          correlationMatrix[x,y] <- max(crossCorr$acf)
+          lagMatrix[x,y] <- crossCorr$lag[crossCorr$acf==max(crossCorr$acf)]
+        }
+      }
+    }
+  }
+  colnames(correlationMatrix) <- names(data)
+  rownames(correlationMatrix) <- names(data)
+  colnames(lagMatrix) <- names(data)
+  rownames(lagMatrix) <- names(data)
+  return(list(correlationMatrix = correlationMatrix, lags = lagMatrix))
+}
+
+correlation_matrices <- computeCrossCorrelations_corrected(data_high$data, plot = FALSE) 
+save(correlation_matrices, file = paste0(datadir, "E5_cross_correlations_overall_sd_corrected.RData"))
+
+computeCrossCorrelationsPerShakerCondition_corrected <- function(data) {
+  correlationList <- list()
+  shakerCondition <- c(30, 40, 50, 62, 75, 87, 100, 112, 125, 137, 150, 160, 175, 187, 200, 212, 225, 237, 250) # add 0 if no-movement condition is to be included
+  for(condition in 1:length(shakerCondition)){
+    #Select data associated with the shaker condition
+    selectData <- list()
+    for(device in 1:length(data)){
+      tmp <- subset(data[[device]], data[[device]]$shaking_frequency == shakerCondition[condition])
+      selectData[[device]] <- tmp
+    }
+    names(selectData) <- names(data)
+    correlationList[[condition]] <- computeCrossCorrelations_corrected(selectData, plot = TRUE)
+  }
+  names(correlationList) <- shakerCondition
+  return(correlationList)
+}
+
+correlations_perShakerCondition <- computeCrossCorrelationsPerShakerCondition_corrected(data_high$data) 
+save(correlations_perShakerCondition, file = paste0(datadir, "E5_cross_correlations_perShakerCondition_sd_corrected.RData"))
+
+#load(paste0(datadir, "E5_cross_correlations_overall_sd_corrected.RData"))
+#load(paste0(datadir, "E5_cross_correlations_perShakerCondition_sd_corrected.RData"))
+```
+
+#### Overall heatmap
+```{r Heatmap sd corrected high sampling frequency, echo=FALSE, fig.width=14, fig.height=14}
+fullmatrix <- correlation_matrices$correlationMatrix
+
+heatmap <- corrplot::corrplot(pmax(fullmatrix, t(fullmatrix), na.rm = TRUE), 
+                                  type = 'lower', method = 'color', order = "alphabet", 
+                                  number.cex = 1.25, cl.cex = 2, tl.cex = 2,
+                                  col.lim = c(0,1), addCoef.col = 'black', tl.srt = 45, 
+                                  diag = TRUE, tl.col = "black")
+rm(fullmatrix, heatmap)
+```
+
+#### Heatmap per shaker condition
+```{r Heatmap sd corrected high sampling frequency per shaker condition, echo=FALSE, fig.width=14, fig.height=15}
+fullmatrices <- correlations_perShakerCondition
+
+heatmaps <- list()
+for (condition in 1:length(fullmatrices)){
+  heatmaps[[condition]] <- corrplot::corrplot(pmax(fullmatrices[[condition]]$correlationMatrix,
+                          t(fullmatrices[[condition]]$correlationMatrix), na.rm = TRUE), 
+                            title = paste0("shaker condition: ", names(fullmatrices)[condition]),
+                            type = 'lower', method = 'color', order = "alphabet", 
+                            number.cex = 1.25, cl.cex = 2, tl.cex = 2,
+                            col.lim = c(-1,1), addCoef.col = 'black', tl.srt = 45, mar=c(0,0,2,0),
+                            diag = TRUE, tl.col = "black")
+}
+
+rm(fullmatrices, heatmaps)
+```
+
+### Comparison of cross-correlation coefficients between brands
+
+```{r Calculate average maximum cross lagged correlation coefficients sd corrected high sampling frequency per shaker condition, include=FALSE}
+avg_crosscor_between <- list()
+avg_crosscor_within <- list()
+
+for (condition in 1:length(correlations_perShakerCondition)){
+  avg_crosscor <- dataframeShapeComparisonBeween(correlations_perShakerCondition[[condition]], data_high$specifications, between = "brand") 
+  avg_crosscor_between[[condition]] <- avg_crosscor[avg_crosscor$same_group == "0",]
+  avg_crosscor_within[[condition]] <- avg_crosscor[avg_crosscor$same_group == "1",]
+}
+rm(avg_crosscor, condition)
+names(avg_crosscor_between) <- names(correlations_perShakerCondition)
+names(avg_crosscor_within) <- names(correlations_perShakerCondition)
+```
+
+```{r Between brand comparison sd corrected high sampling frequency, echo=FALSE}
+table_between <- list()
+
+for(condition in 1:length(avg_crosscor_between)){
+  df_correlations <- avg_crosscor_between[[condition]]
+  df_correlations$correlation <- as.numeric(df_correlations$correlation)
+  avg_cor <- tapply(df_correlations$correlation, df_correlations$between, summary)
+  SD <- tapply(df_correlations$correlation, df_correlations$between, sd)
+  sd <- c(SD[2], SD[4], SD[5], SD[7], SD[8], SD[9])
+  tab <- rbind(avg_cor$AxivityActigraph, avg_cor$GENEActivActigraph, avg_cor$GENEActivAxivity, 
+               avg_cor$MOXActigraph, avg_cor$MOXAxivity, avg_cor$MOXGENEActiv)
+  tab <- cbind(tab, sd)
+  tab <- tab[,-1]
+  tab <- tab[,-5]
+  table_between[[condition]] <- tab
+}
+rm(avg_cor, tab, SD, sd, condition)
+names(table_between) <- names(correlations_perShakerCondition)
+```
+
+```{r Print between comparison tables sd high frequency, echo = FALSE}
+for(condition in 1:length(table_between)){
+  print(paste0("Shaker condition: ", names(table_between)[condition]))
+  print(table_between[[condition]])
+}
+```
+
+```{r Line graph high sampling frequency, echo=FALSE}
+shaker_frequencies <- c(30, 40, 50, 62, 75, 87, 100, 112, 125, 137, 150, 160, 175, 187, 200, 212, 225, 237, 250)
+groups <- rownames(table_between[[1]])
+comparison <- rep(groups, length(shaker_frequencies))
+correlations <- c()
+se <- c()
+shaker_frequency <- c()
+
+for(condition in 1:length(table_between)){
+  correlations <- c(correlations, table_between[[condition]][,3])
+  se <- c(se, table_between[[condition]][,5]*1.96)
+  shaker_frequency <- c(shaker_frequency, rep(shaker_frequencies[condition], length(table_between[[condition]][,3])))
+}
+overview_tab_between <- cbind(comparison, correlations, shaker_frequency, se)
+overview_tab_between <- as.data.frame(overview_tab_between)
+
+line_plot <- ggplot2::ggplot(data = overview_tab_between, ggplot2::aes(x = as.factor(shaker_frequency), y = as.numeric(correlations), group = as.factor(comparison))) +
+  ggplot2::geom_line(ggplot2::aes(color = as.factor(comparison), linetype = as.factor(comparison))) +
+  ggplot2::geom_point(ggplot2::aes(color = as.factor(comparison), shape = as.factor(comparison))) +
+  ggplot2::labs(x="Shaker frequency (rpm)", y = "Cross-correlation coefficient", color = "Brand comparison") +
+  ggplot2::scale_x_discrete(limits = c("30", "40", "50", "62", "75", "87", "100", "112", "125", "137", "150", "160", "175", "187", "200", "212", "225", "237", "250")) +
+  scale_color_manual(values = c("orange", "green", "blue", "red", "purple", "yellow")) +
+  ggplot2::theme_classic() +
+  ggplot2::theme(legend.position="bottom") +
+  ggplot2::geom_hline(yintercept=0.25, linetype="dashed") +
+  ggplot2::geom_hline(yintercept=0.5, linetype="dashed") +
+  ggplot2::geom_hline(yintercept=0.75, linetype="dashed") +
+  
+  ggplot2::geom_errorbar(ggplot2::aes(ymin = as.numeric(correlations) - as.numeric(se),
+                                      ymax = as.numeric(correlations) + as.numeric(se), 
+                                      color = as.factor(comparison)), 
+                         width=0.1) + 
+    ggplot2::labs(color  = "Brand comparison", linetype = "Brand comparison", shape = "Brand comparison")
+
+
+ggplot2::ggsave(file=paste0(datadir, "plots/linegraph_E5_crosscorrelations_sd_corrected.png"), line_plot, width = 10, height = 8, dpi = 900) #saves g
+```
+
+```{r Plot line graph sd, echo=TRUE}
+plot(line_plot)
+```
+
+
