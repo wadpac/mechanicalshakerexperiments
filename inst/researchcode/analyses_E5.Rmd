@@ -77,7 +77,7 @@ rm(plot, plot_list, p)
 
 ## Plot standardised signal (acceleration devided by the standard deviation)
 
-```{r plot standardised signal, echo=FALSE}
+```{r plot list standardised signal, echo=FALSE}
 plot_list <- list()
   for(signal in 1:length(data_high$data)) {
     file_name <- paste0("acceleration data: ", names(data_high$data)[signal])
@@ -102,9 +102,9 @@ for(plot in 1:length(plot_list)){
 rm(plot, plot_list, p)
 ```
 
-## Plot standardised signal: vector magnitude
+## Plot standardised signal: Vector Magnitude
 
-```{r plot VM, echo=FALSE}
+```{r plot list VM, echo=FALSE}
 plot_list <- list()
   for(signal in 1:length(data_high$data)) {
     file_name <- paste0("acceleration data: ", names(data_high$data)[signal])
@@ -181,19 +181,18 @@ rm(raw.spectra_sd, raw.spectra_sd_corrected, raw.spectra_vm, SD, sampling_freque
 
 ## Axis in the shaking direction
 
-### Mean frequency spectra
+### Frequency spectra
+#### Mean frequency spectra
 
 ```{r Plot mean frequency spectrum sd high sampling frequency, echo=FALSE}
 plot(raw_spectra$mean_spectrumSD$x, raw_spectra$mean_spectrumSD$y, xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l", main = "Mean frequency spectrum (SD) high sampling frequency and mixed dynamic range")
 rm(mean.freqspec_sd)
 ```
-### Derive frequency bins
+#### Derive frequency bins
 ```{r Derive frequency bins high sampling frequency, echo=FALSE}
 peaks_sd <- derivePeaks(raw_spectra$mean_spectrumSD, 100, XLIM, plot = TRUE)
 bins_sd <- deriveBins(peaks_sd, raw_spectra$mean_spectrumSD, XLIM = c(0, 5), plot = TRUE) 
 ```
-### Frequency spectra plots
-
 #### Overlay all frequency spectra
 ```{r Overlay all spectra sd high sampling frequency experiment, echo=FALSE}
 plot <- plot(raw_spectra$spectra_SD[[1]]$specx, raw_spectra$spectra_SD[[1]]$specy, main = "Overlay all frequency spectra", 
@@ -209,7 +208,7 @@ for (spec in 2:length(raw_spectra$spectra_SD)) {
 rm(spec, i)
 ```
 
-### Seperate plots for frequency spectra 
+#### Seperate plots for frequency spectra 
 
 ```{r Plot spectra sd high sampling frequency experiment, echo=FALSE}
 for (spec in 1:length(raw_spectra$spectra_SD)) {
@@ -275,212 +274,116 @@ df_long <- df_long[order(df_long$serialnumber),]
 #cat("\nSaving data...")
 save(df_long, file = paste0(datadir, "E5_comparison_values_long_sd.RData"))
 rm(peaks_sd)
-
-#load(datadir, "E5_comparison_values_long_sd.RData")
 ```
 
-## Corrected axis in the shaking direction
+#### Statistical comparison: Mixed model analyses
 
-### Mean frequency spectra
+##### Mean power spectral density: meanPSD ~ brand + bin + brand * bin
+```{r Fit model meanPSD for high sd sampling frequency experiment, echo=FALSE}
+#load(paste0(datadir, "E5_comparison_values_long_sd.RData"))
+meanPSD_interaction_id_sd <- lme4::lmer(meanPSD ~ bin*brand + (1 | serialnumber), REML = TRUE, data = df_long)
 
-```{r Plot mean frequency spectrum sd corrected high sampling frequency, echo=FALSE}
-plot(raw_spectra$mean_spectrumSDcorrected$x, raw_spectra$mean_spectrumSDcorrected$y, xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l", main = "Mean frequency spectrum (SD corrected) high sampling frequency and mixed dynamic range")
-rm(mean.freqspec_sd_corrected)
-```
-### Derive frequency bins
-```{r Derive frequency bins sd corrected high sampling frequency, echo=FALSE}
-peaks_sdCorrected <- derivePeaks(raw_spectra$mean_spectrumSDcorrected, 100, XLIM, plot = TRUE)
-bins_sdCorrected <- deriveBins(peaks_sdCorrected, raw_spectra$mean_spectrumSDcorrected, XLIM = c(0, 5), plot = TRUE) 
-```
-
-### Frequency spectra plots
-
-#### Overlay all frequency spectra
-```{r Overlay all spectra sd corrected high sampling frequency experiment, echo=FALSE}
-plot <- plot(raw_spectra$spectra_SDcorrected[[1]]$specx, raw_spectra$spectra_SDcorrected[[1]]$specy, main = "Overlay all frequency spectra", 
-       xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l")
-for(i in 1:length(bins_sdCorrected)){
-    plot <- plot + abline(v=bins_sdCorrected[i], col = "red")
-  }  
-
-for (spec in 2:length(raw_spectra$spectra_SDcorrected)) {
-  plot + lines(raw_spectra$spectra_SDcorrected[[spec]]$specx, raw_spectra$spectra_SDcorrected[[spec]]$specy, type = "l")
-  
-}
-rm(spec, i)
+# Evaluate if adding a random intercept for frequency bin is necessary
+meanPSD_interaction_id_bin <- lme4::lmer(meanPSD ~ bin*brand + (1 | serialnumber) + (1 | bin), REML = TRUE, data = df_long) 
+anova(meanPSD_interaction_id_sd, meanPSD_interaction_id_bin, refit = FALSE) # This is not necessary, so use simplest model
+rm(meanPSD_interaction_id_bin)
 ```
 
-### Seperate plots for frequency spectra 
-
-```{r Plot spectra sd corrected high sampling frequency experiment, echo=FALSE}
-for (spec in 1:length(raw_spectra$spectra_SDcorrected)) {
-  spectrum <- raw_spectra$spectra_SDcorrected[[spec]]
-  title <- paste("Frequency spectrum plot: ", raw_spectra$specifications$label[[spec]])
-  plot(spectrum$specx, spectrum$specy, main = title, 
-       xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l")
-  for(i in 1:length(bins_sdCorrected)){
-    abline(v=bins_sdCorrected[i], col = "red")
-  }  
-}
-rm(spec, title, spectrum, i)
-```
-```{r Compute dominant frequency (domFreq) and mean power spectral density (meanPSD) for the corrected axis in the shaking direction, include = FALSE}
-comparison_values_sdCorrected <- list()
-for(spectrum in 1:length(raw_spectra$spectra_SDcorrected)){ 
-  comparison_values_sdCorrected[[spectrum]] <- deriveComparisonValues(raw_spectra$spectra_SDcorrected[[spectrum]], bins_sdCorrected)
-}
-names(comparison_values_sdCorrected) <- names(raw_spectra$spectra_SDcorrected)
-
-#cat("\nSaving data...")
-save(comparison_values_sdCorrected, file = paste0(datadir, "E5_comparison_values_sdCorrected.RData")) 
-
-rm(spectrum)
+##### Model assumption: normal distribution of residuals
+```{r Mean PSD Model assumptions sd high sampling frequency experiment, echo=FALSE}
+ggpubr::ggqqplot(df_long, "meanPSD", facet.by = "bin", title = "QQ-plot mean power spectral density")
+residuals_meanPSD_sd <- resid(meanPSD_interaction_id_sd)
+#summary(residuals_meanPSD)
+hist(residuals_meanPSD)
+rm(residuals_meanPSD)
 ```
 
-
-```{r WIDE FORMAT sd corrected: Prepare data set for statistical analyses, include = FALSE}
-# Wide format: for both outcomes domFreq and meanPSD
-
-df_wide <- data.frame()
-id <- names(comparison_values_sdCorrected)
-df_wide <- cbind(id, data_high$specifications$brand, data_high$specifications$sampling_frequency,
-                 data_high$specifications$dynamic_range)
-domFreq_wide <- data.frame() 
-meanPSD_wide <- data.frame()
-for (accelerometer in 1:length(comparison_values_sdCorrected)) {
-  domFreq_wide <- rbind(domFreq_wide, comparison_values_sdCorrected[[accelerometer]]$domFreq)
-  meanPSD_wide <- rbind(meanPSD_wide, comparison_values_sdCorrected[[accelerometer]]$meanPSD)
-}
-domFreq_ms_wide <- cbind(df_wide, domFreq_wide)
-colnames(domFreq_ms_wide) <- c("serialnumber", "brand", "sampling_frequency", "dynamic_range", 
-                               "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13")
-meanPSD_ms_wide <- cbind(df_wide, meanPSD_wide)
-colnames(meanPSD_ms_wide) <- c("serialnumber", "brand", "sampling_frequency", "dynamic_range", 
-                               "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13")
-rm(df_wide, id, domFreq_wide, meanPSD_wide, accelerometer)
+##### Model summary
+```{r Model summary meanPSD sd high sampling frequency experiment, echo=FALSE}
+car::Anova(meanPSD_interaction_id_sd, type="II", test.statistic="F")
+require(lmerTest)
+test.meanPSD <- as(meanPSD_interaction_id_sd, "merModLmerTest")
+print(summary(test.meanPSD, ddf="Kenward-Roger"), correlation = FALSE)
+#summary(meanPSD_interaction_id_sd)
+vcov(meanPSD_interaction_id_sd, type = "random")
+rm(test.meanPSD)
+#report::report(meanPSD_interaction_id_sd)
 ```
 
-```{r LONG FORMAT sd corrected: Prepare data set for statistical analyses, include = FALSE}
-# Combining domFreq and meanPSD (gather columns for outcome variables)
-library(tidyverse)
-
-domFreq_long <- domFreq_ms_wide %>%
-  gather(key = "bin", value = "domFreq", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13") %>%
-  rstatix::convert_as_factor(serialnumber, bin, brand, sampling_frequency, dynamic_range)
-meanPSD_long <- meanPSD_ms_wide %>%
-  gather(key = "bin", value = "meanPSD", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13") %>%
-  rstatix::convert_as_factor(serialnumber, bin, brand, sampling_frequency, dynamic_range)
-df_long <- merge(domFreq_long, meanPSD_long) # Join both data.frame objects to derive a single dataset
-rm(domFreq_long, domFreq_ms_wide, meanPSD_long, meanPSD_ms_wide)
-df_long <- df_long[order(df_long$serialnumber),]
-
-#cat("\nSaving data...")
-save(df_long, file = paste0(datadir, "E5_comparison_values_long_sd_corrected.RData"))
-rm(peaks_sdCorrected)
-
-#load(datadir, "E5_comparison_values_long_sd_corrected.RData")
+##### Pairwise comparisons
+###### Bin
+```{r Calculate contrasts bin meanPSD for sd high sampling frequency experiment, echo=FALSE}
+maineffect_bin <- emmeans::emmeans(meanPSD_interaction_id_sd, comparison="pairwise", 
+                                         specs= ~ bin, adjust="sidak", data = df_long)
+maineffect_bin
+emmeans::contrast(maineffect_bin, "pairwise")
+rm(maineffect_bin)
 ```
 
-## Vector magnitude
+##### Dominant frequency: domFreq ~ dynamic_range + bin + dynamic_range*bin
+```{r Fit model domFreq for sd high sampling frequency experiment, echo=FALSE}
+domFreq_interaction_id_sd <- lme4::lmer(domFreq ~ bin*brand + (1 | serialnumber), REML = TRUE, data = df_long)
 
-### Mean frequency spectra
-
-```{r Plot mean frequency spectrum high sampling frequency, echo=FALSE}
-plot(raw_spectra$mean_spectrumVM$x, raw_spectra$mean_spectrumVM$y, xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l", main = "Mean frequency spectrum high sampling frequency and mixed dynamic range")
-rm(mean_spectrumVM)
+# Evaluate if adding a random intercept for frequency bin is necessary
+domFreq_interaction_id_bin <- lme4::lmer(domFreq ~ bin*brand + (1 | serialnumber) + (1 | bin), REML = TRUE, data = df_long)
+anova(domFreq_interaction_id_sd, domFreq_interaction_id_bin, refit = FALSE) # This is not necessary, so use simplest model
+rm(domFreq_interaction_id_bin)
 ```
 
-### Derive frequency bins
-```{r Derive frequency bins high sampling frequency, echo=FALSE}
-peaks_VM <- derivePeaks(raw_spectra$mean_spectrumVM, 100, XLIM, plot = TRUE)
-bins_VM <- deriveBins(peaks_VM, raw_spectra$mean_spectrumVM, XLIM = c(0, 5), plot = TRUE) 
+##### Model assumption: normal distribution of residuals
+```{r Dom freq Model assumptions sd high sampling frequency experiment, echo=FALSE}
+ggpubr::ggqqplot(df_long, "domFreq", facet.by = "bin", title = "QQ-plot dominant frequency spectral density")
+residuals_domFreq_sd <- resid(domFreq_interaction_id_sd)
+#summary(residuals_meanPSD)
+hist(residuals_domFreq_sd)
+rm(residuals_domFreq_sd)
 ```
-### Frequency spectra plots
-
-#### Overlay all frequency spectra
-```{r Overlay all spectra vm high sampling frequency experiment, echo=FALSE}
-plot <- plot(raw_spectra$spectra_VM[[1]]$specx, raw_spectra$spectraspectra_VM$specy, main = "Overlay all frequency spectra", 
-       xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l")
-for(i in 1:length(bins_VM)){
-    plot <- plot + abline(v=bins_VM[i], col = "red")
-  }  
-
-for (spec in 2:length(raw_spectra$spectra_VM)) {
-  plot + lines(raw_spectra$spectra_VM[[spec]]$specx, raw_spectra$spectra_VM[[spec]]$specy, type = "l")
-  
-}
-rm(spec, i)
+##### Model summary
+```{r Model summary domFreq sd high sampling frequency experiment, echo=FALSE}
+car::Anova(domFreq_interaction_id_sd, type="II", test.statistic="F")
+require(lmerTest)
+test.domFreq <- as(domFreq_interaction_id_sd, "merModLmerTest")
+print(summary(test.domFreq, ddf="Kenward-Roger"), correlation = FALSE)
+#summary(domFreq_interaction_id_sd)
+vcov(domFreq_interaction_id_sd, type = "random")
+rm(test.domFreq)
+#report::report(domFreq_interaction_id_sd)
 ```
 
-### Seperate plots for frequency spectra 
-
-```{r Plot spectra vm high sampling frequency experiment, echo=FALSE}
-for (spec in 1:length(raw_spectra$spectra_VM)) {
-  spectrum <- raw_spectra$spectra_VM[[spec]]
-  title <- paste("Frequency spectrum plot: ", raw_spectra$specifications$label[[spec]])
-  plot(spectrum$specx, spectrum$specy, main = title, 
-       xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l")
-  for(i in 1:length(bins_VM)){
-    abline(v=bins_VM[i], col = "red")
-  }  
-}
-rm(spec, title, spectrum, i)
+##### Pairwise comparisons
+###### Bin
+```{r Calculate contrasts bin domFreq for sd high sampling frequency experiment, echo=FALSE}
+maineffect_bin <- emmeans::emmeans(domFreq_interaction_id_sd, comparison="pairwise", 
+                                         specs= ~ bin, adjust="sidak", data = df_long)
+maineffect_bin
+emmeans::contrast(maineffect_bin, "pairwise")
+rm(maineffect_bin)
 ```
 
-```{r Compute dominant frequency (domFreq) and mean power spectral density (meanPSD) for the VM, include = FALSE}
-comparison_values_VM <- list()
-for(spectrum in 1:length(raw_spectra$spectra_VM)){ 
-  comparison_values_VM[[spectrum]] <- deriveComparisonValues(raw_spectra$spectra_VM[[spectrum]], bins_VM)
-}
-names(comparison_values_VM) <- names(raw_spectra$spectra_VM)
-
-#cat("\nSaving data...")
-save(comparison_values_VM, file = paste0(datadir, "E4_comparison_values_VM.RData")) 
-
-rm(spectrum)
+###### Brand
+```{r Calculate contrasts brand domFreq for sd high sampling frequency experiment, echo=FALSE}
+maineffect_brand <- emmeans::emmeans(domFreq_interaction_id_sd, comparison="pairwise", 
+                                         specs= ~ brand, adjust="sidak", data = df_long)
+maineffect_brand
+emmeans::contrast(maineffect_brand, "pairwise")
+rm(maineffect_brand)
 ```
 
-```{r WIDE FORMAT vm: Prepare data set for statistical analyses, include = FALSE}
-# Wide format: for both outcomes domFreq and meanPSD
+#### Interaction effect
+```{r Calculate contrasts interaction effect domFreq for sd high sampling frequency experiment, echo=FALSE}
+interactioneffect <- emmeans::emmeans(domFreq_interaction_id_sd, comparison="pairwise", 
+                                         specs= ~ bin * brand, adjust="sidak", data = df_long)
 
-df_wide <- data.frame()
-id <- names(comparison_values_VM)
-df_wide <- cbind(id, data_high$specifications$brand, data_high$specifications$sampling_frequency,
-                 data_high$specifications$dynamic_range)
-domFreq_wide <- data.frame() 
-meanPSD_wide <- data.frame()
-for (accelerometer in 1:length(comparison_values_VM)) {
-  domFreq_wide <- rbind(domFreq_wide, comparison_values_VM[[accelerometer]]$domFreq)
-  meanPSD_wide <- rbind(meanPSD_wide, comparison_values_VM[[accelerometer]]$meanPSD)
-}
-domFreq_ms_wide <- cbind(df_wide, domFreq_wide)
-colnames(domFreq_ms_wide) <- c("serialnumber", "brand", "sampling_frequency", "dynamic_range", 
-                               "1", "2")
-meanPSD_ms_wide <- cbind(df_wide, meanPSD_wide)
-colnames(meanPSD_ms_wide) <- c("serialnumber", "brand", "sampling_frequency", "dynamic_range", 
-                               "1", "2")
-rm(df_wide, id, domFreq_wide, meanPSD_wide, accelerometer)
+ct <- emmeans::contrast(interactioneffect, "pairwise")
+ct.df <- as.data.frame(ct)
+
+focusOfInterest <- c()
+  check <- strsplit(ct.df$contrast, " ")
+  for (row in 1:nrow(ct.df)) {
+    focusOfInterest <- c(focusOfInterest, (check[[row]][1] == check[[row]][4] 
+                                           & check[[row]][2] !=   check[[row]][5])) #focus on rows where bin is the same, but the brand differs.
+  }
+ct.df[focusOfInterest,]
+rm(ct, interactioneffect)
+
 ```
-
-```{r LONG FORMAT vm: Prepare data set for statistical analyses, include = FALSE}
-# Combining domFreq and meanPSD (gather columns for outcome variables)
-library(tidyverse)
-
-domFreq_long <- domFreq_ms_wide %>%
-  gather(key = "bin", value = "domFreq", "1", "2") %>%
-  rstatix::convert_as_factor(serialnumber, bin, brand, sampling_frequency, dynamic_range)
-meanPSD_long <- meanPSD_ms_wide %>%
-  gather(key = "bin", value = "meanPSD", "1", "2") %>%
-  rstatix::convert_as_factor(serialnumber, bin, brand, sampling_frequency, dynamic_range)
-df_long <- merge(domFreq_long, meanPSD_long) # Join both data.frame objects to derive a single dataset
-rm(domFreq_long, domFreq_ms_wide, meanPSD_long, meanPSD_ms_wide)
-df_long <- df_long[order(df_long$serialnumber),]
-
-#cat("\nSaving data...")
-save(df_long, file = paste0(datadir, "E5_comparison_values_long_VM.RData"))
-rm(peaks_VM)
-
-#load(datadir, "E5_comparison_values_long_VM.RData")
-```
-
-# Statistical comparison: Mixed model analyses
