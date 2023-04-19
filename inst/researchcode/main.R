@@ -1,12 +1,12 @@
 ### Script to structure data
 
 # user input required:
-shaker_experiments_folder = "/Users/annelindelettink/Documents/Work MacBook Pro Annelinde/Mechanical Shaker Machine"
-#shaker_experiments_folder = "/media/vincent/DATA/VUMC/shaker_experiments"
+# shaker_experiments_folder = "/Users/annelindelettink/Documents/Work MacBook Pro Annelinde/Mechanical Shaker Machine"
+shaker_experiments_folder = "/media/vincent/DATA/VUMC/shaker_experiments"
 
 # source functions directly from file, to be replaced by package installation:
-my_functions_folder =   "/Users/annelindelettink/Documents/Work MacBook Pro Annelinde/Mechanical Shaker Machine/mechanicalshakerexperiments/R"
-#my_functions_folder =   "/home/vincent/projects/mechanicalshakerexperiments/R"
+# my_functions_folder =   "/Users/annelindelettink/Documents/Work MacBook Pro Annelinde/Mechanical Shaker Machine/mechanicalshakerexperiments/R"
+my_functions_folder =   "/home/vincent/projects/mechanicalshakerexperiments/R"
 for (function_file in dir(my_functions_folder, full.names = T)) source(function_file) #load functions
 
 #----------------------------------------------------------------
@@ -30,5 +30,5 @@ lapply(packages, FUN = function(X) {
 #===================================================================================================
 
 brands = c("Actigraph", "Activpal", "Axivity", "GENEActiv", "MOX") #, "Acttrust", "Shimmer")
-experiments <- c("ms_hfcr", "ms_lfcr", "ms_hfmr", "ms_lfmr", "ms_bag") #, "ms_mfcr", "timer_check", "box")
+experiments <- c("ms_mfcr") # "ms_hfcr", "ms_lfcr", "ms_hfmr", "ms_lfmr", "ms_bag", "ms_mfcr", "timer_check", "box")
 structure_data(brands = brands, experiments, rawdatadir, outputdir)
