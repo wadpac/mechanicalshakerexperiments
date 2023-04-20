@@ -26,7 +26,7 @@ outdir = paste0(shaker_experiments_folder, "/samplerate_analyses")
 if (!dir.exists(outdir)) dir.create(outdir)
 outputfile = paste0(shaker_experiments_folder, "/samplerate_analyses/explore_samplerate.RData")
 sessionames = c("ms_mfcr") #"ms_hfcr", "ms_lfcr", "ms_hfmr", "ms_lfmr",
-overwrite = TRUE
+overwrite = FALSE
 epochsize = 5
 averageperws3 = function(x,sf,epochsize) {
   x2 = cumsum(c(0, x))
@@ -237,31 +237,45 @@ D = D[,c("brand","ses_name", "sn", "time", "sf", "stdev", "shakefreq")]
 D$time = as.POSIXlt(D$time, tz = "Europe/Amsterdam", origin = "1970-01-01")
 # D = D[-which(D$brand == "Activpal"),]
 
-CX = 0.7
+
+CXA = 0.7
+CXL = 0.7
+CXM = 1
+CX = 0.6
 brands2lookat = c("GENEActiv",
                   "Axivity",
                   "ActigraphCLE",
                   "ActigraphMOS")#unique(D$brand)
-
 pdf(file = "/media/vincent/DATA/VUMC/shaker_experiments/samplerate_analyses/inspect_stdev.pdf")
+
 for (metric in c("stdev")) { #
+  par(mfrow = c(2, 2), mar = c(4,3,2, 0.5), mgp = c(2,1,0))
   for (brandi in brands2lookat) {
-    par(mfrow = c(4, 5), mar = c(4,3,2, 0.5), mgp = c(2,1,0))
+
     analyse = NULL
     for (shakef in unique(D$shakefreq)) {
       for (ses_name in sessionames) {
-        YLIM = range(D$stdev[which(D$ses_name == ses_name &
-                                       D$shakefreq == shakef &
-                                       D$brand == brandi)], na.rm = TRUE)
-        XLIM = range(D$sf[which(D$brand == brandi)], na.rm = TRUE)
+        YLIM = c(0, 0.9) #range(D$stdev[which(D$ses_name == ses_name &
+                                       # D$shakefreq == shakef &
+                                       # D$brand == brandi)], na.rm = TRUE)
+        XLIM = range(c(D$sf[which(D$brand == brandi)], 115), na.rm = TRUE)
         GA = which(D$ses_name == ses_name &
                      D$shakefreq == shakef &
                      D$brand == brandi)
-        plot(D$sf[GA], D$stdev[GA], type = "p", pch = 20, cex = 0.5, 
-             cex.axis = 0.6, cex.lab = 0.6, cex.main = 0.7,
-             main = paste0(brandi, ": ", shakef, " rpm"), ylab =
-               "Acceleration",
-             xlab = "Sample rate (Hertz)", xlim = XLIM, ylim = YLIM, bty = "l")
+        if (shakef == 0) {
+          plot(D$sf[GA], D$stdev[GA], type = "b", pch = 20, cex = CX, 
+               cex.axis = CXA, cex.lab = CXL, cex.main = CXM,
+               main = brandi, ylab =
+                 "Acceleration",
+               xlab = "Sample rate (Hertz)", xlim = XLIM, ylim = YLIM, bty = "l")
+        } else {
+          lines(D$sf[GA], D$stdev[GA], type = "b", pch = 20, cex = CX, 
+               cex.axis = CXA, cex.lab = CXL, cex.main = CXM)
+        }
+        if (shakef %in% c(0, 100, 125, 150, 175, 200, 225, 250)) {
+          text(x = 109, y = D$stdev[max(GA)], paste0(shakef, " rpm"), cex = 0.6)
+        }
+        
       }
     }
   }
