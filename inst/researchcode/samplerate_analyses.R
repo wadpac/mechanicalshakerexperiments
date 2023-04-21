@@ -240,9 +240,9 @@ par(mfrow = c(1, 3), mar = c(4,3,2, 0.5), mgp = c(2,1,0))
 for (brandi in brands2lookat) {
   ci = 1  
   for (shakef in unique(D2$shakefreq)) {
-    if (shakef %in% c(30, 100, 125, 150, 175, 200, 225, 250)) {
+    if (shakef %in% c(30, 87, 100, 125, 150, 175, 200, 225, 250)) {
       YLIM = c(0, 0.8)
-      XLIM = range(c(D2$sf[which(D2$brand == brandi)], 115), na.rm = TRUE)
+      XLIM = c(10, 115) #range(c(D2$sf[which(D2$brand == brandi)], 115), na.rm = TRUE)
       GA = which( D2$shakefreq == shakef &
                     D2$brand == brandi)
       if (shakef == 30) {
