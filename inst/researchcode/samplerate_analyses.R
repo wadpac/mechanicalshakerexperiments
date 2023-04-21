@@ -4,14 +4,8 @@ graphics.off()
 # Update to be your local directory, if all goes well this is the only line you will have to update
 shaker_experiments_folder = "/media/vincent/DATA/VUMC/shaker_experiments"
 
-# TO DO: Check which GENEActiv was removed towards end of one of the experiments, and make sure data is not included
-
 #========================================================================================
 # Most of these libraries are needed for running SummarizedActigraph and/or MIMSunit
-# library(tidyverse)
-# library(lubridate)
-# library(lme4)
-# library(knitr)
 options(digits.secs = 7)
 options(scipen = 999)
 
@@ -121,23 +115,16 @@ if (!file.exists(outputfile) | overwrite == TRUE) {
           
           #===================================================================
           # Calculate metrics
-          # sdAx = c(sd(tmp$x), sd(tmp$y), sd(tmp$z))
-          
-          # domAx = which.max(sdAx)
-          # axnames[domAx]]
           if (brand == "MOX") {
             domAx = "y"
           } else {
             domAx = "x"
           }
-            
+          
           # calculate stdev over dominant axis
           # absolute relative difference
-          # print(paste0("dominant axis: ", axnames[domAx]))
           stdev = abs(tmp[, domAx]) # mean oabs will equal sd
           stdev = averageperws3(stdev, sf, epochsize = 5)
-          # print(stdev)
-          
           TIMESTAMPS = tmp$HEADER_TIME_STAMP[seq(1, nrow(tmp), by = sf * 5)]
           #===================================================================
           # Standardise size of objects and put in single data.frame
@@ -223,9 +210,6 @@ brands_of_interest = c("GENEActiv",
                        "Activpal")
 selection = which(D$ses_name == "ms_mfcr" &
                     D$brand %in% brands_of_interest)
-fitEN = aov(stdev ~ brand + sf + Error(shakefreq), data = D[selection, ])
-
-# print(summary(fitEN))
 
 #=============================================================================
 # Create plot per protocol session
@@ -237,48 +221,44 @@ D = D[,c("brand","ses_name", "sn", "time", "sf", "stdev", "shakefreq")]
 D$time = as.POSIXlt(D$time, tz = "Europe/Amsterdam", origin = "1970-01-01")
 # D = D[-which(D$brand == "Activpal"),]
 
+D = D[which(D$ses_name == sessionames),]
+D$brand[which(D$brand %in% c("ActigraphCLE", "ActigraphMOS") == TRUE)] = "ActiGraph"
+D2 = aggregate(D[, c("stdev")],
+               by = list(D$sf, D$shakefreq, D$brand), FUN = mean)
+colnames(D2) = c("sf", "shakefreq", "brand", "stdev")
 
-CXA = 0.7
-CXL = 0.7
-CXM = 1
-CX = 0.6
-brands2lookat = c("GENEActiv",
-                  "Axivity",
-                  "ActigraphCLE",
-                  "ActigraphMOS")#unique(D$brand)
-pdf(file = "/media/vincent/DATA/VUMC/shaker_experiments/samplerate_analyses/inspect_stdev.pdf")
+CXA = 1
+CXL = 1
+CXM = 1.1
+CX = 1
+brands2lookat = c("Axivity", "ActiGraph", "GENEActiv")#unique(D$brand)
+pdf(file = "/media/vincent/DATA/VUMC/shaker_experiments/samplerate_analyses/Figure_role_SampleRate.pdf",
+    width = 9, height = 6)
+colors = rep("black", 20) #gray.colors(n = 20, start = 0, end = 0.2)
 
-for (metric in c("stdev")) { #
-  par(mfrow = c(2, 2), mar = c(4,3,2, 0.5), mgp = c(2,1,0))
-  for (brandi in brands2lookat) {
-
-    analyse = NULL
-    for (shakef in unique(D$shakefreq)) {
-      for (ses_name in sessionames) {
-        YLIM = c(0, 0.9) #range(D$stdev[which(D$ses_name == ses_name &
-                                       # D$shakefreq == shakef &
-                                       # D$brand == brandi)], na.rm = TRUE)
-        XLIM = range(c(D$sf[which(D$brand == brandi)], 115), na.rm = TRUE)
-        GA = which(D$ses_name == ses_name &
-                     D$shakefreq == shakef &
-                     D$brand == brandi)
-        if (shakef == 0) {
-          plot(D$sf[GA], D$stdev[GA], type = "b", pch = 20, cex = CX, 
-               cex.axis = CXA, cex.lab = CXL, cex.main = CXM,
-               main = brandi, ylab =
-                 "Acceleration",
-               xlab = "Sample rate (Hertz)", xlim = XLIM, ylim = YLIM, bty = "l")
-        } else {
-          lines(D$sf[GA], D$stdev[GA], type = "b", pch = 20, cex = CX, 
-               cex.axis = CXA, cex.lab = CXL, cex.main = CXM)
-        }
-        if (shakef %in% c(0, 100, 125, 150, 175, 200, 225, 250)) {
-          text(x = 109, y = D$stdev[max(GA)], paste0(shakef, " rpm"), cex = 0.6)
-        }
-        
+par(mfrow = c(1, 3), mar = c(4,3,2, 0.5), mgp = c(2,1,0))
+for (brandi in brands2lookat) {
+  ci = 1  
+  for (shakef in unique(D2$shakefreq)) {
+    if (shakef %in% c(30, 100, 125, 150, 175, 200, 225, 250)) {
+      YLIM = c(0, 0.8)
+      XLIM = range(c(D2$sf[which(D2$brand == brandi)], 115), na.rm = TRUE)
+      GA = which( D2$shakefreq == shakef &
+                    D2$brand == brandi)
+      if (shakef == 30) {
+        plot(D2$sf[GA], D2$stdev[GA], type = "b", pch = 20, cex = CX,
+             cex.axis = CXA, cex.lab = CXL, cex.main = CXM,
+             main = brandi, ylab =
+               substitute(paste("Acceleration (", italic("g"),")")), #< maak italic
+             xlab = "Sampling rate (Hertz)", xlim = XLIM, ylim = YLIM, bty = "l", col = colors[ci])
+      } else {
+        lines(D2$sf[GA], D2$stdev[GA], type = "b", pch = 20, cex = CX,
+              cex.axis = CXA, cex.lab = CXL, cex.main = CXM, col = colors[ci])
       }
+      
+      text(x = 109, y = D2$stdev[max(GA)], paste0(shakef, " rpm"), cex = 0.8, col = colors[ci])
     }
+    ci = ci + 1
   }
 }
 dev.off()
-  
