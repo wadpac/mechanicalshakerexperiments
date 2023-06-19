@@ -56,7 +56,7 @@ plot_list <- list()
     jpeg(paste0(paste0(datadir, "plots"), paste0(file_name, ".jpeg")), width=600, height=500, res=120) 
 
     p <- ggplot2::ggplot() + ggplot2::geom_point(data = data_low$data[[signal]], ggplot2::aes(x = time, y = SD,) , alpha = 0.2, size = 0.25) + ggplot2::theme_bw() +
-      ggplot2::labs(title = file_name, y = "acceleration (g)") +
+      ggplot2::labs(title = file_name, y = expression(paste("acceleration (" ,italic("g"), ")"))) +
       ggplot2::scale_color_manual(values = colors)
     
     p
@@ -78,7 +78,7 @@ rm(plot, plot_list, p)
 # Plot parameters
 plot = TRUE
 xlabel = "Frequency (Hertz)"
-ylabel = "Spectral Density (g2/Hertz)"
+ylabel = expression(paste("Spectral Density (" ,italic("g"), "2/Hertz)"))
 XLIM = c(0, 5) # Limit frequency content to 5 Hz (as 250 rpm / 60 = 4.1667 Hz is the expected max)
 ```
 
@@ -355,6 +355,8 @@ for(matrix in 1:length(fullmatrices)){
 
 heatmaps <- list()
 for (condition in 1:length(fullmatrices)){
+    png(height=1800, width=1800, file=paste0(datadir, paste0("heatmaps/E3/heatmap_E3_", condition, ".png")))
+
   heatmaps[[condition]] <- corrplot::corrplot(pmax(fullmatrices[[condition]]$correlationMatrix,
                           t(fullmatrices[[condition]]$correlationMatrix), na.rm = TRUE), 
                             title = paste0("shaker condition: ", names(fullmatrices)[condition]),
@@ -362,6 +364,7 @@ for (condition in 1:length(fullmatrices)){
                             number.cex = 1.25, cl.cex = 2, tl.cex = 2,
                             col.lim = c(0,1), addCoef.col = 'black', tl.srt = 45, mar=c(0,0,2,0),
                             diag = TRUE, tl.col = "black")
+  dev.off()
 }
 
 rm(fullmatrices, heatmaps)
@@ -417,6 +420,8 @@ for(condition in 1:length(avg_crosscor_between)){
 }
 rm(tab, cor24, cor28, cor216, cor48, cor416, cor816, sd, groups, condition)
 names(table_between) <- names(correlations_perShakerCondition)
+save(table_between, file = paste0(datadir, "E3_line_graph_data.RData"))
+
 ```
 
 ```{r Print between comparison tables low frequency experiment, echo = FALSE}
