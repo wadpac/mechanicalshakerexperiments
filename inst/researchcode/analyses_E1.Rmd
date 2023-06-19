@@ -1,5 +1,5 @@
 ---
-title: 'Analyses Experiment 1: Low sampling frequency constant dynamic range'
+title: 'Analyses Experiment 1: Low sampling rate constant dynamic range'
 author: "Annelinde Lettink"
 date: "3/7/2023"
 output:
@@ -111,7 +111,7 @@ rm(raw.spectra_low, SD, sampling_frequency)
 ## Mean frequency spectra
 
 ```{r Plot mean frequency spectrum low sampling frequency, echo=FALSE}
-plot(raw_spectra$mean_spectrum$x, raw_spectra$mean_spectrum$y, xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l", main = "Mean frequency spectrum low sampling frequency and constant dynamic range")
+plot(raw_spectra$mean_spectrum$x, raw_spectra$mean_spectrum$y, xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l", main = "Mean frequency spectrum low sampling rate and constant dynamic range")
 rm(mean.freqspec_low)
 ```
 
@@ -373,13 +373,17 @@ fullmatrices <- correlations_perShakerCondition
 
 heatmaps <- list()
 for (condition in 1:length(fullmatrices)){
+  
+  png(height=1800, width=1800, file=paste0(datadir, paste0("heatmaps/E1/heatmap_E1_", condition, ".png")))
+
   heatmaps[[condition]] <- corrplot::corrplot(pmax(fullmatrices[[condition]]$correlationMatrix,
                           t(fullmatrices[[condition]]$correlationMatrix), na.rm = TRUE), 
                             title = paste0("shaker condition: ", names(fullmatrices)[condition]),
                             type = 'lower', method = 'color', order = "alphabet", 
-                            number.cex = 1.25, cl.cex = 2, tl.cex = 2,
+                            number.cex = 1.5, cl.cex = 2, tl.cex = 2,
                             col.lim = c(0,1), addCoef.col = 'black', tl.srt = 45, mar=c(0,0,2,0),
                             diag = TRUE, tl.col = "black")
+dev.off()
 }
 
 rm(fullmatrices, heatmaps)
@@ -418,6 +422,7 @@ for(condition in 1:length(avg_crosscor_between)){
 }
 rm(avg_cor, tab, SD, sd, condition)
 names(table_between) <- names(correlations_perShakerCondition)
+save(table_between, file = paste0(datadir, "E1_line_graph_data.RData"))
 ```
 
 ```{r Print between comparison tables low frequency experiment, echo = FALSE}
