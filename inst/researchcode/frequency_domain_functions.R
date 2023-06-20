@@ -151,7 +151,7 @@ createBoxplot <- function(data, freqBins, outcome = c("domFreq", "meanPSD"), gro
   if (outcome == "domFreq"){
     label = "Dominant frequency (Hertz)"
   } else {
-    label = "Mean power spectral density (g2/Hertz)"
+    label = expression(paste("Mean power spectral density (", italic("g"), "2/Hertz)"))
   } 
   bins = as.character(1:(length(freqBins) - 1))
   bin.labels <- c()
@@ -174,6 +174,8 @@ createBoxplot <- function(data, freqBins, outcome = c("domFreq", "meanPSD"), gro
       palette = c("orange", "green", "blue")
     } else if(sampling_frequency == "high"){
       palette = c("red", "orange", "green")
+    } else if(sampling_frequency == "E5"){
+      palette = c("red", "orange", "green", "blue")
     }
   }
   

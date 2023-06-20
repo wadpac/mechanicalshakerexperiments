@@ -84,9 +84,9 @@ pairwisePlots <- function(correlationMatrix, data, threshold) {
           file_name <- paste(paste(device1, device2, sep = "_vs_"), correlationMatrix[x,y], sep = " r = ")
           jpeg(paste(datadir, file_name, ".jpeg", sep = "/plots/"), width=600, height=500, res=120) 
           p <- ggplot2::ggplot() +
-            ggplot2::geom_point(data = data[[x]], ggplot2::aes(x = time, y = HA, colour = "black"), 
+            ggplot2::geom_point(data = data[[x]], ggplot2::aes(x = time, y = SD, colour = "black"), 
                                 alpha = 0.2, size = 0.25) +
-            ggplot2::geom_point(data = data[[y]], ggplot2::aes(x = time, y = HA, colour = "red"), 
+            ggplot2::geom_point(data = data[[y]], ggplot2::aes(x = time, y = SD, colour = "red"), 
                                 alpha =  0.2, size = 0.25) +
             ggplot2::theme_bw() +
             ggplot2::labs(title = paste0("Cross-correlation = ",  correlationMatrix[x,y]), y = "acceleration (g)") +
