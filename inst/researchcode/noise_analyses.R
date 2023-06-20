@@ -184,7 +184,7 @@ posthoc_brand <- noise_data %>%
   tidyr::gather(key = "variables", value = "value", sd_middle_x, sd_max_y, sd_min_z) %>%
   group_by(variables) %>%
   rstatix::tukey_hsd(value ~ brand) %>%
-  select(-estimate, -conf.low, -conf.high) # Remove details
+  select(-conf.low, -conf.high) # Remove details
 
 require(dplyr)
 results_agg_brand <- noise_data %>%
