@@ -174,7 +174,7 @@ createBoxplot <- function(data, freqBins, outcome = c("domFreq", "meanPSD"), gro
       palette = c("orange", "green", "blue")
     } else if(sampling_frequency == "high"){
       palette = c("red", "orange", "green")
-    } else if(sampling_frequency == "E5"){
+    } else if(sampling_frequency == "E6"){
       palette = c("red", "orange", "green", "blue")
     }
   }

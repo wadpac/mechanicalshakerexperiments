@@ -5,7 +5,8 @@
 # 4) E2: analyse differences between brands with high sampling frequency (hfcr)
 # 5) E3: analyse differences between dynamic ranges with low sampling frequency (lfmr)
 # 6) E4: analyse differences between dynamic ranges with high sampling frequency (hfmr)
-# 7) E5: lack of standard orientation analyse differences between brands with high sampling frequency (bag)
+# 7) E5: analyse influence of sampling rate (mfcr)
+# 8) E6: bag experiment, influence of orientation
 
 
 rm(list=ls())
@@ -21,7 +22,7 @@ outputdir = paste0(shaker_experiments_folder, "/analyses")
 if (!dir.exists(outputdir)) dir.create(outputdir)
 
 # Specify the analyses
-analysis <- "E5" # one of: c("visual_inspection", "noise", "E1", "E2", "E3", "E4", "E5")
+analysis <- "E5" # one of: c("visual_inspection", "noise", "E1", "E2", "E3", "E4", "E5", "bag")
 
 #===============================
 
@@ -40,6 +41,8 @@ if(analysis == "visual_inspection"){
 } else if(analysis == "E4") {
   experiments_to_load = c("ms_hfmr") 
 } else if(analysis == "E5") {
+  experiments_to_load = c("ms_mfcr") 
+} else if(analysis == "bag") {
   experiments_to_load = c("ms_bag") 
 } 
 
@@ -88,15 +91,16 @@ for (brand in 1:length(brands_to_load)){
             }
             # Select the axis that measures the acceleration signal in the shaking direction
             maxAxes <- c(sd(tmp$x), sd(tmp$y), sd(tmp$z)) # calculate the standard deviation of the axes
-            SD <- unlist(tmp[which.max(maxAxes) + 1]) # select the axis with the highest SD as this will be the shaking direction
-            if(analysis == "E5") {
+            SD <- unlist(tmp[which.max(maxAxes) + 1]) # select the axis with the highest SD as this will be the dominant axis in the shaking direction
+            if(analysis == "bag") {
               VM <- sqrt(tmp$x^2 + tmp$y^2 + tmp$z^2) # calculate the vector magnitude
             }
             tmp = tmp[, c("shaking_frequency", "time")] # select data for the correct axis, time, and shaking_frequency
             tmp$SD <- SD
-            if(analysis == "E5") {
+            if(analysis == "bag") {
               tmp$VM <- VM # add VM to the data
             }
+          }
           }
           data$data[[counter]] <- tmp
           counter = counter + 1
@@ -128,8 +132,11 @@ if (analysis == "visual_inspection") {
 } else if (analysis == "E2"){
   filename <- "/E2_hfcr.RData"
 } else if (analysis == "E5"){
-  filename <- "/E5_bag.RData"
+  filename <- "/E5_mfcr.RData"
+} else if (analysis == "bag"){
+  filename <- "/E6_bag.RData"
 }
+
 
 save(data, file = paste0(outputdir, filename))
 
