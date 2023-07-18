@@ -10,13 +10,16 @@ options(scipen = 999)
 options(digits = 20)
 
 # specify file and function paths
-shaker_experiments_folder = "/media/vincent/DATA/VUMC/shaker_experiments"
-output_directory = "/media/vincent/DATA/VUMC/shaker_experiments/analyses"
-my_functions_folder =   "~/projects/mechanicalshakerexperiments/R"
-time_keeping_results_file = paste0(shaker_experiments_folder, "/analyses/time_keeping.RData")
+#shaker_experiments_folder = "/media/vincent/DATA/VUMC/shaker_experiments"
+shaker_experiments_folder = "/Users/annelindelettink/Documents/Work MacBook Pro Annelinde/Mechanical Shaker Machine" # Update to be your local directory
+#output_directory = "/media/vincent/DATA/VUMC/shaker_experiments/analyses"
+output_directory = paste0(shaker_experiments_folder, "/analyses")
+
+#my_functions_folder =   "~/projects/mechanicalshakerexperiments/R"
+time_keeping_results_file = paste0(output_directory, "/time_keeping.RData")
 tz = "Europe/Amsterdam"
 # load functions (used when developing the code)
-for (function_file in dir(my_functions_folder, full.names = T)) source(function_file) 
+#for (function_file in dir(my_functions_folder, full.names = T)) source(function_file) 
 
 do.rerun = TRUE
 if (do.rerun == TRUE) {
@@ -90,15 +93,7 @@ if (do.rerun == TRUE) {
           if (brand != "Actigraph" & brand != "Activpal") {
             tmp$time = as.POSIXlt(tmp$time, origin = "1970-01-01", tz = "Europe/Amsterdam")
           }
-          if (brand == "Actigraph" | brand == "Activpal") {
-            tmp = tmp[, c("time","X","Y","Z")]
-          } else if (brand == "Axivity" | brand == "GENEActiv" ) {
-            tmp = tmp[, c("time","x","y","z")] #
-            colnames(tmp)[2:4] = c("X", "Y", "Z")
-          } else if (brand == "MOX") {
-            tmp = tmp[, c("time","AccX","AccY","AccZ")]
-            colnames(tmp)[2:4] = c("X", "Y", "Z")
-          }
+          tmp = tmp[, c("time","x","y","z")] 
           
           row.names(tmp) = 1:nrow(tmp)
           colnames(tmp)[1] = "HEADER_TIME_STAMP"
@@ -106,12 +101,12 @@ if (do.rerun == TRUE) {
           turning_times = as.POSIXlt(x = paste0("2020-11-26 ", turning_times), tz = "Europe/Amsterdam")
           Nturn = length(turning_times)
           results$brand[cnt:(cnt + Nturn - 1)] = rep(brand, Nturn)
-          if (brand == "Actigraph") {
-            brand_sn = paste0(brand, "_", substr(x = sn,start = 1, stop = 3))
-            results$brand_subtype[cnt:(cnt + Nturn - 1)] = rep(brand_sn, Nturn)
-          } else {
+          #if (brand == "Actigraph") {
+           # brand_sn = paste0(brand, "_", substr(x = sn,start = 1, stop = 3))
+            #results$brand_subtype[cnt:(cnt + Nturn - 1)] = rep(brand_sn, Nturn)
+        #  } else {
             results$brand_subtype[cnt:(cnt + Nturn - 1)] = rep(brand, Nturn)
-          }
+         # }
           results$sn[cnt:(cnt + Nturn - 1)] = rep(sn, Nturn)
           results$sf[cnt:(cnt + Nturn - 1)] = rep(sf, Nturn)
           results$turn[cnt:(cnt + Nturn - 1)] = 1:Nturn
@@ -132,9 +127,9 @@ if (do.rerun == TRUE) {
               nearby = which(tmp$HEADER_TIME_STAMP > (turning_times[j] - 90) &
                                tmp$HEADER_TIME_STAMP < (turning_times[j] + 90))
               # identify turning point
-              dx = abs(diff(tmp$X[nearby]))
-              dy = abs(diff(tmp$Y[nearby]))
-              dz = abs(diff(tmp$Z[nearby]))
+              dx = abs(diff(tmp$x[nearby]))
+              dy = abs(diff(tmp$y[nearby]))
+              dz = abs(diff(tmp$z[nearby]))
               dtotal = dx + dy + dz
               turn_signal = nearby[which.max(dtotal)[1]]
               results$turn_signal[cnt] = turn_signal
@@ -188,7 +183,8 @@ results = results[which(results$turn != 1 & results$turn_signal != 0), ]
 # Aggregate per brand
 out = c()
 cnt = 1
-for (brand in c("Actigraph_CLE", "Actigraph_MOS", "GENEActiv", "Axivity", "MOX", "Activpal")) {
+for (brand in c("Actigraph", "GENEActiv", "Axivity", "MOX", "Activpal")) {
+#for (brand in c("Actigraph_CLE", "Actigraph_MOS", "GENEActiv", "Axivity", "MOX", "Activpal")) {
   sel = which(results$brand_subtype == brand)
   if (length(sel) != 0) {
     results_agg = aggregate(x = results[sel,c("elapsed_time_atomclock_hours", "accelerometer_timestamp_error_seconds", 
