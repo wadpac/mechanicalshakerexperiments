@@ -11,8 +11,8 @@
 #' @return A list of: \item{data}{List of data.frames with the accelerometer time series where each list item represents 1 recording} \item{specifications}{Specifications for each recording}
 #' @importFrom utils read.csv
 #' @importFrom lubridate ymd
-#' @importFrom GGIRread resample
 #' @importFrom GGIRread readAxivity
+#' @importFrom GGIRread resample
 #' @importFrom GENEAread read.bin
 #' @importFrom read.gt3x read.gt3x
 #' @import foreach

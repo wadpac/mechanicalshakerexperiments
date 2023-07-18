@@ -18,7 +18,7 @@ loaddata(
 
 \item{brand}{Sensor brand: "Actigraph", "Activpal", "Acttrust", "Axivity", "GENEActiv", or "MOX".}
 
-\item{experiment}{Experiment to load: "timer_check", "ms_hfcr", "ms_lfcr", "ms_hfmr", "ms_lfmr", or "box".}
+\item{experiment}{Experiment to load: "timer_check", "ms_hfcr", "ms_lfcr", "ms_hfmr", "ms_lfmr", "ms_bag", or "box".}
 
 \item{windows}{Boolean, if TRUE then windows from the data_description file will be selected, FALSE: complete data file will be loaded;}
 
