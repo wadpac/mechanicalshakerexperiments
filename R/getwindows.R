@@ -3,10 +3,10 @@
 #' @description 'getwindows' Called from within loaddata to extract specific time windows
 #'
 #' @param brand Sensor brand: "Actigraph", "Activpal", "Acttrust", "Axivity", "GENEActiv", or "MOX".
-#' @param experiment Experiment to load: "timer_check", "ms_hfcr", "ms_lfcr", "ms_hfmr", "ms_lfmr", or "box".
+#' @param experiment Experiment to load: "timer_check", "ms_hrcr", "ms_lrcr", "ms_mrcr", "ms_hrmr", "ms_lrmr", ms_bag or "box".
 #' @param path Path to the root of the experimental data (rawdatadir)
 #' @param data Data object
-#' @param experimentfile xlsx file with protocol description, defaults to file stored inside the code
+#' @param experimentfile .xlsx file with protocol description, defaults to file stored inside the code
 #' @return List of data.frames with the accelerometer time series where each list item represents 1 recording
 #' @importFrom gdata read.xls
 #' @export

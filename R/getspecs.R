@@ -5,7 +5,7 @@
 #' @param brand Sensor brand: "Actigraph", "Activpal", "Acttrust", "Axivity", "GENEActiv", or "MOX".
 #' @param data Data object
 #' @param experimentfile xlsx file with protocol description, defaults to file stored inside the code
-#' @param experiment Experiment to load: "timer_check", "ms_hfcr", "ms_lfcr", "ms_hfmr", "ms_lfmr", or "box".
+#' @param experiment Experiment to load: "timer_check", "ms_hrcr", "ms_lrcr", "ms_mrcr", ms_hrmr", "ms_lrmr", "ms_bag" or "box".
 #' @return specifications, a data.frame with serial_number, sampling_frequency, and dynamic_range
 #' @importFrom gdata read.xls
 #' @export
@@ -60,8 +60,8 @@ getspecs <- function(brand, data, experimentfile = c(), experiment) {
     if(brand == "MOX") {#No information available in the data itself, but in the configuration sheet of data description file
       configurations <- gdata::read.xls(experimentfile, header = TRUE, sheet = 2)
       if(experiment == "box") {
-        sn <- configurations$serial_number[which(configurations$experiment == "ms_mfcr" & configurations$number == data_file)]
-        sf <- configurations$sample_rate[which(configurations$experiment == "ms_mfcr" & configurations$number == data_file)]
+        sn <- configurations$serial_number[which(configurations$experiment == "ms_mrcr" & configurations$number == data_file)]
+        sf <- configurations$sample_rate[which(configurations$experiment == "ms_mrcr" & configurations$number == data_file)]
       } else {
         sn <- configurations$serial_number[which(configurations$experiment == experiment & configurations$number == data_file)]
         sf <- configurations$sample_rate[which(configurations$experiment == experiment & configurations$number == data_file)]

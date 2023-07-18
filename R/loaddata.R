@@ -4,9 +4,9 @@
 #'
 #' @param path Path to the root of the experimental data (rawdatadir)
 #' @param brand Sensor brand: "Actigraph", "Activpal", "Acttrust", "Axivity", "GENEActiv", or "MOX".
-#' @param experiment Experiment to load: "timer_check", "ms_hfcr", "ms_lfcr", "ms_hfmr", "ms_lfmr", "ms_bag", or "box".
+#' @param experiment Experiment to load: "timer_check", "ms_hrcr", "ms_lrcr", "ms_mrcr", "ms_hrmr", "ms_lrmr", "ms_bag", or "box".
 #' @param windows Boolean, if TRUE then windows from the data_description file will be selected, FALSE: complete data file will be loaded;
-#' @param experimentfile xlsx file with protocol description
+#' @param experimentfile .xlsx file with protocol description
 #' @param actigraph_preprocessing Boolean,if  TRUE then sleepmode segments that jump by >1 sec are filled up using the function fill_sleep
 #' @return A list of: \item{data}{List of data.frames with the accelerometer time series where each list item represents 1 recording} \item{specifications}{Specifications for each recording}
 #' @importFrom utils read.csv
@@ -29,7 +29,7 @@ loaddata <- function(path, brand, experiment, windows = TRUE, experimentfile, ac
   }
   if (brand %in% c("Acttrust", "Fitbit") == FALSE) {
     if (experiment == "box" & brand != "Activpal"){
-      folder <- paste0(brand, paste0("_", "ms_mfcr"))
+      folder <- paste0(brand, paste0("_", "ms_mrcr"))
     } else if (brand == "Activpal" & (endsWith(experiment, "cr") | experiment == "box")){
       folder <- paste0(brand, paste0("_", "ms_cr")) 
     } else if((brand == "Actigraph" | brand == "Activpal" | brand == "GENEActiv" | brand == "Shimmer") 
@@ -176,15 +176,15 @@ loaddata <- function(path, brand, experiment, windows = TRUE, experimentfile, ac
                          start = as.POSIXlt("2020-11-26 9:12:00", tz = tz)
                          end = as.POSIXlt("2020-11-26 19:30:00", tz = tz)
                        }
-                       if (experiment == "ms_hfcr") {
+                       if (experiment == "ms_hrcr") {
                          start = as.POSIXlt("2020-11-24 9:42:00", tz = tz)
                          end = as.POSIXlt("2020-11-24 10:47:00", tz = tz)
                        }
-                       if (experiment == "ms_lfcr") {
+                       if (experiment == "ms_lrcr") {
                          start = as.POSIXlt("2020-11-24 12:37:00", tz = tz)
                          end = as.POSIXlt("2020-11-24 13:20:00", tz = tz)
                        }
-                       if (experiment == "ms_mfcr") {
+                       if (experiment == "ms_mrcr") {
                          start = as.POSIXlt("2020-11-24 15:07:00", tz = tz)
                          end = as.POSIXlt("2020-11-24 15:50:00", tz = tz)
                        }
@@ -192,11 +192,11 @@ loaddata <- function(path, brand, experiment, windows = TRUE, experimentfile, ac
                          start = as.POSIXlt("2020-11-24 15:54:00", tz = tz)
                          end = as.POSIXlt("2020-11-24 16:55:00", tz = tz)
                        }
-                       if (experiment == "ms_hfmr") {
+                       if (experiment == "ms_hrmr") {
                          start = as.POSIXlt("2020-11-27 8:37:00", tz = tz)
                          end = as.POSIXlt("2020-11-27 9:20:00", tz = tz)
                        }
-                       if (experiment == "ms_lfmr") {
+                       if (experiment == "ms_lrmr") {
                          start = as.POSIXlt("2020-11-27 10:02:00", tz = tz)
                          end = as.POSIXlt("2020-11-27 10:45:00", tz = tz)
                        }
