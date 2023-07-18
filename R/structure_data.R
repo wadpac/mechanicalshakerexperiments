@@ -26,7 +26,7 @@ structure_data = function(brands, experiments, rawdatadir, outputdir, experiment
                 "raw accelerometer files are stored inside a folder named unstructured_raw_data."))
   }
   if (length(experimentfile) == 0) {
-    experimentfile = system.file("datadescription/data_description.xlsx", package = "mechanicalshakerexperiments")[1]
+    experimentfile = system.file("datadescription/data_description_new.xlsx", package = "mechanicalshakerexperiments")[1]
   }
   for (brand in brands) {
     for (experiment in experiments) {

@@ -18,7 +18,7 @@ getspecs <- function(brand, data, experimentfile = c(), experiment) {
   label <- c()
   
   if (length(experimentfile) == 0) {
-    experimentfile = system.file("datadescription/data_description.xlsx", package = "mechanicalshakerexperiments")[1]
+    experimentfile = system.file("datadescription/data_description_new.xlsx", package = "mechanicalshakerexperiments")[1]
   }
   for (data_file in 1:length(data)) {
     if(brand == "ActiGraph") {
