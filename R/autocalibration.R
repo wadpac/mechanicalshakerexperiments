@@ -5,7 +5,7 @@
 #' @param data data.frame with accelerometer time series
 #' @param sf Sample frequency in Hertz
 #' @param printsummary Boolean to indicate whether calibration summary should be printed
-#' @param brand Character of sensor brand: "Actigraph", "Activpal", "Acttrust", "Axivity", "GENEActiv", or "MOX".
+#' @param brand Character of sensor brand: "ActiGraph", "activPAL", "Acttrust", "Axivity", "GENEActiv", or "MOX".
 #' @return List of objects identical to g.calibrate function R package GGIR
 #' @importFrom stats sd lm.wfit
 #' @export

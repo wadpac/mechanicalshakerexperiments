@@ -3,7 +3,7 @@
 #' @description 'loaddata' Loads data
 #'
 #' @param path Path to the root of the experimental data (rawdatadir)
-#' @param brand Sensor brand: "Actigraph", "Activpal", "Acttrust", "Axivity", "GENEActiv", or "MOX".
+#' @param brand Sensor brand: "ActiGraph", "activPAL", "Acttrust", "Axivity", "GENEActiv", or "MOX".
 #' @param experiment Experiment to load: "timer_check", "ms_hrcr", "ms_lrcr", "ms_mrcr", "ms_hrmr", "ms_lrmr", "ms_bag", or "box".
 #' @param windows Boolean, if TRUE then windows from the data_description file will be selected, FALSE: complete data file will be loaded;
 #' @param experimentfile .xlsx file with protocol description
@@ -28,11 +28,11 @@ loaddata <- function(path, brand, experiment, windows = TRUE, experimentfile, ac
     brand <- "MOX_exportedCSV/exportedCSV/MOX" 
   }
   if (brand %in% c("Acttrust", "Fitbit") == FALSE) {
-    if (experiment == "box" & brand != "Activpal"){
+    if (experiment == "box" & brand != "activPAL"){
       folder <- paste0(brand, paste0("_", "ms_mrcr"))
-    } else if (brand == "Activpal" & (endsWith(experiment, "cr") | experiment == "box")){
+    } else if (brand == "activPAL" & (endsWith(experiment, "cr") | experiment == "box")){
       folder <- paste0(brand, paste0("_", "ms_cr")) 
-    } else if((brand == "Actigraph" | brand == "Activpal" | brand == "GENEActiv" | brand == "Shimmer") 
+    } else if((brand == "ActiGraph" | brand == "activPAL" | brand == "GENEActiv" | brand == "Shimmer") 
               && (endsWith(experiment, "door") | endsWith(experiment, "bag"))){
       folder <- paste0(brand, paste0("_", "ms_bag"))
     } else {
@@ -48,9 +48,9 @@ loaddata <- function(path, brand, experiment, windows = TRUE, experimentfile, ac
   }
   #------------------------------------------------------------
   # Get brand specific file extensions
-  if (brand == "Actigraph") {
+  if (brand == "ActiGraph") {
     pattern = "*.gt3x"
-  } else if (brand == "Activpal" | brand == "MOX") {
+  } else if (brand == "activPAL" | brand == "MOX") {
     pattern = "*.csv"
   } else if (brand == "Acttrust") {
     pattern = "*.txt"
@@ -95,7 +95,7 @@ loaddata <- function(path, brand, experiment, windows = TRUE, experimentfile, ac
                        # for (i in 1:length(file_list)) {
                        # Load in the data
                        tz = "Europe/Amsterdam"
-                       if (brand == "Actigraph") {
+                       if (brand == "ActiGraph") {
                          rawdata <- as.data.frame(read.gt3x::read.gt3x(paste(file_path, file_list[i], sep = "/"), asDataFrame = TRUE))
                          options(digits.secs = 5)
                          options(scipen = 999)
@@ -127,7 +127,7 @@ loaddata <- function(path, brand, experiment, windows = TRUE, experimentfile, ac
                          attributes(rawdata) = attributes(rawdata_backup)
                          rm(rawdata_backup, rawdata2)
                          #======================================
-                       } else if (brand == "Activpal") {
+                       } else if (brand == "activPAL") {
                          rawdata <- read.activpal(paste(file_path, file_list[i], sep = "/"))
                          rawdata[,c("X","Y","Z")] = ((rawdata[,c("X","Y","Z")] / (2^8)) - 0.5) * 2 * 2
                          rawdata = rawdata[,c("time", "X", "Y", "Z")]
@@ -163,7 +163,7 @@ loaddata <- function(path, brand, experiment, windows = TRUE, experimentfile, ac
                        }# brand = Fitbit
                        
                        # rename the acceleration data column names for consistency
-                       if(brand %in% c("Actigraph", "Activpal")) {
+                       if(brand %in% c("ActiGraph", "activPAL")) {
                          names(rawdata) <- tolower(names(rawdata))
                        }
                        if(brand == "MOX") {

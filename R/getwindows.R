@@ -2,7 +2,7 @@
 #'
 #' @description 'getwindows' Called from within loaddata to extract specific time windows
 #'
-#' @param brand Sensor brand: "Actigraph", "Activpal", "Acttrust", "Axivity", "GENEActiv", or "MOX".
+#' @param brand Sensor brand: "ActiGraph", "activPAL", "Acttrust", "Axivity", "GENEActiv", or "MOX".
 #' @param experiment Experiment to load: "timer_check", "ms_hrcr", "ms_lrcr", "ms_mrcr", "ms_hrmr", "ms_lrmr", ms_bag or "box".
 #' @param path Path to the root of the experimental data (rawdatadir)
 #' @param data Data object
@@ -30,7 +30,7 @@ getwindows <- function(brand, experiment, path, data, experimentfile = c()) {
     end_time <- end
   }
   if (experiment == "timer_check") {
-    if (brand == "Actigraph" | brand == "Activpal") {
+    if (brand == "ActiGraph" | brand == "activPAL") {
       selection <- description[description$accelerometers_used == "activpal_actigraph",]
     }
     if (brand == "Axivity" | brand == "GENEActiv" | brand == "Acttrust" | brand == "Shimmer" | brand == "MOX"){
@@ -76,10 +76,10 @@ getwindows <- function(brand, experiment, path, data, experimentfile = c()) {
       selected_data$shaking_frequency = -1 # default is -1 frequency
       selected_data$condition = ""
       for(w in 1:length(start_time)) { # w is condition within the experiment (e.g. shaker frequency)
-        if(brand == "Actigraph") {
+        if(brand == "ActiGraph") {
           stime = as.POSIXct(start_time[w], tz = tz)
           etime = as.POSIXct(end_time[w], tz = tz)
-        } else if (brand == "Activpal") {
+        } else if (brand == "activPAL") {
           stime = as.POSIXlt(start_time[w], tz = tz)
           etime = as.POSIXlt(end_time[w], tz = tz)
         } else if (brand == "Acttrust") {

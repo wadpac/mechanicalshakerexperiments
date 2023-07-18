@@ -2,7 +2,7 @@
 #'
 #' @description 'getspecs' Called from within loaddata to extract recording specifications
 #'
-#' @param brand Sensor brand: "Actigraph", "Activpal", "Acttrust", "Axivity", "GENEActiv", or "MOX".
+#' @param brand Sensor brand: "ActiGraph", "activPAL", "Acttrust", "Axivity", "GENEActiv", or "MOX".
 #' @param data Data object
 #' @param experimentfile xlsx file with protocol description, defaults to file stored inside the code
 #' @param experiment Experiment to load: "timer_check", "ms_hrcr", "ms_lrcr", "ms_mrcr", ms_hrmr", "ms_lrmr", "ms_bag" or "box".
@@ -21,14 +21,14 @@ getspecs <- function(brand, data, experimentfile = c(), experiment) {
     experimentfile = system.file("datadescription/data_description.xlsx", package = "mechanicalshakerexperiments")[1]
   }
   for (data_file in 1:length(data)) {
-    if(brand == "Actigraph") {
+    if(brand == "ActiGraph") {
       head <- attributes(data[[data_file]])[setdiff(names(attributes(data[[data_file]])), c("dim", "dimnames", "time_index"))]
       sn <- head$header$`Serial Number`
       sf <- head$header$`Sample Rate`
       dr <- head$header$`Acceleration Max`
       lab <- paste(paste0("AG_", substr(sn,1, 3)), substr(sn,nchar(sn)-2, nchar(sn)), sep = "_")
     }
-    if(brand == "Activpal") {
+    if(brand == "activPAL") {
       number <- strsplit(strsplit(names(data)[data_file], " ")[[1]][1], "-")[[1]]
       for(s in 1:length(number)) {
         if (startsWith(number[[s]], "AP")) {sn <- number[[s]]}

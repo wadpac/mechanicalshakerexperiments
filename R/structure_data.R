@@ -2,7 +2,7 @@
 #'
 #' @description 'structure_data' is the first step in the processing pipeline and loads the raw unstructured data and structures it to ease post-procressing
 #'
-#' @param brands Character vector with sensor brands to consider, which may include: "Actigraph", "Activpal", "Acttrust", "Axivity", "GENEActiv", and "MOX".
+#' @param brands Character vector with sensor brands to consider, which may include: "ActiGraph", "activPAL", "Acttrust", "Axivity", "GENEActiv", and "MOX".
 #' @param experiments Character vector of experiments to load, which may include: "timer_check", "ms_hrcr", "ms_lrcr", "ms_hrmr", "ms_lrmr", "ms_bag", and "box".
 #' @param rawdatadir Path to the root of the experimental data (rawdatadir)
 #' @param outputdir Output directory
