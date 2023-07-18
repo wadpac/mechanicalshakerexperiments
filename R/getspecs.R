@@ -4,9 +4,9 @@
 #'
 #' @param brand Sensor brand: "ActiGraph", "activPAL", "Acttrust", "Axivity", "GENEActiv", or "MOX".
 #' @param data Data object
-#' @param experimentfile xlsx file with protocol description, defaults to file stored inside the code
+#' @param experimentfile .xlsx file with protocol description, defaults to file stored inside the code
 #' @param experiment Experiment to load: "timer_check", "ms_hrcr", "ms_lrcr", "ms_mrcr", ms_hrmr", "ms_lrmr", "ms_bag" or "box".
-#' @return specifications, a data.frame with serial_number, sampling_frequency, and dynamic_range
+#' @return specifications, a data.frame with serial_number, sampling_rate, and dynamic_range
 #' @importFrom gdata read.xls
 #' @export
 
