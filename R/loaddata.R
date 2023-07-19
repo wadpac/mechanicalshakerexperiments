@@ -11,8 +11,8 @@
 #' @return A list of: \item{data}{List of data.frames with the accelerometer time series where each list item represents 1 recording} \item{specifications}{Specifications for each recording}
 #' @importFrom utils read.csv
 #' @importFrom lubridate ymd
-#' @importFrom GGIRread resample
 #' @importFrom GGIRread readAxivity
+#' @importFrom GGIRread resample
 #' @importFrom GENEAread read.bin
 #' @importFrom read.gt3x read.gt3x
 #' @import foreach
@@ -105,14 +105,14 @@ loaddata <- function(path, brand, experiment, windows = TRUE, experimentfile, ac
                          rawdata_backup = rawdata
                          #======================================
                          # resampling
-                         # extract sample rate to aid resampling:
+                         # extract sampling rate to aid resampling:
                          head <- attributes(rawdata)[setdiff(names(attributes(rawdata)), c("dim", "dimnames", "time_index"))]
-                         sampling_frequency <- head$header$`Sample Rate`
+                         sampling_rate <- head$header$`Sample Rate`
                          rm(head)
                          # prepare data for resampling
                          raw = as.matrix(rawdata[, c("X", "Y", "Z")])
                          rawTime = as.numeric(rawdata$time)
-                         time = seq(ceiling(min(rawTime)), floor(max(rawTime)), by = 1/sampling_frequency)
+                         time = seq(ceiling(min(rawTime)), floor(max(rawTime)), by = 1/sampling_rate)
                          # resample
                          rawdata2 = as.data.frame(GGIRread::resample(raw = raw, rawTime = rawTime, time = time, nrow(raw), 2))
                          # put data back into expected format

@@ -110,10 +110,7 @@ pairwisePlots <- function(correlationMatrix, data, threshold) {
 #' @param specifications A data.frame object that represents specifications of the signal, including serial_number, brand, and dynamic range
 #' @param between A string one of c("brands", dynamic_ranges")
 
-#' @return A data.frame with the following variables: \item{correlation}{Representing the cross-correlations between the two signals}, \item{lag}{Representing the lag corresonding to the maximum correlation between the two signals} 
-#' \item{between1}{Representing the brand/dynamic range of the first signal}, \item{between2}{Representing the brand/dynamic range of the second signal}, 
-#' \item{device1}{Representing the serial number of the device that recorded the first signal}, \item{device2}{Representing the serial number of the device that recorded the second signal},
-#' \item{same_brand}{An indicator of correlations that can be selected for the within (1) or between(0) brand/dynamic range comparison}
+#' @return A data.frame with the following variables: \item{correlation}{Representing the cross-correlations between the two signals} \item{lag}{Representing the lag corresonding to the maximum correlation between the two signals} \item{between1}{Representing the brand/dynamic range of the first signal} \item{between2}{Representing the brand/dynamic range of the second signal} \item{device1}{Representing the serial number of the device that recorded the first signal} \item{device2}{Representing the serial number of the device that recorded the second signal} \item{same_brand}{An indicator of correlations that can be selected for the within (1) or between(0) brand/dynamic range comparison}
 #' 
 #' @export
 #' 

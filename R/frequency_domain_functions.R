@@ -4,7 +4,7 @@
 #' @description 'deriveSpectrum' derives the frequency spectrum of a signal
 #'
 #' @param x Vector that contains the values of the signal (i.e., acceleration measured in the shaking direction)
-#' @param sampling_frequency Integer that indicates the sampling frequency of the signal (i.e., the average number of samples obtained in one second in Hz)
+#' @param sampling_rate Integer that indicates the sampling rate of the signal (i.e., the average number of samples obtained in one second in Hz)
 #' @param file_name String to indicate the name of the plot (i.e., "spectrum" result in the following name for plot 1 "spectrum_1.jpeg").
 #' @param plot Boolean, default is TRUE the derived spectrum will be plotted
 #' @param XLIM Vector that limits the frequency content of the plot, default is c(0, 5) to limit the frequency content to 5 Hz (as 250 rpm / 60 = 4.1667 Hz is the expected max)
@@ -17,13 +17,13 @@
 #' \item{snames}{For multivariate input, the names of the component series.}
 #' \item{method}{The method used to calculate the spectrum.} 
 #' @export
-deriveSpectrum <- function(x, sampling_frequency, file_name, plot = TRUE, XLIM = c(0, 5)) {
+deriveSpectrum <- function(x, sampling_rate, file_name, plot = TRUE, XLIM = c(0, 5)) {
   
   specd <- spectrum(x, log = "no", plot = FALSE) # Default calculate spectrum on log-scale, but we use raw data
   
   # Frequency axis of the spectrum, specd, is calculated in terms of cycles per sampling interval
   # We need to convert this to cyles per unit time (the same can be done using the MakePowerSpectralDensity function from the package psdr)
-  delta <- 1/sampling_frequency # Sampling interval
+  delta <- 1/sampling_rate # Sampling interval
   specd$specx <- specd$freq/delta # Converts to cycles per unit time (divide by sampling interval)
   specd$specy <- 2*specd$spec # Multiply the spectral density by 2 so that the area under the periodogram actually equals the variance of the time series.
   
@@ -65,15 +65,15 @@ deriveMeanSpectrum <- function(spectra) {
 #' @description 'derivePeaks' derives peaks from the mean frequency spectrum
 #'
 #' @param mean.spec A list containing estimates of the spectral density (y) at corresponding frequencies (x)
-#' @param sampling_frequency An integer indicating whether peaks are derived for the low or high sampling frequency experiment, one of c(25, 100) 
+#' @param sampling_rate An integer indicating whether peaks are derived for the low or high sampling rate experiment, one of c(25, 100) 
 #' @param XLIM Vector that limits the frequency content, default is c(0, 5) to limit the frequency content to 5 Hz (as 250 rpm / 60 = 4.1667 Hz is the expected max)
 #' @param plot Boolean, default is TRUE the derived peaks will be plotted over the mean frequency spectrum
 #' @return A vector indicating the frequencies at which the peaks occur 
 #' @export
-derivePeaks <- function(mean.spec, sampling_frequency, XLIM = c(0, 5), plot = TRUE) {
+derivePeaks <- function(mean.spec, sampling_rate, XLIM = c(0, 5), plot = TRUE) {
   peaks <- pracma::findpeaks(mean.spec$y[mean.spec$x <= XLIM[2]], 
                              minpeakheight = mean(mean.spec$y) + sd(mean.spec$y) , 
-                             minpeakdistance = 4*sampling_frequency)
+                             minpeakdistance = 4*sampling_rate)
   local.max <- mean.spec$x[sort(peaks[,2])]
   local.max <- local.max[local.max <= XLIM[2]]
   
@@ -147,7 +147,7 @@ deriveComparisonValues <- function(spectrum, freqBins){
 #' @param orientation_analyses Boolean to indicate if the analysis was for the ms_bag experiment, default = FALSE
 #' @return Boxplot between or within devices for the outcome (y-axis) per frequency bin (x-axis)
 #' @export
-createBoxplot <- function(data, freqBins, outcome = c("domFreq", "meanPSD"), group = c("brand", "dynamic_range"), sampling_frequency = c("low", "high", ""), orientation_analyses = FALSE){
+createBoxplot <- function(data, freqBins, outcome = c("domFreq", "meanPSD"), group = c("brand", "dynamic_range"), sampling_rate = c("low", "high", ""), orientation_analyses = FALSE){
   if (outcome == "domFreq"){
     label = "Dominant frequency (Hertz)"
   } else {
@@ -170,11 +170,11 @@ createBoxplot <- function(data, freqBins, outcome = c("domFreq", "meanPSD"), gro
   if(group == "dynamic_range" | orientation_analyses == TRUE){
     palette = c("red", "orange", "green", "blue")
   } else if(group == "brand"){
-    if(sampling_frequency == "low"){
+    if(sampling_rate == "low"){
       palette = c("orange", "green", "blue")
-    } else if(sampling_frequency == "high"){
+    } else if(sampling_rate == "high"){
       palette = c("red", "orange", "green")
-    } else if(sampling_frequency == "E6"){
+    } else if(sampling_rate == "E6"){
       palette = c("red", "orange", "green", "blue")
     }
   }
