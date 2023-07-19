@@ -21,12 +21,11 @@ structured_data_dir = paste0(shaker_experiments_folder, "/structured_raw_data")
 outputdir = paste0(shaker_experiments_folder, "/analyses")
 if (!dir.exists(outputdir)) dir.create(outputdir)
 
-# Specify the analyses
+# Specify the analysis and the brands to include
 analysis <- "E5" # one of: c("visual_inspection", "noise", "E1", "E2", "E3", "E4", "E5", "bag")
+brands_to_load = c("ActiGraph", "activPAL", "Axivity", "GENEActiv", "MOX")
 
 #===============================
-
-brands_to_load = c("ActiGraph", "activPAL", "Axivity", "GENEActiv", "MOX")
 
 if(analysis == "visual_inspection"){
  experiments_to_load = c("ms_hrcr", "ms_lrcr", "ms_hrmr", "ms_lrmr", "ms_bag") # for all five experiments
