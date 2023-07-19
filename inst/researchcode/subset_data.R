@@ -1,13 +1,12 @@
 ## Script to load the structured acceleration data and to subset these data for the analyses of:
 # 1) visual_inspection: load all data for plotting
 # 2) noise: select the no-movement segments (shaking_frequency == 0), but omit data for the ActiGraph devices in which idle sleep mode was enabled
-# 3) E1: analyse differences between brands with low sampling rate (lrcr)
-# 4) E2: analyse differences between brands with high sampling rate (hrcr)
-# 5) E3: analyse differences between dynamic ranges with low sampling rate (lrmr)
-# 6) E4: analyse differences between dynamic ranges with high sampling rate (hrmr)
+# 4) E1: analyse differences between brands with high sampling rate (hrcr)
+# 3) E2: analyse differences between brands with low sampling rate (lrcr)
+# 5) E3: analyse differences between dynamic ranges with low sampling rate (hrmr)
+# 6) E4: analyse differences between dynamic ranges with high sampling rate (lrmr)
 # 7) E5: analyse influence of sampling rate (mrcr)
 # 8) bag: bag experiment, influence of orientation
-
 
 rm(list=ls())
 graphics.off()
@@ -32,13 +31,13 @@ if(analysis == "visual_inspection"){
 } else if(analysis == "noise") {
   experiments_to_load = c("ms_hrcr", "ms_lrcr", "ms_hrmr", "ms_lrmr") # not for ms_bag because axes were oriented randomly
 } else if(analysis == "E1") {
-  experiments_to_load = c("ms_lrcr") 
-} else if(analysis == "E2") {
   experiments_to_load = c("ms_hrcr") 
+} else if(analysis == "E2") {
+  experiments_to_load = c("ms_lrcr") 
 } else if(analysis == "E3") {
-  experiments_to_load = c("ms_lrmr") 
-} else if(analysis == "E4") {
   experiments_to_load = c("ms_hrmr") 
+} else if(analysis == "E4") {
+  experiments_to_load = c("ms_lrmr") 
 } else if(analysis == "E5") {
   experiments_to_load = c("ms_mrcr") 
 } else if(analysis == "bag") {
@@ -122,20 +121,19 @@ if (analysis == "visual_inspection") {
   filename <- "/complete_data.RData"
 } else if (analysis == "noise"){
   filename <- "/no_movement.RData"
-} else if (analysis == "E3"){
-  filename <- "/E3_lrmr.RData"
-} else if (analysis == "E4"){
-  filename <- "/E4_hrmr.RData"
 } else if (analysis == "E1"){
-  filename <- "/E1_lrcr.RData"
+  filename <- "/E1_hrcr.RData"
 } else if (analysis == "E2"){
-  filename <- "/E2_hrcr.RData"
+  filename <- "/E2_lrcr.RData"
+} else if (analysis == "E3"){
+  filename <- "/E3_hrmr.RData"
+} else if (analysis == "E4"){
+  filename <- "/E4_lrmr.RData"
 } else if (analysis == "E5"){
   filename <- "/E5_mrcr.RData"
 } else if (analysis == "bag"){
-  filename <- "/E6_bag.RData"
+  filename <- "/ms_bag.RData"
 }
-
 
 save(data, file = paste0(outputdir, filename))
 
