@@ -21,7 +21,7 @@ outputdir = paste0(shaker_experiments_folder, "/analyses")
 if (!dir.exists(outputdir)) dir.create(outputdir)
 
 # Specify the analysis and the brands to include
-analysis <- "E1" #one of: c("visual_inspection", "noise", "E1", "E2", "E3", "E4", "E5", "bag")
+analysis <- "E5" #one of: c("visual_inspection", "noise", "E1", "E2", "E3", "E4", "E5", "bag")
 brands_to_load = c("ActiGraph", "activPAL", "Axivity", "GENEActiv", "MOX")
 
 #===============================
@@ -76,7 +76,7 @@ for (brand in 1:length(brands_to_load)){
             tmp <- tmp
           } else if (analysis == "noise"){
             tmp <- tmp[tmp$shaking_frequency == 0, ] #select no movement segments
-          } else if (analysis == "E1" | analysis == "E2" | analysis == "E3"| analysis == "E4" | analysis == "E5") {
+          } else if (analysis == "E1" | analysis == "E2" | analysis == "E3"| analysis == "E4" | analysis == "E5" | analysis == "bag") {
             if(experiments_to_load[experiment] == "ms_hrcr"){ # Remove the data due to repetition of the experiment
               # These are the start and end times from the description file where accelerometers_used = all_except_one_GENEActiv
               start1 <- as.POSIXlt("2020-11-24 9:42:00", tz = "Europe/Amsterdam")

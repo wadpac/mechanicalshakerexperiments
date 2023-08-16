@@ -5,7 +5,7 @@ graphics.off()
 #shaker_experiments_folder = "/media/vincent/DATA/VUMC/shaker_experiments"
 shaker_experiments_folder = "/Users/annelindelettink/Documents/Work MacBook Pro Annelinde/Mechanical Shaker Machine"
 #========================================================================================
-# Most of these libraries are needed for running SummarizedActigraph and/or MIMSunit
+# Most of these libraries are needed for running SummarizedActiGraph and/or MIMSunit
 options(digits.secs = 7)
 options(scipen = 999)
 
@@ -16,10 +16,10 @@ extracted_data_path = paste0(shaker_experiments_folder, "/structured_raw_data")
 #======================================================================================
 # Load relevant files, apply calibration correction coefficients, and apply metrics
 fns = dir(extracted_data_path, full.names = TRUE)
-outdir = paste0(shaker_experiments_folder, "/sampling_rate_analyses")
+outdir = paste0(shaker_experiments_folder, "/analyses/sampling_rate_analyses")
 if (!dir.exists(outdir)) dir.create(outdir)
 outputfile = paste0(shaker_experiments_folder, "/sampling_rate_analyses/explore_samplerate.RData")
-sessionnames = c("ms_mfcr") #"ms_hfcr", "ms_lfcr", "ms_hfmr", "ms_lfmr",
+sessionnames = c("ms_mrcr") #"ms_hrcr", "ms_lrcr", "ms_hrmr", "ms_lrmr",
 overwrite = FALSE
 epochsize = 5
 averageperws3 = function(x,sf,epochsize) {
@@ -37,14 +37,14 @@ if (!file.exists(outputfile) | overwrite == TRUE) {
     for (fn in fns[ses1]) {
       print(fn)
       load(fn) # TO DO: This loads object extracteddata => maybe rename this "structured_data"???
-      if (length(grep(fn, pattern = "Actigraph")) > 0) {
-        brand = "Actigraph"
+      if (length(grep(fn, pattern = "ActiGraph")) > 0) {
+        brand = "ActiGraph"
       } else if (length(grep(fn, pattern = "Axivity")) > 0) {
         brand = "Axivity"
       } else if (length(grep(fn, pattern = "GENEActiv")) > 0) {
         brand = "GENEActiv"
-      } else if (length(grep(fn, pattern = "Activpal")) > 0) {
-        brand = "Activpal"
+      } else if (length(grep(fn, pattern = "activPAL")) > 0) {
+        brand = "activPAL"
       } else if (length(grep(fn, pattern = "MOX")) > 0) {
         brand = "MOX"
       }
@@ -52,9 +52,9 @@ if (!file.exists(outputfile) | overwrite == TRUE) {
         tmp = extracteddata$data[[i]] # tmp is the raw data now
         if (length(tmp) > 0) {
           DR = as.numeric(extracteddata$specifications[i, "dynamic_range"])
-          sf = as.numeric(extracteddata$specifications[i, "sampling_frequency"])
+          sf = as.numeric(extracteddata$specifications[i, "sampling_rate"])
           sn = as.character(extracteddata$specifications[i, "serial_number"])
-          if (brand == "Actigraph" | brand == "Activpal") {
+          if (brand == "ActiGraph" | brand == "activPAL") {
             tmp$time = as.POSIXct(tmp$time, origin = "1970-01-01", tz = "Europe/Amsterdam")
             tmp = tmp[, c("time","x","y","z","shaking_frequency")] #,"shaking_frequency"
           } else if (brand == "Axivity" | brand == "GENEActiv" ) {
@@ -65,7 +65,7 @@ if (!file.exists(outputfile) | overwrite == TRUE) {
           colnames(tmp) = tolower(colnames(tmp))
           row.names(tmp) = 1:nrow(tmp)
           colnames(tmp)[1] = "HEADER_TIME_STAMP"
-          if (brand == "Actigraph") { # following lines should only be needed for Actigraph
+          if (brand == "ActiGraph") { # following lines should only be needed for ActiGraph
             duplicated_timestamps = duplicated(tmp$HEADER_TIME_STAMP)
             if (any(duplicated_timestamps)) {
               # if there are duplicated timestamps then
@@ -74,7 +74,7 @@ if (!file.exists(outputfile) | overwrite == TRUE) {
             }
           }
           #-----------------------------------------
-          # fill time gaps, which is needed for Actigraph, which can go into sleep.mode
+          # fill time gaps, which is needed for ActiGraph, which can go into sleep.mode
           time_gaps = 1
           while (length(time_gaps) > 0) {
             dt = diff(as.numeric(tmp$HEADER_TIME_STAMP))
@@ -169,11 +169,11 @@ if (!file.exists(outputfile) | overwrite == TRUE) {
 DATA = do.call("rbind", combineddata)
 DATA = DATA[-which(DATA$sn %in% c(21950, 37727) == TRUE & DATA$sf == 800),] # remove extreme configuration that caused artifacts
 #====================================================================
-# Stratify Actigraph by version:
+# Stratify ActiGraph by version:
 MOS = grep(pattern = "MOS", x = DATA$sn)
 CLE = grep(pattern = "CLE", x = DATA$sn)
-DATA$brand[MOS] = "ActigraphMOS"
-DATA$brand[CLE] = "ActigraphCLE"
+DATA$brand[MOS] = "ActiGraphMOS"
+DATA$brand[CLE] = "ActiGraphCLE"
 
 #========================================================================================
 # Aggregate epochs to one value per shaker frequency x serial number combination.
@@ -205,11 +205,11 @@ D = D[-which(D$sf > 100), ]
 # Assess whether metrics differ across brands with repeated measures ANOVA
 brands_of_interest = c("GENEActiv",
                        "Axivity",
-                       "ActigraphCLE",
-                       "ActigraphMOS",
-                       "Activpal", 
+                       "ActiGraphCLE",
+                       "ActiGraphMOS",
+                       "activPAL", 
                        "MOX")
-selection = which(D$ses_name == "ms_mfcr" &
+selection = which(D$ses_name == "ms_mrcr" &
                     D$brand %in% brands_of_interest)
 
 #=============================================================================
@@ -220,10 +220,10 @@ D = aggregate(D, list(D$ses_name, D$shakefreq, D$brand, D$sn, D$sf), FUN = mean)
 colnames(D)[1:5] = c("ses_name", "shakefreq", "brand", "sn", "sf")
 D = D[,c("brand","ses_name", "sn", "time", "sf", "stdev", "shakefreq")]
 D$time = as.POSIXlt(D$time, tz = "Europe/Amsterdam", origin = "1970-01-01")
-# D = D[-which(D$brand == "Activpal"),]
+# D = D[-which(D$brand == "activPAL"),]
 
 D = D[which(D$ses_name == sessionnames),]
-D$brand[which(D$brand %in% c("ActigraphCLE", "ActigraphMOS") == TRUE)] = "ActiGraph"
+D$brand[which(D$brand %in% c("ActiGraphCLE", "ActiGraphMOS") == TRUE)] = "ActiGraph"
 D2 = aggregate(D[, c("stdev")],
                by = list(D$sf, D$shakefreq, D$brand), FUN = mean)
 colnames(D2) = c("sf", "shakefreq", "brand", "stdev")
@@ -233,9 +233,9 @@ CXL = 1
 CXM = 1.1
 CX = 1
 brands2lookat = c("Axivity", "ActiGraph", "GENEActiv", "MOX")#unique(D$brand)
-pdf(file = paste0(outdir, "/Figure6_SamplingRate.pdf"),
+pdf(file = paste0(outdir, "/Figure7_SamplingRate.pdf"),
     width = 9, height = 6)
-jpeg(file = paste0(outdir, "/Figure6_SamplingRate.jpeg"),
+jpeg(file = paste0(outdir, "/Figure7_SamplingRate.jpeg"),
     width = 500, height = 350)
 colors = rep("black", 20) #gray.colors(n = 20, start = 0, end = 0.2)
 
@@ -253,7 +253,7 @@ for (brandi in brands2lookat) {
              cex.axis = CXA, cex.lab = CXL, cex.main = CXM,
              main = brandi, ylab =
                substitute(paste("Acceleration (", italic("g"),")")), #< maak italic
-             xlab = "Sampling rate (Hertz)", xlim = XLIM, ylim = YLIM, bty = "l", col = colors[ci])
+             xlab = "Sampling rate (Hz)", xlim = XLIM, ylim = YLIM, bty = "l", col = colors[ci])
       } else {
         lines(D2$sf[GA], D2$stdev[GA], type = "b", pch = 20, cex = CX,
               cex.axis = CXA, cex.lab = CXL, cex.main = CXM, col = colors[ci])

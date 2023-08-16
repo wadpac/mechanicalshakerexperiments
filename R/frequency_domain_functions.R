@@ -176,7 +176,7 @@ createBoxplot <- function(data, freqBins, outcome = c("domFreq", "meanPSD"), gro
       palette = c("#31688EFF", "#35B779FF", "#FDE725FF")
     } else if(sampling_rate == "high"){
       palette = c("#440154FF", "#31688EFF", "#35B779FF")
-    } else if(sampling_rate == "E6"){
+    } else if(sampling_rate == "bag"){
       palette = c("#440154FF", "#31688EFF", "#35B779FF", "#FDE725FF")
     }
   }
