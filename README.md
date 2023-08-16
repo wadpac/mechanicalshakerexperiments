@@ -20,7 +20,7 @@ This resulted in structured data objects (.RData) for the different brands and e
 
 We applied the previously described auto-calibration method (1) to the no-movement periods during the box experiment to derive calibration correction coefficients (derive_calibration_coefficients.R).
 
-The structured data per experiment can be loaded using the script subset_data.R. Here we excluded data recorded outside the experiment and double observations during the experiment. Note that we removed data of devices for which IDLE sleep mode was enabled during ms_hrcr. This resulted in structured data for the different experiments. Each .Rdata file contains the selected data from all devices during that experiment:
+The structured data per experiment can be loaded using the script subset_data.R (subsetted_raw_data.zip). Here we excluded data recorded outside the experiment and double observations during the experiment. Note that we removed data of devices for which IDLE sleep mode was enabled during ms_hrcr. This resulted in structured data for the different experiments. Each .Rdata file contains the selected data from all devices during that experiment:
 
 ●        $data is a list of data.frames, one for each accelerometer device, including columns: labels to indicate the shaker frequency condition (shaking_frequency), the time stamps (time), the data from the axis with the highest standard deviation corresponding with the direction of shaking  (SD)
 
@@ -30,6 +30,7 @@ The structured data per experiment can be loaded using the script subset_data.R.
 
 Analyses will be described in a scientific paper and range from frequency spectrum analysis to temporal correlation analysis. The scripts used for the data analyses performed include ‘analyses’ in their name.
 
-References
+
+### References
 
 1. van Hees VT, Fang Z, Langford J, Assah F, Mohammad A, da Silva ICM, et al. Autocalibration of accelerometer data for free-living physical activity assessment using local gravity and temperature: an evaluation on four continents. Journal of Applied Physiology. 2014;117(7):738-44. doi: 10.1152/japplphysiol.00421.2014.
