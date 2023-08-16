@@ -1,10 +1,10 @@
 ## Script to load the structured acceleration data and to subset these data for the analyses of:
 # 1) visual_inspection: load all data for plotting
 # 2) noise: select the no-movement segments (shaking_frequency == 0), but omit data for the ActiGraph devices in which idle sleep mode was enabled
-# 4) E1: analyse differences between brands with high sampling rate (hrcr)
-# 3) E2: analyse differences between brands with low sampling rate (lrcr)
-# 5) E3: analyse differences between dynamic ranges with low sampling rate (hrmr)
-# 6) E4: analyse differences between dynamic ranges with high sampling rate (lrmr)
+# 4) E1: analyse differences between brands with low sampling rate (lrcr)
+# 3) E2: analyse differences between brands with high sampling rate (hrcr)
+# 5) E3: analyse differences between dynamic ranges with low sampling rate (lrmr)
+# 6) E4: analyse differences between dynamic ranges with high sampling rate (hrmr)
 # 7) E5: analyse influence of sampling rate (mrcr)
 # 8) bag: bag experiment, influence of orientation
 
@@ -21,23 +21,23 @@ outputdir = paste0(shaker_experiments_folder, "/analyses")
 if (!dir.exists(outputdir)) dir.create(outputdir)
 
 # Specify the analysis and the brands to include
-analysis <- "E5" # one of: c("visual_inspection", "noise", "E1", "E2", "E3", "E4", "E5", "bag")
+analysis <- "E1" #one of: c("visual_inspection", "noise", "E1", "E2", "E3", "E4", "E5", "bag")
 brands_to_load = c("ActiGraph", "activPAL", "Axivity", "GENEActiv", "MOX")
 
 #===============================
 
 if(analysis == "visual_inspection"){
- experiments_to_load = c("ms_hrcr", "ms_lrcr", "ms_hrmr", "ms_lrmr", "ms_bag") # for all five experiments
+ experiments_to_load = c("ms_hrcr", "ms_lrcr", "ms_hrmr", "ms_lrmr", "ms_mrcr", "ms_bag") # for all five experiments
 } else if(analysis == "noise") {
   experiments_to_load = c("ms_hrcr", "ms_lrcr", "ms_hrmr", "ms_lrmr") # not for ms_bag because axes were oriented randomly
 } else if(analysis == "E1") {
-  experiments_to_load = c("ms_hrcr") 
-} else if(analysis == "E2") {
   experiments_to_load = c("ms_lrcr") 
+} else if(analysis == "E2") {
+  experiments_to_load = c("ms_hrcr") 
 } else if(analysis == "E3") {
-  experiments_to_load = c("ms_hrmr") 
-} else if(analysis == "E4") {
   experiments_to_load = c("ms_lrmr") 
+} else if(analysis == "E4") {
+  experiments_to_load = c("ms_hrmr") 
 } else if(analysis == "E5") {
   experiments_to_load = c("ms_mrcr") 
 } else if(analysis == "bag") {
@@ -108,7 +108,6 @@ for (brand in 1:length(brands_to_load)){
         }
       }
     }
-  }
 }
 
 colnames(specifications) <- c("label", "serial_number", "brand", "experiment", "sampling_rate", "dynamic_range")
@@ -117,23 +116,25 @@ data$specifications <- specifications
 as.factor(data$specifications$brand)
 as.factor(data$specifications$experiment)
 
+
+
 if (analysis == "visual_inspection") {
   filename <- "/complete_data.RData"
 } else if (analysis == "noise"){
   filename <- "/no_movement.RData"
 } else if (analysis == "E1"){
-  filename <- "/E1_hrcr.RData"
+  filename <- "/E1_lrcr.RData"
 } else if (analysis == "E2"){
-  filename <- "/E2_lrcr.RData"
+  filename <- "/E2_hrcr.RData"
 } else if (analysis == "E3"){
-  filename <- "/E3_hrmr.RData"
+  filename <- "/E3_lrmr.RData"
 } else if (analysis == "E4"){
-  filename <- "/E4_lrmr.RData"
+  filename <- "/E4_hrmr.RData"
 } else if (analysis == "E5"){
   filename <- "/E5_mrcr.RData"
 } else if (analysis == "bag"){
   filename <- "/ms_bag.RData"
 }
 
-save(data, file = paste0(outputdir, filename))
+save(data, file = paste0(shaker_experiments_folder, "/subsetted_raw_data", filename))
 
