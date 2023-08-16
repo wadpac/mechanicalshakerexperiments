@@ -4,12 +4,12 @@
 \alias{autocalibration}
 \title{autocalibration}
 \usage{
-autocalibration(data, sf, printsummary = TRUE, brand)
+autocalibration(data, sr, printsummary = TRUE, brand)
 }
 \arguments{
 \item{data}{data.frame with accelerometer time series}
 
-\item{sf}{Sample frequency in Hertz}
+\item{sr}{Sampling rate in Hertz}
 
 \item{printsummary}{Boolean to indicate whether calibration summary should be printed}
 
