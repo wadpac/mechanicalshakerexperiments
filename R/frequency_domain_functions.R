@@ -70,7 +70,7 @@ deriveMeanSpectrum <- function(spectra) {
 #' @param XLIM Vector that limits the frequency content, default is c(0, 5) to limit the frequency content to 5 Hz (as 250 rpm / 60 = 4.1667 Hz is the expected max)
 #' @param plot Boolean, default is TRUE the derived peaks will be plotted over the mean frequency spectrum
 #' @return A vector indicating the frequencies at which the peaks occur 
-#' @importClassesFrom pracma findpeaks
+#' @importFrom pracma findpeaks
 #' @export
 derivePeaks <- function(mean.spec, sampling_rate, XLIM = c(0, 5), plot = TRUE) {
   peaks <- pracma::findpeaks(mean.spec$y[mean.spec$x <= XLIM[2]], 
