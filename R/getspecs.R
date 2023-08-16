@@ -58,13 +58,15 @@ getspecs <- function(brand, data, experimentfile = c(), experiment) {
       lab <- paste0("GA_", substr(sn, nchar(sn)-2, nchar(sn)))
     }
     if(brand == "MOX") {#No information available in the data itself, but in the configuration sheet of data description file
-      configurations <- gdata::read.xls(experimentfile, header = TRUE, sheet = 2)
+      configurations <- readxl::read_excel(experimentfile, sheet = 2)
       if(experiment == "box") {
         sn <- configurations$serial_number[which(configurations$experiment == "ms_mrcr" & configurations$number == data_file)]
         sr <- configurations$sample_rate[which(configurations$experiment == "ms_mrcr" & configurations$number == data_file)]
       } else {
-        sn <- configurations$serial_number[which(configurations$experiment == experiment & configurations$number == data_file)]
-        sr <- configurations$sample_rate[which(configurations$experiment == experiment & configurations$number == data_file)]
+        #work around old experiment names; adjust in Excel file?
+        if(experiment == "ms_lrcr") {experiment_old = "ms_lfcr"} else if(experiment == "ms_hrcr"){experiment_old = "ms_hfcr"} else if (experiment == "ms_mrcr"){experiment_old = "ms_mfcr"}
+        sn <- configurations$serial_number[which(configurations$experiment == experiment_old & configurations$number == data_file)]
+        sr <- configurations$sample_rate[which(configurations$experiment == experiment_old & configurations$number == data_file)]
       }
       dr <- 8 #as specified on the manufacturers website
       lab <- paste0("MOX_", substr(sn, (nchar(sn)-2), nchar(sn)))
