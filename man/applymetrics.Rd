@@ -4,14 +4,14 @@
 \alias{applymetrics}
 \title{applymetrics}
 \usage{
-applymetrics(data, n = 4, sf, lb = 0.2, hb = 15, epochsize = 5)
+applymetrics(data, n = 4, sr, lb = 0.2, hb = 15, epochsize = 5)
 }
 \arguments{
 \item{data}{Three column acceleration time series}
 
 \item{n}{Order of frequency filter to be applied}
 
-\item{sf}{Sample frequency (Hertz)}
+\item{sr}{Sampling rate (Hertz)}
 
 \item{lb}{Lower boundary (Hertz) of frequency filter}
 

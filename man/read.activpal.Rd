@@ -7,7 +7,7 @@
 read.activpal(file.name.and.path)
 }
 \arguments{
-\item{file.name.and.path}{Full file path to Activpal file (.csv format)}
+\item{file.name.and.path}{Full file path to activPAL file (.csv format)}
 }
 \value{
 Data.frame with acceleration timeseries and timestamps

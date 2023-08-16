@@ -3,10 +3,10 @@
 #' @description 'loaddata' Loads data
 #'
 #' @param path Path to the root of the experimental data (rawdatadir)
-#' @param brand Sensor brand: "Actigraph", "Activpal", "Acttrust", "Axivity", "GENEActiv", or "MOX".
-#' @param experiment Experiment to load: "timer_check", "ms_hfcr", "ms_lfcr", "ms_hfmr", "ms_lfmr", "ms_bag", or "box".
+#' @param brand Sensor brand: "ActiGraph", "activPAL", "Acttrust", "Axivity", "GENEActiv", or "MOX".
+#' @param experiment Experiment to load: "timer_check", "ms_hrcr", "ms_lrcr", "ms_mrcr", "ms_hrmr", "ms_lrmr", "ms_bag", or "box".
 #' @param windows Boolean, if TRUE then windows from the data_description file will be selected, FALSE: complete data file will be loaded;
-#' @param experimentfile xlsx file with protocol description
+#' @param experimentfile .xlsx file with protocol description
 #' @param actigraph_preprocessing Boolean,if  TRUE then sleepmode segments that jump by >1 sec are filled up using the function fill_sleep
 #' @return A list of: \item{data}{List of data.frames with the accelerometer time series where each list item represents 1 recording} \item{specifications}{Specifications for each recording}
 #' @importFrom utils read.csv
@@ -28,11 +28,11 @@ loaddata <- function(path, brand, experiment, windows = TRUE, experimentfile, ac
     brand <- "MOX_exportedCSV/exportedCSV/MOX" 
   }
   if (brand %in% c("Acttrust", "Fitbit") == FALSE) {
-    if (experiment == "box" & brand != "Activpal"){
-      folder <- paste0(brand, paste0("_", "ms_mfcr"))
-    } else if (brand == "Activpal" & (endsWith(experiment, "cr") | experiment == "box")){
+    if (experiment == "box" & brand != "activPAL"){
+      folder <- paste0(brand, paste0("_", "ms_mrcr"))
+    } else if (brand == "activPAL" & (endsWith(experiment, "cr") | experiment == "box")){
       folder <- paste0(brand, paste0("_", "ms_cr")) 
-    } else if((brand == "Actigraph" | brand == "Activpal" | brand == "GENEActiv" | brand == "Shimmer") 
+    } else if((brand == "ActiGraph" | brand == "activPAL" | brand == "GENEActiv" | brand == "Shimmer") 
               && (endsWith(experiment, "door") | endsWith(experiment, "bag"))){
       folder <- paste0(brand, paste0("_", "ms_bag"))
     } else {
@@ -48,9 +48,9 @@ loaddata <- function(path, brand, experiment, windows = TRUE, experimentfile, ac
   }
   #------------------------------------------------------------
   # Get brand specific file extensions
-  if (brand == "Actigraph") {
+  if (brand == "ActiGraph") {
     pattern = "*.gt3x"
-  } else if (brand == "Activpal" | brand == "MOX") {
+  } else if (brand == "activPAL" | brand == "MOX") {
     pattern = "*.csv"
   } else if (brand == "Acttrust") {
     pattern = "*.txt"
@@ -95,7 +95,7 @@ loaddata <- function(path, brand, experiment, windows = TRUE, experimentfile, ac
                        # for (i in 1:length(file_list)) {
                        # Load in the data
                        tz = "Europe/Amsterdam"
-                       if (brand == "Actigraph") {
+                       if (brand == "ActiGraph") {
                          rawdata <- as.data.frame(read.gt3x::read.gt3x(paste(file_path, file_list[i], sep = "/"), asDataFrame = TRUE))
                          options(digits.secs = 5)
                          options(scipen = 999)
@@ -105,14 +105,14 @@ loaddata <- function(path, brand, experiment, windows = TRUE, experimentfile, ac
                          rawdata_backup = rawdata
                          #======================================
                          # resampling
-                         # extract sample rate to aid resampling:
+                         # extract sampling rate to aid resampling:
                          head <- attributes(rawdata)[setdiff(names(attributes(rawdata)), c("dim", "dimnames", "time_index"))]
-                         sampling_frequency <- head$header$`Sample Rate`
+                         sampling_rate <- head$header$`Sample Rate`
                          rm(head)
                          # prepare data for resampling
                          raw = as.matrix(rawdata[, c("X", "Y", "Z")])
                          rawTime = as.numeric(rawdata$time)
-                         time = seq(ceiling(min(rawTime)), floor(max(rawTime)), by = 1/sampling_frequency)
+                         time = seq(ceiling(min(rawTime)), floor(max(rawTime)), by = 1/sampling_rate)
                          # resample
                          rawdata2 = as.data.frame(GGIRread::resample(raw = raw, rawTime = rawTime, time = time, nrow(raw), 2))
                          # put data back into expected format
@@ -127,7 +127,7 @@ loaddata <- function(path, brand, experiment, windows = TRUE, experimentfile, ac
                          attributes(rawdata) = attributes(rawdata_backup)
                          rm(rawdata_backup, rawdata2)
                          #======================================
-                       } else if (brand == "Activpal") {
+                       } else if (brand == "activPAL") {
                          rawdata <- read.activpal(paste(file_path, file_list[i], sep = "/"))
                          rawdata[,c("X","Y","Z")] = ((rawdata[,c("X","Y","Z")] / (2^8)) - 0.5) * 2 * 2
                          rawdata = rawdata[,c("time", "X", "Y", "Z")]
@@ -163,7 +163,7 @@ loaddata <- function(path, brand, experiment, windows = TRUE, experimentfile, ac
                        }# brand = Fitbit
                        
                        # rename the acceleration data column names for consistency
-                       if(brand %in% c("Actigraph", "Activpal")) {
+                       if(brand %in% c("ActiGraph", "activPAL")) {
                          names(rawdata) <- tolower(names(rawdata))
                        }
                        if(brand == "MOX") {
@@ -176,15 +176,15 @@ loaddata <- function(path, brand, experiment, windows = TRUE, experimentfile, ac
                          start = as.POSIXlt("2020-11-26 9:12:00", tz = tz)
                          end = as.POSIXlt("2020-11-26 19:30:00", tz = tz)
                        }
-                       if (experiment == "ms_hfcr") {
+                       if (experiment == "ms_hrcr") {
                          start = as.POSIXlt("2020-11-24 9:42:00", tz = tz)
                          end = as.POSIXlt("2020-11-24 10:47:00", tz = tz)
                        }
-                       if (experiment == "ms_lfcr") {
+                       if (experiment == "ms_lrcr") {
                          start = as.POSIXlt("2020-11-24 12:37:00", tz = tz)
                          end = as.POSIXlt("2020-11-24 13:20:00", tz = tz)
                        }
-                       if (experiment == "ms_mfcr") {
+                       if (experiment == "ms_mrcr") {
                          start = as.POSIXlt("2020-11-24 15:07:00", tz = tz)
                          end = as.POSIXlt("2020-11-24 15:50:00", tz = tz)
                        }
@@ -192,11 +192,11 @@ loaddata <- function(path, brand, experiment, windows = TRUE, experimentfile, ac
                          start = as.POSIXlt("2020-11-24 15:54:00", tz = tz)
                          end = as.POSIXlt("2020-11-24 16:55:00", tz = tz)
                        }
-                       if (experiment == "ms_hfmr") {
+                       if (experiment == "ms_hrmr") {
                          start = as.POSIXlt("2020-11-27 8:37:00", tz = tz)
                          end = as.POSIXlt("2020-11-27 9:20:00", tz = tz)
                        }
-                       if (experiment == "ms_lfmr") {
+                       if (experiment == "ms_lrmr") {
                          start = as.POSIXlt("2020-11-27 10:02:00", tz = tz)
                          end = as.POSIXlt("2020-11-27 10:45:00", tz = tz)
                        }

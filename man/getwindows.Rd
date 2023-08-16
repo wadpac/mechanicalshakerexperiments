@@ -7,15 +7,15 @@
 getwindows(brand, experiment, path, data, experimentfile = c())
 }
 \arguments{
-\item{brand}{Sensor brand: "Actigraph", "Activpal", "Acttrust", "Axivity", "GENEActiv", or "MOX".}
+\item{brand}{Sensor brand: "ActiGraph", "activPAL", "Acttrust", "Axivity", "GENEActiv", or "MOX".}
 
-\item{experiment}{Experiment to load: "timer_check", "ms_hfcr", "ms_lfcr", "ms_hfmr", "ms_lfmr", or "box".}
+\item{experiment}{Experiment to load: "timer_check", "ms_hrcr", "ms_lrcr", "ms_mrcr", "ms_hrmr", "ms_lrmr", ms_bag or "box".}
 
 \item{path}{Path to the root of the experimental data (rawdatadir)}
 
 \item{data}{Data object}
 
-\item{experimentfile}{xlsx file with protocol description, defaults to file stored inside the code}
+\item{experimentfile}{.xlsx file with protocol description, defaults to file stored inside the code}
 }
 \value{
 List of data.frames with the accelerometer time series where each list item represents 1 recording

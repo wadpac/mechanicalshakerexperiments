@@ -13,7 +13,7 @@ output:
 
 # Five mechanical shaker experiments
 
-This file presents the data from the five mechanical shaker experiments: E1: ms_hfcr, E2: ms_lfcr, E3: ms_hfmr, E4: ms_lfmr, and E5: ms_bag. We plotted raw triaxial acceleration signals of each device per experiment for visual inspection.
+This file presents the data from the five mechanical shaker experiments: E1: ms\_lrcr, E2: ms\_hrcr, E3: ms\_lrmr, E4: ms\_hrmr, E5: ms\_mrcr, and bag: ms\_bag. We plotted raw triaxial acceleration signals of each device per experiment for visual inspection.
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -25,7 +25,7 @@ graphics.off()
 # Specify file paths and load data
 shaker_experiments_folder = "/Users/annelindelettink/Documents/Work MacBook Pro Annelinde/Mechanical Shaker Machine"
 
-datadir = paste0(shaker_experiments_folder, "/analyses/")
+datadir = paste0(shaker_experiments_folder, "/subsetted_raw_data/")
 if (!dir.exists(datadir)) {
   stop(paste0("Directory does not exist: ", datadir))
 }
@@ -86,93 +86,119 @@ plotSignals <- function(outputdir, d, axes){
 }
 ```
 
-## Experiment 1 (E1): Low sampling frequency and constant dynamic range (lfcr)
+## Experiment 1 (E1): Low sampling rate and constant dynamic range (lrcr)
 Visual inspection indicates no typical shaker movements for acceleration signals of aP_490 and aP_254.
 
-```{r Signal plots ms_lfcr, include = FALSE}
-index <- which(data$specifications$experiment == "ms_lfcr")
-ms_lfcr <- list()
+```{r Signal plots ms_lrcr, include = FALSE}
+index <- which(data$specifications$experiment == "ms_lrcr")
+ms_lrcr <- list()
 for (signal in 1:length(index)){
-  ms_lfcr[[signal]] <- data$data[[index[signal]]]
+  ms_lrcr[[signal]] <- data$data[[index[signal]]]
 }
-names(ms_lfcr) <- data$specifications$label[index]
+names(ms_lrcr) <- data$specifications$label[index]
+ms_lrcr <- Filter(Negate(is.null), ms_lrcr)
 
 # Save a plot for each signal
-plots.ms_lfcr <- plotSignals(outputdir = paste0(datadir, "plots"), d = ms_lfcr, axes = c("x", "y", "z"))
+plots.ms_lrcr <- plotSignals(outputdir = paste0(datadir, "plots"), d = ms_lrcr, axes = c("x", "y", "z"))
 ```
 
-```{r Plot signals ms_lfcr, echo = FALSE}
+```{r Plot signals ms_lrcr, echo = FALSE}
 # Save and print the plot for each signal
-for(plot in 1:length(plots.ms_lfcr)){
-  print(plots.ms_lfcr[[plot]])
+for(plot in 1:length(plots.ms_lrcr)){
+  print(plots.ms_lrcr[[plot]])
 }
-rm(plot, plots.ms_lfcr)
+rm(plot, plots.ms_lrcr)
 ```
-## Experiment 2 (E2): High sampling frequency and constant dynamic range (hfcr)
+
+## Experiment 2 (E2): High sampling rate and constant dynamic range (hrcr)
 Note that we restarted this experiment, as we noticed that one GENEActiv device (GA_301) had come loose. MOX devices quit recording around 30 minutes before the end of the experiment.
 
-```{r Signal plots ms_hfcr, include = FALSE}
-index <- which(data$specifications$experiment == "ms_hfcr")
-ms_hfcr <- list()
+```{r Signal plots ms_hrcr, include = FALSE}
+index <- which(data$specifications$experiment == "ms_hrcr")
+ms_hrcr <- list()
 for (signal in 1:length(index)){
-  ms_hfcr[[signal]] <- data$data[[index[signal]]]
+  ms_hrcr[[signal]] <- data$data[[index[signal]]]
 }
-names(ms_hfcr) <- data$specifications$label[index]
+names(ms_hrcr) <- data$specifications$label[index]
+ms_hrcr <- Filter(Negate(is.null), ms_hrcr)
 
 # Save a plot for each signal
-plots.ms_hfcr <- plotSignals(outputdir = paste0(datadir, "plots"), d = ms_hfcr, axes = c("x", "y", "z"))
+plots.ms_hrcr <- plotSignals(outputdir = paste0(datadir, "plots"), d = ms_hrcr, axes = c("x", "y", "z"))
 ```
 
-```{r Plot signals ms_hfcr, echo = FALSE}
+```{r Plot signals ms_hrcr, echo = FALSE}
 # Save and print the plot for each signal
-for(plot in 1:length(plots.ms_hfcr)){
-  print(plots.ms_hfcr[[plot]])
+for(plot in 1:length(plots.ms_hrcr)){
+  print(plots.ms_hrcr[[plot]])
 }
-rm(plot, plots.ms_hfcr)
+rm(plot, plots.ms_hrcr)
 ```
-## Experiment 3 (E3): Low sampling frequency and mixed dynamic range (lfmr)
-```{r Signal plots ms_lfmr, include = FALSE}
-index <- which(data$specifications$experiment == "ms_lfmr")
-ms_lfmr <- list()
+
+## Experiment 3 (E3): Low sampling rate and mixed dynamic range (lrmr)
+```{r Signal plots ms_lrmr, include = FALSE}
+index <- which(data$specifications$experiment == "ms_lrmr")
+ms_lrmr <- list()
 for (signal in 1:length(index)){
-  ms_lfmr[[signal]] <- data$data[[index[signal]]]
+  ms_lrmr[[signal]] <- data$data[[index[signal]]]
 }
-names(ms_lfmr) <- data$specifications$label[index]
+names(ms_lrmr) <- data$specifications$label[index]
 
 # Save a plot for each signal
-plots.ms_lfmr <- plotSignals(outputdir = paste0(datadir, "plots"), d = ms_lfmr, axes = c("x", "y", "z"))
+plots.ms_lrmr <- plotSignals(outputdir = paste0(datadir, "plots"), d = ms_lrmr, axes = c("x", "y", "z"))
 ```
 
-```{r Plot signals ms_lfmr, echo = FALSE}
+```{r Plot signals ms_lmr, echo = FALSE}
 # Save and print the plot for each signal
-for(plot in 1:length(plots.ms_lfmr)){
-  print(plots.ms_lfmr[[plot]])
+for(plot in 1:length(plots.ms_lrmr)){
+  print(plots.ms_lrmr[[plot]])
 }
-rm(plot, plots.ms_lfmr)
+rm(plot, plots.ms_lrmr)
 ```
 
-## Experiment 4 (E4): High sampling frequency and mixed dynamic range (hfmr)
-```{r Signal plots ms_hfmr, include = FALSE}
-index <- which(data$specifications$experiment == "ms_hfmr")
-ms_hfmr <- list()
+## Experiment 4 (E4): High sampling rate and mixed dynamic range (hrmr)
+```{r Signal plots ms_hrmr, include = FALSE}
+index <- which(data$specifications$experiment == "ms_hrmr")
+ms_hrmr <- list()
 for (signal in 1:length(index)){
-  ms_hfmr[[signal]] <- data$data[[index[signal]]]
+  ms_hrmr[[signal]] <- data$data[[index[signal]]]
 }
-names(ms_hfmr) <- data$specifications$label[index]
+names(ms_hrmr) <- data$specifications$label[index]
 
 # Save a plot for each signal
-plots.ms_hfmr <- plotSignals(outputdir = paste0(datadir, "plots"), d = ms_hfmr, axes = c("x", "y", "z"))
+plots.ms_hrmr <- plotSignals(outputdir = paste0(datadir, "plots"), d = ms_hrmr, axes = c("x", "y", "z"))
 ```
 
-```{r Plot signals ms_hfmr, echo = FALSE}
+```{r Plot signals ms_hrmr, echo = FALSE}
 # Save and print the plot for each signal
-for(plot in 1:length(plots.ms_hfmr)){
-  print(plots.ms_hfmr[[plot]])
+for(plot in 1:length(plots.ms_hrmr)){
+  print(plots.ms_hrmr[[plot]])
 }
-rm(plot, plots.ms_hfmr)
+rm(plot, plots.ms_hrmr)
 ```
 
-## Experiment 5 (E5): High sampling frequency and lack of standardized orientation (bag)
+## Experiment 5 (E5): Mixed sampling rate and constant dynamic range (mrcr)
+```{r Signal plots ms_mrcr, include = FALSE}
+index <- which(data$specifications$experiment == "ms_mrcr")
+ms_mrcr <- list()
+for (signal in 1:length(index)){
+  ms_mrcr[[signal]] <- data$data[[index[signal]]]
+}
+names(ms_mrcr) <- data$specifications$label[index]
+ms_mrcr <- Filter(Negate(is.null), ms_mrcr)
+
+# Save a plot for each signal
+plots.ms_mrcr <- plotSignals(outputdir = paste0(datadir, "plots"), d = ms_mrcr, axes = c("x", "y", "z"))
+```
+
+```{r Plot signals ms_mrcr, echo = FALSE}
+# Save and print the plot for each signal
+for(plot in 1:length(ms_mrcr)){
+  print(plots.ms_mrcr[[plot]])
+}
+rm(plot, plots.ms_mrcr)
+```
+
+## Bag experiment 5 (ms_bag): High sampling rate and lack of standardized orientation (bag)
 
 ```{r Signal plots ms_bag, include = FALSE}
 index <- which(data$specifications$experiment == "ms_bag")
@@ -181,6 +207,7 @@ for (signal in 1:length(index)){
   ms_bag[[signal]] <- data$data[[index[signal]]]
 }
 names(ms_bag) <- data$specifications$label[index]
+ms_bag <- Filter(Negate(is.null), ms_bag)
 
 # Save a plot for each signal
 plots.ms_bag <- plotSignals(outputdir = paste0(datadir, "plots"), d = ms_bag, axes = c("x", "y", "z"))

@@ -2,7 +2,9 @@
 #'
 #' @description 'computeCrossCorrelations' computes the maximum cross-correlations between two signals and the corresponding lag
 #' @param data An object of class "spec"
+#' @param plot A boolean: if TRUE the cross-correlation will be plotted
 #' @return List object consisting of two elements: \item{correlationMatrix}{A correlation matrix representing the maximum cross-correlations between the signals} \item{lags}{A matrix that presents the lags corresponding to the lag in which the maximum cross-correlation occurred}
+#' @importFrom stats sd ccf
 #' @export
 computeCrossCorrelations <- function(data, plot) {
   correlationMatrix <- matrix(data=NA,nrow=length(data),ncol=length(data)) # create empty matrix for max cross-correlations
@@ -69,6 +71,7 @@ computeCrossCorrelationsPerShakerCondition <- function(data) {
 #' @param data A list that includes the timeseries data
 #' @param threshold A double number indicating the threshold cross-correlation for which pairwise plots will be generated
 #' @return Plot including two time series the timeseries of the device first in the title is presented in black
+#' @import ggplot2
 #' @export
 pairwisePlots <- function(correlationMatrix, data, threshold) {
   plot_list <- list()
@@ -83,16 +86,16 @@ pairwisePlots <- function(correlationMatrix, data, threshold) {
           device2 <- names(data)[[y]]
           file_name <- paste(paste(device1, device2, sep = "_vs_"), correlationMatrix[x,y], sep = " r = ")
           jpeg(paste(datadir, file_name, ".jpeg", sep = "/plots/"), width=600, height=500, res=120) 
-          p <- ggplot2::ggplot() +
-            ggplot2::geom_point(data = data[[x]], ggplot2::aes(x = time, y = SD, colour = "black"), 
+          p <- ggplot() +
+            geom_point(data = data[[x]], aes(x = time, y = SD, colour = "black"), 
                                 alpha = 0.2, size = 0.25) +
-            ggplot2::geom_point(data = data[[y]], ggplot2::aes(x = time, y = SD, colour = "red"), 
+            geom_point(data = data[[y]], aes(x = time, y = SD, colour = "red"), 
                                 alpha =  0.2, size = 0.25) +
-            ggplot2::theme_bw() +
-            ggplot2::labs(title = paste0("Cross-correlation = ",  correlationMatrix[x,y]), y = "acceleration (g)") +
+            theme_bw() +
+            labs(title = paste0("Cross-correlation = ",  correlationMatrix[x,y]), y = "acceleration (g)") +
             #Legend
-            ggplot2::scale_color_manual(values = c("black", "red"), labels=c(device1, device2)) +
-            ggplot2::scale_fill_manual(name ="signal") + ggplot2::theme(legend.position = "right") 
+            scale_color_manual(values = c("black", "red"), labels=c(device1, device2)) +
+            scale_fill_manual(name ="signal") + theme(legend.position = "right") 
           dev.off()
           plot_list[[counter]] <- p
         }
@@ -106,14 +109,10 @@ pairwisePlots <- function(correlationMatrix, data, threshold) {
 #'
 #' @description 'dataframeShapeComparisonBeween' derives a data.frame object required for between and within brand comparison of the cross-correlations
 #'
-#' @param crossCorrelations A list consisting of two elements: \item{correlationMatrix}{A correlation matrix representing the maximum cross-correlations between the signals} \item{lags}{A matrix that presents the lags corresponding to the lag in which the maximum cross-correlation occurred}
+#' @param crossCorrelations A list consisting of two elements: \itemize{\item{correlationMatrix}{A correlation matrix representing the maximum cross-correlations between the signals} \item{lags}{A matrix that presents the lags corresponding to the lag in which the maximum cross-correlation occurred}}
 #' @param specifications A data.frame object that represents specifications of the signal, including serial_number, brand, and dynamic range
 #' @param between A string one of c("brands", dynamic_ranges")
-
-#' @return A data.frame with the following variables: \item{correlation}{Representing the cross-correlations between the two signals}, \item{lag}{Representing the lag corresonding to the maximum correlation between the two signals} 
-#' \item{between1}{Representing the brand/dynamic range of the first signal}, \item{between2}{Representing the brand/dynamic range of the second signal}, 
-#' \item{device1}{Representing the serial number of the device that recorded the first signal}, \item{device2}{Representing the serial number of the device that recorded the second signal},
-#' \item{same_brand}{An indicator of correlations that can be selected for the within (1) or between(0) brand/dynamic range comparison}
+##' @return A data.frame with the following variables: \item{correlation}{Representing the cross-correlations between the two signals} \item{lag}{Representing the lag corresonding to the maximum correlation between the two signals} \item{between1}{Representing the brand/dynamic range of the first signal} \item{between2}{Representing the brand/dynamic range of the second signal} \item{device1}{Representing the serial number of the device that recorded the first signal} \item{device2}{Representing the serial number of the device that recorded the second signal} \item{same_brand}{An indicator of correlations that can be selected for the within (1) or between(0) brand/dynamic range comparison}
 #' 
 #' @export
 #' 

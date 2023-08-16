@@ -13,15 +13,15 @@ structure_data(
 )
 }
 \arguments{
-\item{brands}{Character vector with sensor brands to consider, which may include: "Actigraph", "Activpal", "Acttrust", "Axivity", "GENEActiv", and "MOX".}
+\item{brands}{Character vector with sensor brands to consider, which may include: "ActiGraph", "activPAL", "Acttrust", "Axivity", "GENEActiv", and "MOX".}
 
-\item{experiments}{Character vector of experiments to load, which may include: "timer_check", "ms_hfcr", "ms_lfcr", "ms_hfmr", "ms_lfmr", and "box".}
+\item{experiments}{Character vector of experiments to load, which may include: "timer_check", "ms_hrcr", "ms_lrcr", "ms_hrmr", "ms_lrmr", "ms_bag", and "box".}
 
 \item{rawdatadir}{Path to the root of the experimental data (rawdatadir)}
 
 \item{outputdir}{Output directory}
 
-\item{experimentfile}{xlsx file with protocol description, defaults to file stored inside the code}
+\item{experimentfile}{.xlsx file with protocol description, defaults to file stored inside the code}
 }
 \value{
 No output is given, data is stored in .RData files

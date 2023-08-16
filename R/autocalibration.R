@@ -3,14 +3,15 @@
 #' @description 'autocalibration' simplified version of auto-calibration from R package GGIR without temperature and without loading the data in blocks
 #'
 #' @param data data.frame with accelerometer time series
-#' @param sf Sample frequency in Hertz
+#' @param sr Sampling rate in Hertz
 #' @param printsummary Boolean to indicate whether calibration summary should be printed
-#' @param brand Character of sensor brand: "Actigraph", "Activpal", "Acttrust", "Axivity", "GENEActiv", or "MOX".
+#' @param brand Character of sensor brand: "ActiGraph", "activPAL", "Acttrust", "Axivity", "GENEActiv", or "MOX".
 #' @return List of objects identical to g.calibrate function R package GGIR
 #' @importFrom stats sd lm.wfit
+#' @importFrom GGIR g.downsample
 #' @export
 
-autocalibration = function(data, sf, printsummary= TRUE, brand) {
+autocalibration = function(data, sr, printsummary= TRUE, brand) {
   # simplified version of auto-calibration from R package GGIR
   # without temperature and without loading the data in blocks
 
@@ -44,11 +45,11 @@ autocalibration = function(data, sf, printsummary= TRUE, brand) {
   on.exit(options(op))
   #creating matrixes for storing output
   S = matrix(0,0,4) #dummy variable needed to cope with head-tailing succeeding blocks of data
-  NR = ceiling((90*10^6) / (sf*ws4)) + 1000 #NR = number of 'ws4' second rows (this is for 10 days at 80 Hz)
+  NR = ceiling((90*10^6) / (sr*ws4)) + 1000 #NR = number of 'ws4' second rows (this is for 10 days at 80 Hz)
   meta = matrix(99999,NR,7)
   LD = nrow(data)
   #store data that could not be used for this block, but will be added to next block
-  use = (floor(LD / (ws*sf))) * (ws*sf) #number of datapoint to use
+  use = (floor(LD / (ws*sr))) * (ws*sr) #number of datapoint to use
   if (length(use) > 0) {
     if (use > 0) {
       if (use != LD) {
@@ -59,7 +60,7 @@ autocalibration = function(data, sf, printsummary= TRUE, brand) {
       LD = nrow(data) #redefine LD because there is less data
       ##==================================================
       dur = nrow(data)	#duration of experiment in data points
-      durexp = nrow(data) / (sf*ws)	#duration of experiment in hrs
+      durexp = nrow(data) / (sr*ws)	#duration of experiment in hrs
       # Initialization of variables
       # if (dformat != 5) {
 
@@ -70,19 +71,19 @@ autocalibration = function(data, sf, printsummary= TRUE, brand) {
       data$Z = as.numeric(data$Z)
       Gx = data[,2]; Gy = data[,3]; Gz = data[,4]
       #=============================================
-      # non-integer sample frequency is a pain for deriving epoch based sd
+      # non-integer sampling rate is a pain for deriving epoch based sd
       # however, with an epoch of 10 seconds it is an integer number of samples per epoch
       EN = sqrt(Gx^2 + Gy^2 + Gz^2)
-      D1 = GGIR::g.downsample(EN,sf,ws4,ws2)
+      D1 = GGIR::g.downsample(EN,sr,ws4,ws2)
       EN2 = D1$var2
       #mean acceleration
-      D1 = GGIR::g.downsample(Gx,sf,ws4,ws2); 	GxM2 = D1$var2
-      D1 = GGIR::g.downsample(Gy,sf,ws4,ws2); 	GyM2 = D1$var2
-      D1 = GGIR::g.downsample(Gz,sf,ws4,ws2); 	GzM2 = D1$var2
+      D1 = GGIR::g.downsample(Gx,sr,ws4,ws2); 	GxM2 = D1$var2
+      D1 = GGIR::g.downsample(Gy,sr,ws4,ws2); 	GyM2 = D1$var2
+      D1 = GGIR::g.downsample(Gz,sr,ws4,ws2); 	GzM2 = D1$var2
       #sd acceleration
-      dim(Gx) = c(sf*ws4,ceiling(length(Gx)/(sf*ws4))); 	GxSD2 = apply(Gx,2,sd)
-      dim(Gy) = c(sf*ws4,ceiling(length(Gy)/(sf*ws4))); 	GySD2 = apply(Gy,2,sd)
-      dim(Gz) = c(sf*ws4,ceiling(length(Gz)/(sf*ws4))); 	GzSD2 = apply(Gz,2,sd)
+      dim(Gx) = c(sr*ws4,ceiling(length(Gx)/(sr*ws4))); 	GxSD2 = apply(Gx,2,sd)
+      dim(Gy) = c(sr*ws4,ceiling(length(Gy)/(sr*ws4))); 	GySD2 = apply(Gy,2,sd)
+      dim(Gz) = c(sr*ws4,ceiling(length(Gz)/(sr*ws4))); 	GzSD2 = apply(Gz,2,sd)
       #-----------------------------------------------------
       #expand 'out' if it is expected to be too short
       if (count > (nrow(meta) - (2.5*(3600/ws4) *24))) {

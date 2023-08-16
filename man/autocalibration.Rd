@@ -4,16 +4,16 @@
 \alias{autocalibration}
 \title{autocalibration}
 \usage{
-autocalibration(data, sf, printsummary = TRUE, brand)
+autocalibration(data, sr, printsummary = TRUE, brand)
 }
 \arguments{
 \item{data}{data.frame with accelerometer time series}
 
-\item{sf}{Sample frequency in Hertz}
+\item{sr}{Sampling rate in Hertz}
 
 \item{printsummary}{Boolean to indicate whether calibration summary should be printed}
 
-\item{brand}{Character of sensor brand: "Actigraph", "Activpal", "Acttrust", "Axivity", "GENEActiv", or "MOX".}
+\item{brand}{Character of sensor brand: "ActiGraph", "activPAL", "Acttrust", "Axivity", "GENEActiv", or "MOX".}
 }
 \value{
 List of objects identical to g.calibrate function R package GGIR

@@ -2,7 +2,7 @@
 # This script performs a check of the time keeping ability of various sensor brands.
 # The following comparison are made:
 # - accelerometer_timestamp_error_seconds: Accelerometer time stamp when turning is visable in signal - Timestamp of turning according to reference clock
-# - Expected (sf) and observed sample rate (sf_observed) based on number of samples that were collected between the turning points visible in the signal
+# - Expected (sf) and observed sampling rate (sf_observed) based on number of samples that were collected between the turning points visible in the signal
 # - accelerometer_sampling_error_seconds: Delta samples signal * expected sample frequency - Delta time of the turning point according to reference clock
 rm(list = ls())
 options(digits.secs = 5)
@@ -13,7 +13,7 @@ options(digits = 20)
 #shaker_experiments_folder = "/media/vincent/DATA/VUMC/shaker_experiments"
 shaker_experiments_folder = "/Users/annelindelettink/Documents/Work MacBook Pro Annelinde/Mechanical Shaker Machine" # Update to be your local directory
 #output_directory = "/media/vincent/DATA/VUMC/shaker_experiments/analyses"
-output_directory = paste0(shaker_experiments_folder, "/analyses")
+output_directory = paste0(shaker_experiments_folder, "/analyses/time_keeping")
 
 #my_functions_folder =   "~/projects/mechanicalshakerexperiments/R"
 time_keeping_results_file = paste0(output_directory, "/time_keeping.RData")
@@ -46,11 +46,13 @@ if (do.rerun == TRUE) {
   sessionames = c("timer_check")
   epochsize = 5
   
-  experimentfile = system.file("datadescription/data_description.xlsx", package = "mechanicalshakerexperiments")[1]
-  experiments <- gdata::read.xls(experimentfile, header = TRUE, sheet = 1)
+  experimentfile = system.file("datadescription/data_description_new.xlsx", package = "mechanicalshakerexperiments")[1]
+  experiments <- readxl::read_excel(experimentfile, sheet = 1)
+  experiments$start_time <- format(as.POSIXct(experiments$start_time), format = "%H:%M:%S")
+  
   experiments = experiments[which(experiments$event == "turn_box"), c("accelerometers_used", "start_time")]
   
-  success_log = list(Actigraph = c(), Axivity = c(), GENEActiv = c(), Activpal = c())
+  success_log = list(ActiGraph = c(), Axivity = c(), GENEActiv = c(), activPAL = c())
   
   results = data.frame(brand = character(500), sn = character(500), sf = numeric(500), turn = numeric(500), 
                        turn_clock_time = character(500), turn_signal = numeric(500), turn_signal_relative = numeric(500),
@@ -68,16 +70,16 @@ if (do.rerun == TRUE) {
       }
       print(fn)
       load(fn)
-      if (length(grep(fn, pattern = "Actigraph")) > 0) {
-        brand = "Actigraph"
+      if (length(grep(fn, pattern = "ActiGraph")) > 0) {
+        brand = "ActiGraph"
       } else if (length(grep(fn, pattern = "Axivity")) > 0) {
         brand = "Axivity"
       } else if (length(grep(fn, pattern = "GENEActiv")) > 0) {
         brand = "GENEActiv"
       } else if (length(grep(fn, pattern = "MOX")) > 0) {
         brand = "MOX"
-      } else if (length(grep(fn, pattern = "Activpal")) > 0) {
-        brand = "Activpal"
+      } else if (length(grep(fn, pattern = "activPAL")) > 0) {
+        brand = "activPAL"
       }
       for (i in 1:length(extracteddata$data)) {
         options(digits.secs = 5)
@@ -88,9 +90,9 @@ if (do.rerun == TRUE) {
           # check that this goes well for Axivity AX6
           DR = as.numeric(extracteddata$specifications[i, "dynamic_range"])
           sn = as.character(extracteddata$specifications[i, "serial_number"])
-          sf = as.numeric(extracteddata$specifications[i, "sampling_frequency"])
+          sf = as.numeric(extracteddata$specifications[i, "sampling_rate"])
           if (brand == "MOX") sf = 25
-          if (brand != "Actigraph" & brand != "Activpal") {
+          if (brand != "ActiGraph" & brand != "activPAL") {
             tmp$time = as.POSIXlt(tmp$time, origin = "1970-01-01", tz = "Europe/Amsterdam")
           }
           tmp = tmp[, c("time","x","y","z")] 
@@ -101,7 +103,7 @@ if (do.rerun == TRUE) {
           turning_times = as.POSIXlt(x = paste0("2020-11-26 ", turning_times), tz = "Europe/Amsterdam")
           Nturn = length(turning_times)
           results$brand[cnt:(cnt + Nturn - 1)] = rep(brand, Nturn)
-          #if (brand == "Actigraph") {
+          #if (brand == "ActiGraph") {
            # brand_sn = paste0(brand, "_", substr(x = sn,start = 1, stop = 3))
             #results$brand_subtype[cnt:(cnt + Nturn - 1)] = rep(brand_sn, Nturn)
         #  } else {
@@ -117,7 +119,7 @@ if (do.rerun == TRUE) {
             # identify clock based turning times
             turning_point = which(tmp$HEADER_TIME_STAMP_rounded == turning_times[j])
             if (length(turning_point) > 0) {
-              # for Activpal we may not be able to find the turning point, because it falls a sleep easily
+              # for activPAL we may not be able to find the turning point, because it falls a sleep easily
               # we could extract the turning point by looking at nearest timestamp, like in the line below
               # turning_point = which.min(abs(tmp$HEADER_TIME_STAMP_rounded - turning_times[j]))
               # however, then it would not be a good evaluation of time keeping anymore, because all error will
@@ -142,7 +144,7 @@ if (do.rerun == TRUE) {
               accelerometer_timestamp_error_seconds = -accelerometer_timestamp_error_seconds[which.min(abs(accelerometer_timestamp_error_seconds))]
               units(accelerometer_timestamp_error_seconds) = "secs"
               results$accelerometer_timestamp_error_seconds[cnt] = as.numeric(accelerometer_timestamp_error_seconds)
-              # sample rate based evaluation
+              # sampling rate based evaluation
               if (brand != "Activpal") {
                 results$sf_observed[cnt] = results$turn_signal_relative[cnt] / results$elapsed_time_atomclock_hours[cnt]
                 turn_signal_relative2 = results$turn_signal_relative[cnt] / as.numeric(results$sf[cnt])
@@ -168,7 +170,7 @@ if (do.rerun == TRUE) {
     }
   }
   results = results[which(results$brand != ""),]
-  for (brand in c("Actigraph", "GENEActiv", "Axivity", "MOX", "Activpal")) { #, 
+  for (brand in c("ActiGraph", "GENEActiv", "Axivity", "MOX", "activPAL")) { #, 
     cat(paste0("\nSuccessful turning point extraction for ", brand,"\n"))
     print(table(success_log[[brand]]))
   }
@@ -183,7 +185,7 @@ results = results[which(results$turn != 1 & results$turn_signal != 0), ]
 # Aggregate per brand
 out = c()
 cnt = 1
-for (brand in c("Actigraph", "GENEActiv", "Axivity", "MOX", "Activpal")) {
+for (brand in c("ActiGraph", "GENEActiv", "Axivity", "MOX", "activPAL")) {
 #for (brand in c("Actigraph_CLE", "Actigraph_MOS", "GENEActiv", "Axivity", "MOX", "Activpal")) {
   sel = which(results$brand_subtype == brand)
   if (length(sel) != 0) {

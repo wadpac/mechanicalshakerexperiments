@@ -1,13 +1,12 @@
 ## Script to load the structured acceleration data and to subset these data for the analyses of:
 # 1) visual_inspection: load all data for plotting
-# 2) noise: select the no-movement segments (shaking_frequency == 0), but omit data for the actigraph devices in which idle sleep mode was enabled
-# 3) E1: analyse differences between brands with low sampling frequency (lfcr)
-# 4) E2: analyse differences between brands with high sampling frequency (hfcr)
-# 5) E3: analyse differences between dynamic ranges with low sampling frequency (lfmr)
-# 6) E4: analyse differences between dynamic ranges with high sampling frequency (hfmr)
-# 7) E5: analyse influence of sampling rate (mfcr)
-# 8) E6: bag experiment, influence of orientation
-
+# 2) noise: select the no-movement segments (shaking_frequency == 0), but omit data for the ActiGraph devices in which idle sleep mode was enabled
+# 4) E1: analyse differences between brands with low sampling rate (lrcr)
+# 3) E2: analyse differences between brands with high sampling rate (hrcr)
+# 5) E3: analyse differences between dynamic ranges with low sampling rate (lrmr)
+# 6) E4: analyse differences between dynamic ranges with high sampling rate (hrmr)
+# 7) E5: analyse influence of sampling rate (mrcr)
+# 8) bag: bag experiment, influence of orientation
 
 rm(list=ls())
 graphics.off()
@@ -21,27 +20,26 @@ structured_data_dir = paste0(shaker_experiments_folder, "/structured_raw_data")
 outputdir = paste0(shaker_experiments_folder, "/analyses")
 if (!dir.exists(outputdir)) dir.create(outputdir)
 
-# Specify the analyses
-analysis <- "E5" # one of: c("visual_inspection", "noise", "E1", "E2", "E3", "E4", "E5", "bag")
+# Specify the analysis and the brands to include
+analysis <- "E5" #one of: c("visual_inspection", "noise", "E1", "E2", "E3", "E4", "E5", "bag")
+brands_to_load = c("ActiGraph", "activPAL", "Axivity", "GENEActiv", "MOX")
 
 #===============================
 
-brands_to_load = c("Actigraph", "Activpal", "Axivity", "GENEActiv", "MOX")
-
 if(analysis == "visual_inspection"){
- experiments_to_load = c("ms_hfcr", "ms_lfcr", "ms_hfmr", "ms_lfmr", "ms_bag") # for all five experiments
+ experiments_to_load = c("ms_hrcr", "ms_lrcr", "ms_hrmr", "ms_lrmr", "ms_mrcr", "ms_bag") # for all five experiments
 } else if(analysis == "noise") {
-  experiments_to_load = c("ms_hfcr", "ms_lfcr", "ms_hfmr", "ms_lfmr") # not for ms_bag because axes were oriented randomly
+  experiments_to_load = c("ms_hrcr", "ms_lrcr", "ms_hrmr", "ms_lrmr") # not for ms_bag because axes were oriented randomly
 } else if(analysis == "E1") {
-  experiments_to_load = c("ms_lfcr") 
+  experiments_to_load = c("ms_lrcr") 
 } else if(analysis == "E2") {
-  experiments_to_load = c("ms_hfcr") 
+  experiments_to_load = c("ms_hrcr") 
 } else if(analysis == "E3") {
-  experiments_to_load = c("ms_lfmr") 
+  experiments_to_load = c("ms_lrmr") 
 } else if(analysis == "E4") {
-  experiments_to_load = c("ms_hfmr") 
+  experiments_to_load = c("ms_hrmr") 
 } else if(analysis == "E5") {
-  experiments_to_load = c("ms_mfcr") 
+  experiments_to_load = c("ms_mrcr") 
 } else if(analysis == "bag") {
   experiments_to_load = c("ms_bag") 
 } 
@@ -57,12 +55,12 @@ for (brand in 1:length(brands_to_load)){
     if (brands_to_load[brand] != "Axivity" & endsWith(experiments_to_load[experiment], "mr")) { # to avoid loading mixed dynamic range experiments for other devices
       cat(paste0("\nThis device was not included in experiment:"), experiments_to_load[experiment])
       next
-    } else if (brands_to_load[brand] == "Activpal" & endsWith(experiments_to_load[experiment], "hfcr")) {
-      next # Do not load Activpal data for the ms_hfcr experiment (in noise analyses to avoid double observations with same settings)
+    } else if (brands_to_load[brand] == "activPAL" & endsWith(experiments_to_load[experiment], "hrcr")) {
+      next # Do not load activPAL data for the ms_hrcr experiment (in noise analyses to avoid double observations with same settings)
     } else{
       load(paste0(structured_data_dir, "/", brands_to_load[brand], "_", experiments_to_load[experiment], ".RData"))
       
-      if (analysis == "noise" & brands_to_load[brand] == "Actigraph" & experiments_to_load[experiment] == "ms_hfcr"){ # Omit data of devices in which idle.sleep.mode was enabled during ms_hfcr
+      if (analysis == "noise" & brands_to_load[brand] == "ActiGraph" & experiments_to_load[experiment] == "ms_hrcr"){ # Omit data of devices in which idle.sleep.mode was enabled during ms_hrcr
           sleep.mode.devices <- c("AG_CLE_039", "AG_CLE_077", "AG_CLE_091", "AG_CLE_132", "AG_MOS_028", "AG_MOS_192", "AG_MOS_352", "AG_MOS_527", "AG_MOS_008")
           index.sleep.mode <- which(extracteddata$specifications[,c("label")] %in% sleep.mode.devices)
           extracteddata$data[index.sleep.mode] <- NULL
@@ -78,8 +76,8 @@ for (brand in 1:length(brands_to_load)){
             tmp <- tmp
           } else if (analysis == "noise"){
             tmp <- tmp[tmp$shaking_frequency == 0, ] #select no movement segments
-          } else if (analysis == "E1" | analysis == "E2" | analysis == "E3"| analysis == "E4" | analysis == "E5") {
-            if(experiments_to_load[experiment] == "ms_hfcr"){ # Remove the data due to repetition of the experiment
+          } else if (analysis == "E1" | analysis == "E2" | analysis == "E3"| analysis == "E4" | analysis == "E5" | analysis == "bag") {
+            if(experiments_to_load[experiment] == "ms_hrcr"){ # Remove the data due to repetition of the experiment
               # These are the start and end times from the description file where accelerometers_used = all_except_one_GENEActiv
               start1 <- as.POSIXlt("2020-11-24 9:42:00", tz = "Europe/Amsterdam")
               end1 <- as.POSIXlt("2020-11-24 10:13:00", tz = "Europe/Amsterdam")
@@ -105,38 +103,38 @@ for (brand in 1:length(brands_to_load)){
           data$data[[counter]] <- tmp
           counter = counter + 1
           specs <- c(extracteddata$specifications[file, "label"], extracteddata$specifications[file, "serial_number"], brands_to_load[brand], experiments_to_load[experiment],
-                     extracteddata$specifications[file, "sampling_frequency"], extracteddata$specifications[file, "dynamic_range"])
+                     extracteddata$specifications[file, "sampling_rate"], extracteddata$specifications[file, "dynamic_range"])
           specifications <- rbind(specifications, unname(specs))
         }
       }
     }
-  }
 }
 
-colnames(specifications) <- c("label", "serial_number", "brand", "experiment", "sampling_frequency", "dynamic_range")
+colnames(specifications) <- c("label", "serial_number", "brand", "experiment", "sampling_rate", "dynamic_range")
 names(data$data) <- specifications$label
 data$specifications <- specifications
 as.factor(data$specifications$brand)
 as.factor(data$specifications$experiment)
 
+
+
 if (analysis == "visual_inspection") {
   filename <- "/complete_data.RData"
 } else if (analysis == "noise"){
   filename <- "/no_movement.RData"
-} else if (analysis == "E3"){
-  filename <- "/E3_lfmr.RData"
-} else if (analysis == "E4"){
-  filename <- "/E4_hfmr.RData"
 } else if (analysis == "E1"){
-  filename <- "/E1_lfcr.RData"
+  filename <- "/E1_lrcr.RData"
 } else if (analysis == "E2"){
-  filename <- "/E2_hfcr.RData"
+  filename <- "/E2_hrcr.RData"
+} else if (analysis == "E3"){
+  filename <- "/E3_lrmr.RData"
+} else if (analysis == "E4"){
+  filename <- "/E4_hrmr.RData"
 } else if (analysis == "E5"){
-  filename <- "/E5_mfcr.RData"
+  filename <- "/E5_mrcr.RData"
 } else if (analysis == "bag"){
-  filename <- "/E6_bag.RData"
+  filename <- "/ms_bag.RData"
 }
 
-
-save(data, file = paste0(outputdir, filename))
+save(data, file = paste0(shaker_experiments_folder, "/subsetted_raw_data", filename))
 

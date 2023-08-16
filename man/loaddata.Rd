@@ -16,13 +16,13 @@ loaddata(
 \arguments{
 \item{path}{Path to the root of the experimental data (rawdatadir)}
 
-\item{brand}{Sensor brand: "Actigraph", "Activpal", "Acttrust", "Axivity", "GENEActiv", or "MOX".}
+\item{brand}{Sensor brand: "ActiGraph", "activPAL", "Acttrust", "Axivity", "GENEActiv", or "MOX".}
 
-\item{experiment}{Experiment to load: "timer_check", "ms_hfcr", "ms_lfcr", "ms_hfmr", "ms_lfmr", "ms_bag", or "box".}
+\item{experiment}{Experiment to load: "timer_check", "ms_hrcr", "ms_lrcr", "ms_mrcr", "ms_hrmr", "ms_lrmr", "ms_bag", or "box".}
 
 \item{windows}{Boolean, if TRUE then windows from the data_description file will be selected, FALSE: complete data file will be loaded;}
 
-\item{experimentfile}{xlsx file with protocol description}
+\item{experimentfile}{.xlsx file with protocol description}
 
 \item{actigraph_preprocessing}{Boolean,if  TRUE then sleepmode segments that jump by >1 sec are filled up using the function fill_sleep}
 }

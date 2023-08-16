@@ -29,6 +29,6 @@ lapply(packages, FUN = function(X) {
 
 #===================================================================================================
 
-brands = c("Actigraph", "Activpal", "Axivity", "GENEActiv", "MOX") #, "Acttrust", "Shimmer")
-experiments <- c("ms_hfcr", "ms_lfcr", "ms_hfmr", "ms_lfmr", "ms_bag") #, "ms_mfcr", "timer_check", "box")
+brands = c("ActiGraph", "activPAL", "Axivity", "GENEActiv", "MOX") #, "Acttrust", "Shimmer")
+experiments <- c("ms_hrcr", "ms_lrcr", "ms_hrmr", "ms_lrmr", "ms_mrcr", "timer_check", "ms_bag", "box")
 structure_data(brands = brands, experiments, rawdatadir, outputdir)
