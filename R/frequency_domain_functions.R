@@ -7,6 +7,7 @@
 #' @param sampling_rate Integer that indicates the sampling rate of the signal (i.e., the average number of samples obtained in one second in Hz)
 #' @param file_name String to indicate the name of the plot (i.e., "spectrum" result in the following name for plot 1 "spectrum_1.jpeg").
 #' @param plot Boolean, default is TRUE the derived spectrum will be plotted
+#' @param datadir String that defines the path to save the plot
 #' @param XLIM Vector that limits the frequency content of the plot, default is c(0, 5) to limit the frequency content to 5 Hz (as 250 rpm / 60 = 4.1667 Hz is the expected max)
 #' @return An object of class "spec", which is a list containing at least the following components: 
 #' \item{freq}{Vector of frequencies at which the spectral density is estimated.} 
@@ -17,7 +18,7 @@
 #' \item{snames}{For multivariate input, the names of the component series.}
 #' \item{method}{The method used to calculate the spectrum.} 
 #' @export
-deriveSpectrum <- function(x, sampling_rate, file_name, plot = TRUE, XLIM = c(0, 5)) {
+deriveSpectrum <- function(x, sampling_rate, file_name, plot = TRUE, datadir, XLIM = c(0, 5)) {
   
   specd <- spectrum(x, log = "no", plot = FALSE) # Default calculate spectrum on log-scale, but we use raw data
   
@@ -168,14 +169,15 @@ createBoxplot <- function(data, freqBins, outcome = c("domFreq", "meanPSD"), gro
   }
   
   if(group == "dynamic_range" | orientation_analyses == TRUE){
-    palette = c("red", "orange", "green", "blue")
+    palette = viridis::viridis(4)
+    
   } else if(group == "brand"){
     if(sampling_rate == "low"){
-      palette = c("orange", "green", "blue")
+      palette = c("#31688EFF", "#35B779FF", "#FDE725FF")
     } else if(sampling_rate == "high"){
-      palette = c("red", "orange", "green")
+      palette = c("#440154FF", "#31688EFF", "#35B779FF")
     } else if(sampling_rate == "E6"){
-      palette = c("red", "orange", "green", "blue")
+      palette = c("#440154FF", "#31688EFF", "#35B779FF", "#FDE725FF")
     }
   }
   
