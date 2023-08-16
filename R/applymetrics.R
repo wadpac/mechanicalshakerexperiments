@@ -9,6 +9,8 @@
 #' @param hb Higher boundary (Hertz) of frequency filter
 #' @param epochsize epochsize to be used
 #' @return Data.frame with acceleration metrics values at epoch level
+#' @importFrom signal butter filter
+#' @importFrom zoo rollmedian
 #' @export
 #' 
 applymetrics = function(data,n=4,sr, lb=0.2, hb=15, epochsize=5){

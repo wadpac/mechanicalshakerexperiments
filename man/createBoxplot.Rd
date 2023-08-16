@@ -9,7 +9,7 @@ createBoxplot(
   freqBins,
   outcome = c("domFreq", "meanPSD"),
   group = c("brand", "dynamic_range"),
-  sampling_rate = c("low", "high", ""),
+  sampling_rate = c("low", "high", "bag"),
   orientation_analyses = FALSE
 )
 }
@@ -21,6 +21,8 @@ createBoxplot(
 \item{outcome}{String containing the type of the comparison value. One of c("domFreq", "meanPSD")}
 
 \item{group}{String to indicate the grouping variable. One of c("brand", "dynamic_range")}
+
+\item{sampling_rate}{String to indicate the sampling rate during the experiment. One of c("low", "high", "bag")}
 
 \item{orientation_analyses}{Boolean to indicate if the analysis was for the ms_bag experiment, default = FALSE}
 }

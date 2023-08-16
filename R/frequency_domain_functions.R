@@ -70,6 +70,7 @@ deriveMeanSpectrum <- function(spectra) {
 #' @param XLIM Vector that limits the frequency content, default is c(0, 5) to limit the frequency content to 5 Hz (as 250 rpm / 60 = 4.1667 Hz is the expected max)
 #' @param plot Boolean, default is TRUE the derived peaks will be plotted over the mean frequency spectrum
 #' @return A vector indicating the frequencies at which the peaks occur 
+#' @importClassesFrom pracma findpeaks
 #' @export
 derivePeaks <- function(mean.spec, sampling_rate, XLIM = c(0, 5), plot = TRUE) {
   peaks <- pracma::findpeaks(mean.spec$y[mean.spec$x <= XLIM[2]], 
@@ -96,6 +97,7 @@ derivePeaks <- function(mean.spec, sampling_rate, XLIM = c(0, 5), plot = TRUE) {
 #' @param XLIM Vector that limits the frequency content, default is c(0, 5) to limit the frequency content to 5 Hz (as 250 rpm / 60 = 4.1667 Hz is the expected max)
 #' @param plot Boolean, default is TRUE the derived bins will be plotted over the mean frequency spectrum
 #' @return A vector indicating the frequencies at which the peaks occur 
+#' @importFrom graphics plot abline
 #' @export
 deriveBins <- function(peaks, mean.spec, XLIM = c(0, 5), plot = TRUE) {
   peaks <- c(XLIM[1], peaks)
@@ -145,10 +147,15 @@ deriveComparisonValues <- function(spectrum, freqBins){
 #' @param freqBins A vector that indicates the cut-offs for the frequency bins
 #' @param outcome String containing the type of the comparison value. One of c("domFreq", "meanPSD") 
 #' @param group String to indicate the grouping variable. One of c("brand", "dynamic_range")
+#' @param sampling_rate String to indicate the sampling rate during the experiment. One of c("low", "high", "bag")
 #' @param orientation_analyses Boolean to indicate if the analysis was for the ms_bag experiment, default = FALSE
 #' @return Boxplot between or within devices for the outcome (y-axis) per frequency bin (x-axis)
+#' @import ggpubr
+#' @importFrom ggplot2 scale_x_discrete
+#' @importFrom viridis viridis
+#' @importFrom stats aggregate
 #' @export
-createBoxplot <- function(data, freqBins, outcome = c("domFreq", "meanPSD"), group = c("brand", "dynamic_range"), sampling_rate = c("low", "high", ""), orientation_analyses = FALSE){
+createBoxplot <- function(data, freqBins, outcome = c("domFreq", "meanPSD"), group = c("brand", "dynamic_range"), sampling_rate = c("low", "high", "bag"), orientation_analyses = FALSE){
   if (outcome == "domFreq"){
     label = "Dominant frequency (Hertz)"
   } else {
@@ -181,16 +188,16 @@ createBoxplot <- function(data, freqBins, outcome = c("domFreq", "meanPSD"), gro
     }
   }
   
-  boxplot <- ggpubr::ggboxplot(data, x = "bin", y = outcome, color = group, palette = palette,
+  boxplot <- ggboxplot(data, x = "bin", y = outcome, color = group, palette = palette,
                                xlab = "Shaker frequency (Hertz)", ylab = label, 
                                order = bins,
                                font.label = list(size = 10, color = "black")) +
-    ggpubr::font("xlab", size = 10, color = "black") +
-    ggpubr::font("x.text", size = 8, color = "black") + 
-    ggpubr::font("ylab", size = 10, color = "black") +
-    ggpubr::font("y.text", size = 10, color = "black") + 
-    ggpubr::font("legend.title", size = 10, color = "black") +
-    ggpubr::font("legend.text", size = 10, color = "black") + 
+    font("xlab", size = 10, color = "black") +
+    font("x.text", size = 8, color = "black") + 
+    font("ylab", size = 10, color = "black") +
+    font("y.text", size = 10, color = "black") + 
+    font("legend.title", size = 10, color = "black") +
+    font("legend.text", size = 10, color = "black") + 
     ggplot2::scale_x_discrete(breaks=bins,
                               labels= bin.labels)
   return(boxplot)

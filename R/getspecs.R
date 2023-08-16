@@ -7,7 +7,7 @@
 #' @param experimentfile .xlsx file with protocol description, defaults to file stored inside the code
 #' @param experiment Experiment to load: "timer_check", "ms_hrcr", "ms_lrcr", "ms_mrcr", ms_hrmr", "ms_lrmr", "ms_bag" or "box".
 #' @return specifications, a data.frame with serial_number, sampling_rate, and dynamic_range
-#' @importFrom gdata read.xls
+#' @importFrom readxl read_excel
 #' @export
 
 getspecs <- function(brand, data, experimentfile = c(), experiment) {

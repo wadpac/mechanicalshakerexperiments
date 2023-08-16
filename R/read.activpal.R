@@ -4,6 +4,7 @@
 #'
 #' @param file.name.and.path Full file path to activPAL file (.csv format)
 #' @return Data.frame with acceleration timeseries and timestamps
+#' @importFrom data.table fread
 #' @export
 
 read.activpal <- function(file.name.and.path) {

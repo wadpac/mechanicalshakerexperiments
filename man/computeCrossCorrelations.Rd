@@ -8,6 +8,8 @@ computeCrossCorrelations(data, plot)
 }
 \arguments{
 \item{data}{An object of class "spec"}
+
+\item{plot}{A boolean: if TRUE the cross-correlation will be plotted}
 }
 \value{
 List object consisting of two elements: \item{correlationMatrix}{A correlation matrix representing the maximum cross-correlations between the signals} \item{lags}{A matrix that presents the lags corresponding to the lag in which the maximum cross-correlation occurred}

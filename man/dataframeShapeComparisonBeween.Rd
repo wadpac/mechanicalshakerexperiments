@@ -7,7 +7,7 @@
 dataframeShapeComparisonBeween(crossCorrelations, specifications, between)
 }
 \arguments{
-\item{crossCorrelations}{A list consisting of two elements: \item{correlationMatrix}{A correlation matrix representing the maximum cross-correlations between the signals} \item{lags}{A matrix that presents the lags corresponding to the lag in which the maximum cross-correlation occurred}}
+\item{crossCorrelations}{A list consisting of two elements: \itemize{\item{correlationMatrix}{A correlation matrix representing the maximum cross-correlations between the signals} \item{lags}{A matrix that presents the lags corresponding to the lag in which the maximum cross-correlation occurred}}}
 
 \item{specifications}{A data.frame object that represents specifications of the signal, including serial_number, brand, and dynamic range}
 
