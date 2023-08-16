@@ -1,7 +1,7 @@
 ---
-title: 'Analyses Experiment 3: Low sampling frequency mixed dynamic range'
+title: 'Analyses Experiment 3: Low sampling rate mixed dynamic range'
 author: "Annelinde Lettink"
-date: "3/7/2023"
+date: "16/8/2023"
 output:
   html_document:
     toc: yes
@@ -23,28 +23,34 @@ graphics.off()
 # Specify file paths and load data
 shaker_experiments_folder = "/Users/annelindelettink/Documents/Work MacBook Pro Annelinde/Mechanical Shaker Machine"
 
-datadir = paste0(shaker_experiments_folder, "/analyses/")
+datadir = paste0(shaker_experiments_folder, "/subsetted_raw_data/")
 if (!dir.exists(datadir)) {
   stop(paste0("Directory does not exist: ", datadir))
 }
 # Load mechanical shaker data for experiment 3
-filename_experiment = paste0(datadir, "E3_lfmr.RData") 
+filename_experiment = paste0(datadir, "E3_lrmr.RData") 
 if (!file.exists(filename_experiment)) {
   stop(paste0("File does not exist: ", filename_experiment))
 }
 load(filename_experiment)
 
 # Load functions
-source("frequency_domain_functions.R")
-source("time_domain_functions.R")
+#install.packages("mechanicalshakerexperiments")
+#library(mechanicalshakerexperiments)
+# source functions directly from file, to be replaced by package installation:
+my_functions_folder =   "/Users/annelindelettink/Documents/Work MacBook Pro Annelinde/Mechanical Shaker Machine/mechanicalshakerexperiments/R"
+#my_functions_folder =   "/home/vincent/projects/mechanicalshakerexperiments/R"
+for (function_file in dir(my_functions_folder, full.names = T)) source(function_file) #load functions
 
-# Select data with low sampling frequency (25 Hz) only
-index_low <- which(data$specifications$experiment == "ms_lfmr" & data$specifications$sampling_frequency == "25")
+# Select data with low sampling rate (25 Hz) only
+index_low <- which(data$specifications$experiment == "ms_lrmr" & data$specifications$sampling_rate == "25")
 setdiff(data$specifications$label, data$specifications$label[index_low]) # Ax_215 excluded, configuration mistake: 100 instead of 25 Hz
 
 data_low <- list(data = data$data[index_low], 
                   specifications = data$specifications[index_low,])
 rm(data)
+
+outputdir <- "/Users/annelindelettink/Documents/Work MacBook Pro Annelinde/Mechanical Shaker Machine/analyses/E3_lrmr/"
 ```
 
 # Plot selected axis shaking direction 
@@ -53,7 +59,7 @@ plot_list <- list()
   for(signal in 1:length(data_low$data)) {
     file_name <- paste0("acceleration data: ", names(data_low$data)[signal])
 
-    jpeg(paste0(paste0(datadir, "plots"), paste0(file_name, ".jpeg")), width=600, height=500, res=120) 
+    jpeg(paste0(paste0(outputdir, "plots"), paste0(file_name, ".jpeg")), width=600, height=500, res=120) 
 
     p <- ggplot2::ggplot() + ggplot2::geom_point(data = data_low$data[[signal]], ggplot2::aes(x = time, y = SD,) , alpha = 0.2, size = 0.25) + ggplot2::theme_bw() +
       ggplot2::labs(title = file_name, y = expression(paste("acceleration (" ,italic("g"), ")"))) +
@@ -65,7 +71,7 @@ plot_list <- list()
   }
 ```
 
-```{r Plot signals ms_lfmr, echo =FALSE}
+```{r Plot signals ms_lrmr, echo =FALSE}
 # Save and print the plot for each signal
 for(plot in 1:length(plot_list)){
   print(plot_list[[plot]])
@@ -82,14 +88,14 @@ ylabel = expression(paste("Spectral Density (" ,italic("g"), "2/Hertz)"))
 XLIM = c(0, 5) # Limit frequency content to 5 Hz (as 250 rpm / 60 = 4.1667 Hz is the expected max)
 ```
 
-```{r Derive frequency spectra low sampling frequency experiment, echo=FALSE}
+```{r Derive frequency spectra low sampling rate experiment, echo=FALSE}
 # DERIVE RAW FREQUENCY SPECTRA (for visual inspection and save data for further analysis)
 raw.spectra_low <- list() 
 
 for (file in 1:length(data_low$data)) { # for all accelerometer files
-  sampling_frequency <- as.numeric(data_low$specifications$sampling_frequency[file])  
+  sampling_rate <- as.numeric(data_low$specifications$sampling_rate[file])  
   SD <- data_low$data[[file]]$SD #axis in shaking direction
-  rawSpectrum <- deriveSpectrum(SD, sampling_frequency, file_name = names(data_low$data)[[file]])
+  rawSpectrum <- deriveSpectrum(SD, sampling_rate, file_name = names(data_low$data)[[file]], datadir = outputdir)
   raw.spectra_low[[file]] <- rawSpectrum
 }
 rm(rawSpectrum, file)
@@ -101,21 +107,21 @@ mean.freqspec_low <- deriveMeanSpectrum(raw.spectra_low)
 ```{r Save raw spectra, include=FALSE}
 raw_spectra <- list(spectra = raw.spectra_low, mean_spectrum = mean.freqspec_low, specifications = data_low$specifications) # Save derived raw spectra
 
-save(raw_spectra, file = paste0(datadir, "E3_frequency_spectra.RData"))
-rm(raw.spectra_low, SD, sampling_frequency)
+save(raw_spectra, file = paste0(outputdir, "E3_frequency_spectra.RData"))
+rm(raw.spectra_low, SD, sampling_rate)
 
-#load(paste0(datadir, "E3_frequency_spectra.RData"))
+#load(paste0(outputdir, "E3_frequency_spectra.RData"))
 ```
 
 ## Mean frequency spectra
 
-```{r Plot mean frequency spectrum low sampling frequency, echo=FALSE}
-plot(raw_spectra$mean_spectrum$x, raw_spectra$mean_spectrum$y, xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l", main = "Mean frequency spectrum low sampling frequency and mixed dynamic range")
+```{r Plot mean frequency spectrum low sampling rate, echo=FALSE}
+plot(raw_spectra$mean_spectrum$x, raw_spectra$mean_spectrum$y, xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l", main = "Mean frequency spectrum low sampling rate and mixed dynamic range")
 rm(mean.freqspec_low)
 ```
 
 ## Derive frequency bins
-```{r Derive frequency bins low sampling frequency, echo=FALSE}
+```{r Derive frequency bins low sampling rate, echo=FALSE}
 peaks_low <- derivePeaks(raw_spectra$mean_spectrum, 25, XLIM, plot = TRUE)
 bins_low <- deriveBins(peaks_low, raw_spectra$mean_spectrum, XLIM = c(0, 5), plot = TRUE) 
 ```
@@ -123,7 +129,7 @@ bins_low <- deriveBins(peaks_low, raw_spectra$mean_spectrum, XLIM = c(0, 5), plo
 ## Frequency spectra plots
 
 ### Overlay all frequency spectra
-```{r Overlay all spectra low sampling frequency experiment, echo=FALSE}
+```{r Overlay all spectra low sampling rate experiment, echo=FALSE}
 plot <- plot(raw_spectra$spectra[[1]]$specx, raw_spectra$spectra[[1]]$specy, main = "Overlay all frequency spectra", 
        xlab = xlabel, ylab = ylabel, type = "l", xlim = XLIM, bty= "l")
 for(i in 1:length(bins_low)){
@@ -139,7 +145,7 @@ rm(spec, i)
 
 ### Seperate plots for frequency spectra 
 
-```{r Plot spectra low sampling frequency experiment, echo=FALSE}
+```{r Plot spectra low sampling rate experiment, echo=FALSE}
 for (spec in 1:length(raw_spectra$spectra)) {
   spectrum <- raw_spectra$spectra[[spec]]
   title <- paste("Frequency spectrum plot: ", raw_spectra$specifications$label[[spec]])
@@ -160,7 +166,7 @@ for(spectrum in 1:length(raw_spectra$spectra)){
 names(comparison_values) <- names(raw_spectra$spectra)
 
 #cat("\nSaving data...")
-save(comparison_values, file = paste0(datadir, "E3_comparison_values.RData")) 
+save(comparison_values, file = paste0(outputdir, "E3_comparison_values.RData")) 
 
 rm(spectrum)
 ```
@@ -170,7 +176,7 @@ rm(spectrum)
 
 df_wide <- data.frame()
 id <- names(comparison_values)
-df_wide <- cbind(id, data_low$specifications$brand, data_low$specifications$sampling_frequency,
+df_wide <- cbind(id, data_low$specifications$brand, data_low$specifications$sampling_rate,
                  data_low$specifications$dynamic_range)
 domFreq_wide <- data.frame() 
 meanPSD_wide <- data.frame()
@@ -179,10 +185,10 @@ for (accelerometer in 1:length(comparison_values)) {
   meanPSD_wide <- rbind(meanPSD_wide, comparison_values[[accelerometer]]$meanPSD)
 }
 domFreq_ms_wide <- cbind(df_wide, domFreq_wide)
-colnames(domFreq_ms_wide) <- c("serialnumber", "brand", "sampling_frequency", "dynamic_range", 
+colnames(domFreq_ms_wide) <- c("serialnumber", "brand", "sampling_rate", "dynamic_range", 
                                "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12")
 meanPSD_ms_wide <- cbind(df_wide, meanPSD_wide)
-colnames(meanPSD_ms_wide) <- c("serialnumber", "brand", "sampling_frequency", "dynamic_range", 
+colnames(meanPSD_ms_wide) <- c("serialnumber", "brand", "sampling_rate", "dynamic_range", 
                                "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12")
 rm(df_wide, id, domFreq_wide, meanPSD_wide, accelerometer)
 ```
@@ -193,25 +199,25 @@ library(tidyverse)
 
 domFreq_long <- domFreq_ms_wide %>%
   gather(key = "bin", value = "domFreq", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12") %>%
-  rstatix::convert_as_factor(serialnumber, bin, brand, sampling_frequency, dynamic_range)
+  rstatix::convert_as_factor(serialnumber, bin, brand, sampling_rate, dynamic_range)
 meanPSD_long <- meanPSD_ms_wide %>%
   gather(key = "bin", value = "meanPSD", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12") %>%
-  rstatix::convert_as_factor(serialnumber, bin, brand, sampling_frequency, dynamic_range)
+  rstatix::convert_as_factor(serialnumber, bin, brand, sampling_rate, dynamic_range)
 df_long <- merge(domFreq_long, meanPSD_long) # Join both data.frame objects to derive a single dataset
 rm(domFreq_long, domFreq_ms_wide, meanPSD_long, meanPSD_ms_wide)
 df_long <- df_long[order(df_long$serialnumber),]
 
 #cat("\nSaving data...")
-save(df_long, file = paste0(datadir, "E3_comparison_values_long.RData"))
+save(df_long, file = paste0(outputdir, "E3_comparison_values_long.RData"))
 rm(peaks_low, index_low)
 
-#load(datadir, "E3_comparison_values_long.RData")
+#load(outputdir, "E3_comparison_values_long.RData")
 ```
 
 ## Statistical comparison: Mixed model analyses
 
 ### Mean power spectral density: meanPSD ~ dynamic_range + bin + dynamic_range * bin
-```{r Fit model meanPSD for low sampling frequency experiment, echo=FALSE}
+```{r Fit model meanPSD for low sampling rate experiment, echo=FALSE}
 meanPSD_interaction_id <- lme4::lmer(meanPSD ~ bin*dynamic_range + (1 | serialnumber), REML = TRUE, data = df_long)
 
 # Evaluate if adding a random intercept for frequency bin is necessary
@@ -220,7 +226,7 @@ anova(meanPSD_interaction_id, meanPSD_interaction_id_bin, refit = FALSE) # This 
 rm(meanPSD_interaction_id_bin)
 ```
 ### Model assumption: normal distribution of residuals
-```{r Mean PSD Model assumptions low sampling frequency experiment, echo=FALSE}
+```{r Mean PSD Model assumptions low sampling rate experiment, echo=FALSE}
 ggpubr::ggqqplot(df_long, "meanPSD", facet.by = "bin", title = "QQ-plot mean power spectral density")
 residuals_meanPSD <- resid(meanPSD_interaction_id)
 #summary(residuals_meanPSD)
@@ -229,7 +235,7 @@ rm(residuals_meanPSD)
 ```
 
 ### Model summary
-```{r Model summary meanPSD low sampling frequency experiment, echo=FALSE}
+```{r Model summary meanPSD low sampling rate experiment, echo=FALSE}
 car::Anova(meanPSD_interaction_id, type="II", test.statistic="F")
 require(lmerTest)
 test.meanPSD <- as(meanPSD_interaction_id, "merModLmerTest")
@@ -242,7 +248,7 @@ rm(test.meanPSD)
 
 ### Pairwise comparisons
 #### Bin
-```{r Calculate contrasts bin meanPSD for low sampling frequency experiment, echo=FALSE}
+```{r Calculate contrasts bin meanPSD for low sampling rate experiment, echo=FALSE}
 maineffect_bin <- emmeans::emmeans(meanPSD_interaction_id, comparison="pairwise", 
                                          specs= ~ bin, adjust="sidak", data = df_long)
 maineffect_bin
@@ -251,7 +257,7 @@ rm(maineffect_bin)
 ```
 
 # Dominant frequency: domFreq ~ dynamic_range + bin + dynamic_range*bin
-```{r Fit model domFreq for low sampling frequency experiment, echo=FALSE}
+```{r Fit model domFreq for low sampling rate experiment, echo=FALSE}
 domFreq_interaction_id <- lme4::lmer(domFreq ~ bin*dynamic_range + (1 | serialnumber), REML = TRUE, data = df_long)
 
 # Evaluate if adding a random intercept for frequency bin is necessary
@@ -261,7 +267,7 @@ rm(domFreq_interaction_id_bin)
 ```
 
 #### Model assumption: normal distribution of residuals
-```{r Dominant frequency Model assumptions low sampling frequency experiment, echo=FALSE}
+```{r Dominant frequency Model assumptions low sampling rate experiment, echo=FALSE}
 ggpubr::ggqqplot(df_long, "domFreq", facet.by = "bin", title = "QQ-plot dominant frequency")
 residuals_domFreq <- resid(domFreq_interaction_id)
 #summary(residuals_domFreq)
@@ -270,7 +276,7 @@ rm(residuals_domFreq)
 ```
 
 #### Model summary
-```{r Model summary domFreq low sampling frequency experiment, echo=FALSE}
+```{r Model summary domFreq low sampling rate experiment, echo=FALSE}
 car::Anova(domFreq_interaction_id, type="II", test.statistic="F")
 require(lmerTest)
 test.domFreq <- as(domFreq_interaction_id, "merModLmerTest")
@@ -283,7 +289,7 @@ rm(test.domFreq)
 
 ### Pairwise comparisons
 #### Bin
-```{r Calculate contrasts bin domFreq for low sampling frequency experiment, echo=FALSE}
+```{r Calculate contrasts bin domFreq for low sampling rate experiment, echo=FALSE}
 maineffect_bin <- emmeans::emmeans(domFreq_interaction_id, comparison="pairwise", 
                                          specs= ~ bin, adjust="sidak", data = df_long)
 maineffect_bin
@@ -296,8 +302,8 @@ rm(maineffect_bin)
 bxp_psd <- createBoxplot(df_long, bins_low, outcome = "meanPSD", group = "dynamic_range") 
 bxp_domFreq <- createBoxplot(df_long, bins_low, outcome = "domFreq", group = "dynamic_range")
 
-ggplot2::ggsave(file=paste0(datadir, "plots/boxplot_E3_meanPSD.png"), bxp_psd, width = 10, height = 8, dpi = 900) #saves g
-ggplot2::ggsave(file=paste0(datadir, "plots/boxplot_E3_domFreq.png"), bxp_domFreq, width = 10, height = 8, dpi = 900) #saves g
+ggplot2::ggsave(file=paste0(outputdir, "plots/boxplot_E3_meanPSD.png"), bxp_psd, width = 10, height = 8, dpi = 900) #saves g
+ggplot2::ggsave(file=paste0(outputdir, "plots/boxplot_E3_domFreq.png"), bxp_domFreq, width = 10, height = 8, dpi = 900) #saves g
 ```
 
 ```{r Print boxplot for mean power spectral density, echo=FALSE}
@@ -314,16 +320,16 @@ plot(bxp_domFreq)
 
 ```{r Compute cross-correlation matrices, include=FALSE}
 correlation_matrices <- computeCrossCorrelations(data_low$data, plot = FALSE) 
-save(correlation_matrices, file = paste0(datadir, "E3_cross_correlations_overall.RData"))
+save(correlation_matrices, file = paste0(outputdir, "E3_cross_correlations_overall.RData"))
 
 correlations_perShakerCondition <- computeCrossCorrelationsPerShakerCondition(data_low$data) 
-save(correlations_perShakerCondition, file = paste0(datadir, "E3_cross_correlations_perShakerCondition.RData"))
+save(correlations_perShakerCondition, file = paste0(outputdir, "E3_cross_correlations_perShakerCondition.RData"))
 
-#load(paste0(datadir, "E3_cross_correlations_perShakerCondition.RData"))
+#load(paste0(outputdir, "E3_cross_correlations_perShakerCondition.RData"))
 ```
 
 ### Overall heatmap
-```{r Heatmap low sampling frequency experiment, echo=FALSE, fig.width=14, fig.height=14}
+```{r Heatmap low sampling rate experiment, echo=FALSE, fig.width=14, fig.height=14}
 fullmatrix <- correlation_matrices$correlationMatrix
 
 # Add the dynamic range to the labels
@@ -344,7 +350,7 @@ heatmap <- corrplot::corrplot(pmax(fullmatrix, t(fullmatrix), na.rm = TRUE),
 rm(fullmatrix, heatmap)
 ```
 ### Heatmap per shaker condition
-```{r Heatmap low sampling frequency experiment per shaker condition, echo=FALSE, fig.width=14, fig.height=15}
+```{r Heatmap low sampling rate experiment per shaker condition, echo=FALSE, fig.width=14, fig.height=15}
 fullmatrices <- correlations_perShakerCondition
 
 # Add the dynamic range to the labels
@@ -355,7 +361,7 @@ for(matrix in 1:length(fullmatrices)){
 
 heatmaps <- list()
 for (condition in 1:length(fullmatrices)){
-    png(height=1800, width=1800, file=paste0(datadir, paste0("heatmaps/E3/heatmap_E3_", condition, ".png")))
+    png(height=1800, width=1800, file=paste0(outputdir, paste0("heatmaps/heatmap_E3_", condition, ".png")))
 
   heatmaps[[condition]] <- corrplot::corrplot(pmax(fullmatrices[[condition]]$correlationMatrix,
                           t(fullmatrices[[condition]]$correlationMatrix), na.rm = TRUE), 
@@ -372,7 +378,7 @@ rm(fullmatrices, heatmaps)
 
 ## Comparison of cross-correlation coefficients between dynamic ranges
 
-```{r Calculate average maximum cross lagged correlation coefficients low sampling frequency experiment per shaker condition, include=FALSE}
+```{r Calculate average maximum cross lagged correlation coefficients low sampling rate experiment per shaker condition, include=FALSE}
 avg_crosscor_between <- list()
 avg_crosscor_within <- list()
 
@@ -386,7 +392,7 @@ names(avg_crosscor_between) <- names(correlations_perShakerCondition)
 names(avg_crosscor_within) <- names(correlations_perShakerCondition)
 ```
 
-```{r Between dynamic range comparison low sampling frequency experiment, echo=FALSE}
+```{r Between dynamic range comparison low sampling rate experiment, echo=FALSE}
 table_between <- list()
 
 for(condition in 1:length(avg_crosscor_between)){
@@ -420,7 +426,7 @@ for(condition in 1:length(avg_crosscor_between)){
 }
 rm(tab, cor24, cor28, cor216, cor48, cor416, cor816, sd, groups, condition)
 names(table_between) <- names(correlations_perShakerCondition)
-save(table_between, file = paste0(datadir, "E3_line_graph_data.RData"))
+save(table_between, file = paste0(outputdir, "E3_line_graph_data.RData"))
 
 ```
 
@@ -432,7 +438,7 @@ for(condition in 1:length(table_between)){
 ```
 
 
-```{r Line graph low sampling frequency, echo=TRUE}
+```{r Line graph low sampling rate, echo=TRUE}
 shaker_frequencies <- c(30, 40, 50, 62, 75, 87, 100, 112, 125, 137, 150, 160, 175, 187, 200, 212, 225, 237, 250)
 groups <- c("2_vs_4", "2_vs_8", "2_vs_18", "4_vs_8", "4_vs_16", "8_vs_16")
 comparison <- rep(groups, length(shaker_frequencies))
@@ -459,6 +465,7 @@ line_plot <- ggplot2::ggplot(data = overview_tab_between, ggplot2::aes(x = as.fa
   ggplot2::geom_hline(yintercept=0.25, linetype="dashed") +
   ggplot2::geom_hline(yintercept=0.5, linetype="dashed") +
   ggplot2::geom_hline(yintercept=0.75, linetype="dashed") +
+  ggplot2::scale_color_manual(values = viridis::viridis(6)) +
   ggplot2::geom_errorbar(ggplot2::aes(ymin = as.numeric(correlations) - as.numeric(se),
                                       ymax = as.numeric(correlations) + as.numeric(se), 
                                       color = as.factor(comparison)), 
@@ -466,7 +473,7 @@ line_plot <- ggplot2::ggplot(data = overview_tab_between, ggplot2::aes(x = as.fa
     ggplot2::labs(color  = "Dynamic range comparison", linetype = "Dynamic range comparison", shape = "Dynamic range comparison")
 
 
-ggplot2::ggsave(file=paste0(datadir, "plots/linegraph_E3_crosscorrelations.png"), line_plot, width = 10, height = 8, dpi = 900) #saves g
+ggplot2::ggsave(file=paste0(outputdir, "plots/linegraph_E3_crosscorrelations.png"), line_plot, width = 10, height = 8, dpi = 900) #saves g
 ```
 
 ```{r Plot line graph, echo=TRUE}
