@@ -16,9 +16,9 @@ Description: For processesing accelerometer data generated in the mechanical sha
 URL: https://github.com/wadpac/mechanicalshakerexperiments
 License: Apache License version 2.0 | file LICENSE
 Suggests: testthat, covr, knitr, rmarkdown
-Imports: gdata, doParallel, foreach, GENEAread, GGIR, GGIRread, read.gt3x, data.table, lubridate, signal, zoo, ggplot2, ggpubr, pracma, readxl, viridis
+Imports: doParallel, foreach, GENEAread, GGIR, GGIRread, read.gt3x, data.table, lubridate, signal, zoo, ggplot2, ggpubr, pracma, readxl, viridis
 Depends: stats, utils, R (>= 3.5.0)
 NeedsCompilation: no
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.2.2
+RoxygenNote: 7.2.3
 Encoding: UTF-8
