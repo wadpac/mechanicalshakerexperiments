@@ -170,9 +170,9 @@ createBoxplot <- function(data, freqBins, outcome = c("domFreq", "meanPSD"), gro
   }
   bin.means <- aggregate(data[, c("domFreq", "meanPSD")], list(data$bin), mean)
   if(outcome == "domFreq"){
-    data <- transform(data, domFreq.binmean = ave(domFreq, bin.labels, FUN = mean))
+    data <- transform(data, domFreq.binmean = ave(data$domFreq, bin.labels, FUN = mean))
   } else{
-    data <- transform(data, meanPSD.binmean = ave(meanPSD, bin.labels, FUN = mean))
+    data <- transform(data, meanPSD.binmean = ave(data$meanPSD, bin.labels, FUN = mean))
     #data <- transform(data, perc = ave(meanPSD, bin.labels, FUN = prop.table)*100)
   }
   
