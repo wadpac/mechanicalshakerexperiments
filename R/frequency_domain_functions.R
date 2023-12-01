@@ -17,6 +17,7 @@
 #' \item{series}{The name of the time series.}
 #' \item{snames}{For multivariate input, the names of the component series.}
 #' \item{method}{The method used to calculate the spectrum.} 
+#' @importFrom stats spectrum
 #' @export
 deriveSpectrum <- function(x, sampling_rate, file_name, plot = TRUE, datadir, XLIM = c(0, 5)) {
   
@@ -153,7 +154,7 @@ deriveComparisonValues <- function(spectrum, freqBins){
 #' @import ggpubr
 #' @importFrom ggplot2 scale_x_discrete
 #' @importFrom viridis viridis
-#' @importFrom stats aggregate
+#' @importFrom stats aggregate ave
 #' @export
 createBoxplot <- function(data, freqBins, outcome = c("domFreq", "meanPSD"), group = c("brand", "dynamic_range"), sampling_rate = c("low", "high", "bag"), orientation_analyses = FALSE){
   if (outcome == "domFreq"){
