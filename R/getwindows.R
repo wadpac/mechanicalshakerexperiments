@@ -8,7 +8,6 @@
 #' @param data Data object
 #' @param experimentfile .xlsx file with protocol description, defaults to file stored inside the code
 #' @return List of data.frames with the accelerometer time series where each list item represents 1 recording
-#' @importFrom gdata read.xls
 #' @export
 
 
@@ -17,12 +16,24 @@ getwindows <- function(brand, experiment, path, data, experimentfile = c()) {
   if (length(experimentfile) == 0) {
     experimentfile = system.file("datadescription/data_description.xlsx", package = "mechanicalshakerexperiments")[1]
   }
-  description <- gdata::read.xls(experimentfile, header = TRUE)
+  tz = "Europe/Amsterdam"
+  description <- as.data.frame(readxl::read_excel(path = experimentfile, col_types = "text"))
+  for (jj in 7:8) {
+    description[, jj] = suppressWarnings(format(x = as.POSIXct(as.numeric(description[, jj]) * (60*60*24),
+                                                               origin = "1899-12-30",
+                                                               tz = tz),
+                                                format = "%H:%M:%S"))
+  }
+  description[, 2] = suppressWarnings(format(x = as.POSIXct(as.numeric(description[, 2]) * (60*60*24),
+                                                            origin = "1899-12-30",
+                                                            tz = tz), 
+                                             format = "%Y-%m-%d"))
+  
   description <- description[which(description$experiment == experiment),]
   # Calculate indices for the windows to select
   start_time <- c()
   end_time <- c()
-  tz = "Europe/Amsterdam"
+  
   if (experiment == "box") {
     start <- strftime(toString(paste(description$date[1], description$start_time[1]), sep = " "), format = "%Y-%m-%d %H:%M:%OS2", tz = tz)
     start_time <- start
@@ -58,7 +69,6 @@ getwindows <- function(brand, experiment, path, data, experimentfile = c()) {
   selected_data <- data.frame()
   #Select the windows
   cat("file ")
-  tz = "Europe/Amsterdam"
   for(pp in 1:length(data)) { # pp is file number?
     cat(paste0(" ",pp))
     if (brand %in% c("Axivity", "GENEActiv")) {

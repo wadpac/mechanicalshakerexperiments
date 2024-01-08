@@ -87,7 +87,6 @@ loaddata <- function(path, brand, experiment, windows = TRUE, experimentfile, ac
   cl <- parallel::makeCluster(Ncores) #not to overload your computer
   doParallel::registerDoParallel(cl)
   i = NULL
-  
   `%myinfix%` = foreach::`%dopar%`
   parallelLoad <- function(file_path, file_list, brand, experiment, windows, path) {
     foreach::foreach(i = 1:length(file_list), .packages = c("read.gt3x", "GGIRread", "GENEAread"),
@@ -214,7 +213,7 @@ loaddata <- function(path, brand, experiment, windows = TRUE, experimentfile, ac
                        }
                        if (brand %in% c("Axivity", "GENEActiv") == FALSE) {
                          rawdata = rawdata[which(rawdata$time >= start & rawdata$time <= end),]
-                       }else {
+                       } else {
                          if (brand == "GENEActiv") {
                            rawdata$data.out = rawdata$data.out[which(rawdata$data.out$time >= start & rawdata$data.out$time <= end),]
                          } else if (brand == "Axivity") {
