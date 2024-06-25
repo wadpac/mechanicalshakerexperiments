@@ -8,12 +8,12 @@
 #' @param brand Character of sensor brand: "ActiGraph", "activPAL", "Acttrust", "Axivity", "GENEActiv", or "MOX".
 #' @return List of objects identical to g.calibrate function R package GGIR
 #' @importFrom stats sd lm.wfit
-#' @importFrom GGIR g.downsample
 #' @export
 
 autocalibration = function(data, sr, printsummary= TRUE, brand) {
   # simplified version of auto-calibration from R package GGIR
   # without temperature and without loading the data in blocks
+  # now includes old g.downsampling function removed from GGIR...
 
   spherecrit=0.3
   minloadcrit=72
@@ -73,13 +73,29 @@ autocalibration = function(data, sr, printsummary= TRUE, brand) {
       #=============================================
       # non-integer sampling rate is a pain for deriving epoch based sd
       # however, with an epoch of 10 seconds it is an integer number of samples per epoch
+      g.downsample = function(sig,fs,ws3,ws2) {
+        #averaging per second => var1
+        sig2 =cumsum(c(0,sig))
+        select = seq(1,length(sig2),by=fs)
+        var1 = diff(sig2[round(select)]) / abs(diff(round(select[1:(length(select))])))
+        #averaging per ws3 => var2 (e.g. 5 seconds)
+        select = seq(1,length(sig2),by=fs*ws3)
+        var2 = diff(sig2[round(select)]) / abs(diff(round(select[1:(length(select))])))
+        #averaging per ws2 => var3 (e.g. 15 minutes)
+        select = seq(1,length(sig2),by=fs*ws2)
+        var3 = diff(sig2[round(select)]) / abs(diff(round(select[1:(length(select))])))
+        invisible(list(var1=var1,var2=var2,var3=var3))
+      }
+      
       EN = sqrt(Gx^2 + Gy^2 + Gz^2)
-      D1 = GGIR::g.downsample(EN,sr,ws4,ws2)
+      D1 = g.downsample(EN,sr,ws4,ws2)
       EN2 = D1$var2
       #mean acceleration
-      D1 = GGIR::g.downsample(Gx,sr,ws4,ws2); 	GxM2 = D1$var2
-      D1 = GGIR::g.downsample(Gy,sr,ws4,ws2); 	GyM2 = D1$var2
-      D1 = GGIR::g.downsample(Gz,sr,ws4,ws2); 	GzM2 = D1$var2
+      
+      D1 = g.downsample(Gx,sr,ws4,ws2); 	GxM2 = D1$var2
+      D1 = g.downsample(Gy,sr,ws4,ws2); 	GyM2 = D1$var2
+      D1 = g.downsample(Gz,sr,ws4,ws2); 	GzM2 = D1$var2
+  
       #sd acceleration
       dim(Gx) = c(sr*ws4,ceiling(length(Gx)/(sr*ws4))); 	GxSD2 = apply(Gx,2,sd)
       dim(Gy) = c(sr*ws4,ceiling(length(Gy)/(sr*ws4))); 	GySD2 = apply(Gy,2,sd)
