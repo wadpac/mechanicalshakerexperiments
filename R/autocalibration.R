@@ -95,9 +95,7 @@ autocalibration = function(data, sr, printsummary= TRUE, brand) {
       D1 = g.downsample(Gx,sr,ws4,ws2); 	GxM2 = D1$var2
       D1 = g.downsample(Gy,sr,ws4,ws2); 	GyM2 = D1$var2
       D1 = g.downsample(Gz,sr,ws4,ws2); 	GzM2 = D1$var2
-      
-      
-      
+  
       #sd acceleration
       dim(Gx) = c(sr*ws4,ceiling(length(Gx)/(sr*ws4))); 	GxSD2 = apply(Gx,2,sd)
       dim(Gy) = c(sr*ws4,ceiling(length(Gy)/(sr*ws4))); 	GySD2 = apply(Gy,2,sd)
