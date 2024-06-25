@@ -2,7 +2,7 @@
 [![codecov](https://codecov.io/gh/wadpac/mechanicalshakerexperiments/branch/main/graph/badge.svg?token=C2X6Z6AJLL)](https://codecov.io/gh/wadpac/mechanicalshakerexperiments)
 
 
-The code in this repository corresponds to our research project to facilitate processing and analyzing data from a large pool of acceleration sensors that were attached to a mechanical shaker machine. The data itself is publicly available [here]([https://pages.github.com/](https://zenodo.org/records/8160791)).
+The code in this repository corresponds to our research project to facilitate processing and analyzing data from a large pool of acceleration sensors that were attached to a mechanical shaker machine. The data itself is publicly available [here] ([https://pages.github.com/](https://zenodo.org/records/8160791)).
 
 ### File reading
 
