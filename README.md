@@ -2,7 +2,7 @@
 [![codecov](https://codecov.io/gh/wadpac/mechanicalshakerexperiments/branch/main/graph/badge.svg?token=C2X6Z6AJLL)](https://codecov.io/gh/wadpac/mechanicalshakerexperiments)
 
 
-The code in this repository corresponds to our research project to facilitate processing and analyzing data from a large pool of acceleration sensors that were attached to a mechanical shaker machine. The data itself is publicly available [here] ([https://pages.github.com/](https://zenodo.org/records/8160791)).
+The code in this repository corresponds to our research project to facilitate processing and analyzing data from a large pool of acceleration sensors that were attached to a mechanical shaker machine. The data itself is publicly available here: https://zenodo.org/records/8160791.
 
 ### File reading
 
@@ -28,7 +28,7 @@ The structured data per experiment can be loaded using the script subset_data.R 
 
 ### Analyses
 
-In our [recent publication](https://journals.humankinetics.com/view/journals/jmpb/7/1/article-jmpb.2024-0003.xml) we evaluate the comparability of raw acceleration data across sensor brands and configurations we performed frequency spectrum analysis and temporal correlation analysis. The scripts used for the data analyses performed of this article include ‘analyses’ in their name.
+In our recent publication (https://journals.humankinetics.com/view/journals/jmpb/7/1/article-jmpb.2024-0003.xml) we evaluate the comparability of raw acceleration data across sensor brands and configurations we performed frequency spectrum analysis and temporal correlation analysis. The scripts used for the data analyses performed of this article include ‘analyses’ in their name.
 
 
 ### References
