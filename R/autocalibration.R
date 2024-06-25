@@ -8,7 +8,7 @@
 #' @param brand Character of sensor brand: "ActiGraph", "activPAL", "Acttrust", "Axivity", "GENEActiv", or "MOX".
 #' @return List of objects identical to g.calibrate function R package GGIR
 #' @importFrom stats sd lm.wfit
-#' @importFrom GGIR g.downsample
+#' @importFrom GENEAread g.downsample
 #' @export
 
 autocalibration = function(data, sr, printsummary= TRUE, brand) {
